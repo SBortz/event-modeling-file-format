@@ -96,26 +96,13 @@ void RenderTimeline(EventModel model)
     
     AnsiConsole.WriteLine();
 
-    // Timeline table
-    var table = new Table()
-        .Border(TableBorder.None)
-        .BorderColor(Color.Grey)
-        .HideHeaders()
-        .AddColumn(new TableColumn("").Centered().Width(1).NoWrap())
-        .AddColumn(new TableColumn("").Centered().Width(1).NoWrap())
-        .AddColumn(new TableColumn("").Centered().Width(1).NoWrap())
-        .AddColumn(new TableColumn("").Centered().Width(1).NoWrap())
-        .AddColumn(new TableColumn("").LeftAligned())
-        .AddColumn(new TableColumn("").LeftAligned());
-    
+    // Timeline
     for (int i = 0; i < model.Timeline.Count; i++)
     {
         var element = model.Timeline[i];
         var isLast = i == model.Timeline.Count - 1;
-        AddTimelineRow(table, element, isLast);
+        RenderTimelineElement(element, isLast);
     }
-    
-    AnsiConsole.Write(table);
     
     AnsiConsole.WriteLine();
     
@@ -139,52 +126,61 @@ void RenderTimeline(EventModel model)
     AnsiConsole.Write(summaryTable);
 }
 
-void AddTimelineRow(Table table, TimelineElement element, bool isLast)
+void RenderTimelineElement(TimelineElement element, bool isLast)
 {
-    var (eventCol, viewCmdCol, actorCol, name, details) = element switch
+    var line = isLast ? "↓" : "│";
+    
+    // Fixed column positions: E=0, V/C=2, A=4, Line=6
+    var (pos, symbol, color) = element switch
     {
-        EventElement evt => (
-            "[orange1]●[/]",
-            "",
-            "",
-            evt.Name,
-            !string.IsNullOrEmpty(evt.ProducedBy) 
-                ? $"← {evt.ProducedBy}" 
-                : (!string.IsNullOrEmpty(evt.ExternalSource) ? $"external: {evt.ExternalSource}" : "")
-        ),
-        StateViewElement sv => (
-            "",
-            "[green]◆[/]",
-            "",
-            sv.Name,
-            sv.SubscribesTo.Count > 0 ? $"← [{string.Join(", ", sv.SubscribesTo)}]" : ""
-        ),
-        CommandElement cmd => (
-            "",
-            "[blue]▶[/]",
-            "",
-            cmd.Name,
-            ""
-        ),
-        ActorElement actor => (
-            "",
-            "",
-            "[white]○[/]",
-            actor.Name,
-            $"{actor.ReadsView} → {actor.SendsCommand}"
-        ),
-        _ => ("", "", "", element.Name, "")
+        EventElement => (0, "●", "orange1"),
+        StateViewElement => (2, "◆", "green"),
+        CommandElement => (2, "▶", "blue"),
+        ActorElement => (4, "○", "white"),
+        _ => (0, "?", "white")
     };
     
-    var timelineChar = isLast ? "[dim]↓[/]" : "[dim]│[/]";
-    var tickDisplay = $"[dim]@{element.Tick}[/]";
+    // Build the prefix with proper spacing
+    // Format: Symbol(pos) + padding + tick + │ + name
+    var tickStr = $"@{element.Tick}";
+    var tickPadded = tickStr.PadLeft(5);
+    var padding = Math.Max(0, 4 - pos);
+    var prefix = new string(' ', pos) + $"[{color}]{symbol}[/]" + new string(' ', padding) + $"[dim]{tickPadded} {line}[/] ";
+    var detailPrefix = "           " + $"[dim]{line}[/]    ";
     
-    table.AddRow(
-        eventCol,
-        viewCmdCol,
-        actorCol,
-        timelineChar,
-        $"[bold]{Markup.Escape(name)}[/] {tickDisplay}",
-        $"[dim]{Markup.Escape(details)}[/]"
-    );
+    // Main line: symbol + tick + │ + name
+    AnsiConsole.Markup(prefix);
+    AnsiConsole.MarkupLine($"[{color} bold]{Markup.Escape(element.Name)}[/]");
+    
+    // Detail lines (indented) - referenced elements in their type's color
+    switch (element)
+    {
+        case EventElement evt:
+            if (!string.IsNullOrEmpty(evt.ProducedBy))
+                AnsiConsole.MarkupLine($"{detailPrefix}[dim]producedBy:[/] [blue]{Markup.Escape(evt.ProducedBy)}[/]");
+            if (!string.IsNullOrEmpty(evt.ExternalSource))
+                AnsiConsole.MarkupLine($"{detailPrefix}[dim]externalSource:[/] [dim]{Markup.Escape(evt.ExternalSource)}[/]");
+            break;
+            
+        case StateViewElement sv:
+            if (sv.SubscribesTo.Count > 0)
+            {
+                var eventNames = string.Join("[dim],[/] ", sv.SubscribesTo.Select(e => $"[orange1]{Markup.Escape(e)}[/]"));
+                AnsiConsole.MarkupLine($"{detailPrefix}[dim]subscribesTo:[/] {eventNames}");
+            }
+            break;
+            
+        case ActorElement actor:
+            AnsiConsole.MarkupLine($"{detailPrefix}[dim]readsView:[/] [green]{Markup.Escape(actor.ReadsView)}[/]");
+            AnsiConsole.MarkupLine($"{detailPrefix}[dim]sendsCommand:[/] [blue]{Markup.Escape(actor.SendsCommand)}[/]");
+            break;
+            
+        case CommandElement:
+            // Commands have no additional details to show
+            break;
+    }
+    
+    // Empty line for spacing (except for last element)
+    if (!isLast)
+        AnsiConsole.MarkupLine($"           [dim]{line}[/]");
 }
