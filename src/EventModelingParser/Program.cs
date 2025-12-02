@@ -15,12 +15,17 @@ if (args.Length == 0 || args.Contains("--help") || args.Contains("-h") || args.C
 
 var filePath = args[0];
 string viewMode = "timeline";
+bool showExamples = false;
 
 for (int i = 1; i < args.Length; i++)
 {
     if ((args[i] == "--view" || args[i] == "-v") && i + 1 < args.Length)
     {
         viewMode = args[++i].ToLower();
+    }
+    else if (args[i] == "--examples" || args[i] == "-e")
+    {
+        showExamples = true;
     }
 }
 
@@ -92,6 +97,10 @@ void ShowHelp()
         "  [blue]timeline[/] - Vertical timeline view [dim](default)[/]\n" +
         "  [blue]slice[/]    - Detailed slice view with JSON examples\n" +
         "  [blue]table[/]    - Tabular overview with data flow tree"
+    );
+    optionsTable.AddRow(
+        "[green]-e[/], [green]--examples[/]",
+        "Show example data in timeline view"
     );
     optionsTable.AddRow(
         "[green]-h[/], [green]--help[/], [green]-?[/]",
@@ -219,7 +228,7 @@ else if (viewMode == "table")
 }
 else
 {
-    RenderTimeline(model);
+    RenderTimeline(model, showExamples);
 }
 
 return 0;
@@ -735,9 +744,9 @@ void RenderSliceView(EventModel model)
     }
 }
 
-void RenderTimeline(EventModel model)
+void RenderTimeline(EventModel model, bool withExamples = false)
 {
-    RenderHeader(model, "Timeline View");
+    RenderHeader(model, withExamples ? "Timeline View (with examples)" : "Timeline View");
 
     // Timeline - sorted by tick, with spacing based on tick distance
     var sortedTimeline = model.Timeline.OrderBy(e => e.Tick).ToList();
@@ -756,7 +765,7 @@ void RenderTimeline(EventModel model)
             extraLines = Math.Max(0, (tickDistance / 10) - 1);
         }
         
-        RenderTimelineElement(element, isLast, extraLines);
+        RenderTimelineElement(element, isLast, extraLines, withExamples);
     }
     
     AnsiConsole.WriteLine();
@@ -765,7 +774,7 @@ void RenderTimeline(EventModel model)
     RenderSummaryPanel(model);
 }
 
-void RenderTimelineElement(TimelineElement element, bool isLast, int extraLines = 0)
+void RenderTimelineElement(TimelineElement element, bool isLast, int extraLines = 0, bool showExample = false)
 {
     var line = isLast ? "↓" : "│";
     
@@ -799,6 +808,8 @@ void RenderTimelineElement(TimelineElement element, bool isLast, int extraLines 
                 AnsiConsole.MarkupLine($"{detailPrefix}[dim]producedBy:[/] [blue]{Markup.Escape(evt.ProducedBy)}[/]");
             if (!string.IsNullOrEmpty(evt.ExternalSource))
                 AnsiConsole.MarkupLine($"{detailPrefix}[dim]externalSource:[/] [dim]{Markup.Escape(evt.ExternalSource)}[/]");
+            if (showExample && evt.Example != null)
+                RenderInlineExample(evt.Example, detailPrefix, line);
             break;
             
         case StateViewElement sv:
@@ -807,6 +818,8 @@ void RenderTimelineElement(TimelineElement element, bool isLast, int extraLines 
                 var eventNames = string.Join("[dim],[/] ", sv.SubscribesTo.Select(e => $"[orange1]{Markup.Escape(e)}[/]"));
                 AnsiConsole.MarkupLine($"{detailPrefix}[dim]subscribesTo:[/] {eventNames}");
             }
+            if (showExample && sv.Example != null)
+                RenderInlineExample(sv.Example, detailPrefix, line);
             break;
             
         case ActorElement actor:
@@ -814,8 +827,9 @@ void RenderTimelineElement(TimelineElement element, bool isLast, int extraLines 
             AnsiConsole.MarkupLine($"{detailPrefix}[dim]sendsCommand:[/] [blue]{Markup.Escape(actor.SendsCommand)}[/]");
             break;
             
-        case CommandElement:
-            // Commands have no additional details to show
+        case CommandElement cmd:
+            if (showExample && cmd.Example != null)
+                RenderInlineExample(cmd.Example, detailPrefix, line);
             break;
     }
     
@@ -829,5 +843,17 @@ void RenderTimelineElement(TimelineElement element, bool isLast, int extraLines 
         {
             AnsiConsole.MarkupLine($"           [dim]{line}[/]");
         }
+    }
+}
+
+void RenderInlineExample(object example, string detailPrefix, string line)
+{
+    var json = JsonSerializer.Serialize(example, new JsonSerializerOptions { WriteIndented = true });
+    var lines = json.Split('\n');
+    
+    AnsiConsole.MarkupLine($"{detailPrefix}[dim]example:[/]");
+    foreach (var jsonLine in lines)
+    {
+        AnsiConsole.MarkupLine($"           [dim]{line}[/]      [cyan]{Markup.Escape(jsonLine)}[/]");
     }
 }
