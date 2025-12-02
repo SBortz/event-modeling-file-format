@@ -1,4 +1,3 @@
-using System.Reflection;
 using System.Text.Json;
 using EventModelingParser.Models;
 using NJsonSchema;
@@ -14,29 +13,19 @@ if (args.Length == 0 || args.Contains("--help") || args.Contains("-h") || args.C
 }
 
 var filePath = args[0];
+string? schemaPath = null;
 string viewMode = "timeline";
-bool showExamples = false;
 
 for (int i = 1; i < args.Length; i++)
 {
-    if ((args[i] == "--view" || args[i] == "-v") && i + 1 < args.Length)
+    if ((args[i] == "--schema" || args[i] == "-s") && i + 1 < args.Length)
+    {
+        schemaPath = args[++i];
+    }
+    else if ((args[i] == "--view" || args[i] == "-v") && i + 1 < args.Length)
     {
         viewMode = args[++i].ToLower();
     }
-    else if (args[i] == "--examples" || args[i] == "-e")
-    {
-        showExamples = true;
-    }
-}
-
-// Helper to load embedded schema
-string? GetEmbeddedSchema()
-{
-    var assembly = Assembly.GetExecutingAssembly();
-    using var stream = assembly.GetManifestResourceStream("EventModelingParser.event-modeling.schema.json");
-    if (stream == null) return null;
-    using var reader = new StreamReader(stream);
-    return reader.ReadToEnd();
 }
 
 void ShowHelp()
@@ -99,8 +88,8 @@ void ShowHelp()
         "  [blue]table[/]    - Tabular overview with data flow tree"
     );
     optionsTable.AddRow(
-        "[green]-e[/], [green]--examples[/]",
-        "Show example data in timeline view"
+        "[green]-s[/], [green]--schema[/] [dim]<path>[/]",
+        "Path to JSON schema file for validation"
     );
     optionsTable.AddRow(
         "[green]-h[/], [green]--help[/], [green]-?[/]",
@@ -142,16 +131,16 @@ void ShowHelp()
     AnsiConsole.Write(new Rule("[yellow]Examples[/]") { Style = Style.Parse("yellow"), Justification = Justify.Left });
     AnsiConsole.WriteLine();
     
-    AnsiConsole.MarkupLine("  [dim]# Basic usage (timeline view)[/]");
+    AnsiConsole.MarkupLine("  [dim]# Basic usage with default timeline view[/]");
     AnsiConsole.MarkupLine("  [white]EventModelingParser[/] [cyan]my-model.eventmodel.json[/]");
     AnsiConsole.WriteLine();
     
-    AnsiConsole.MarkupLine("  [dim]# Table view with data flow tree[/]");
+    AnsiConsole.MarkupLine("  [dim]# Use table view for documentation[/]");
     AnsiConsole.MarkupLine("  [white]EventModelingParser[/] [cyan]my-model.eventmodel.json[/] [green]--view table[/]");
     AnsiConsole.WriteLine();
     
-    AnsiConsole.MarkupLine("  [dim]# Detailed slice view with JSON examples[/]");
-    AnsiConsole.MarkupLine("  [white]EventModelingParser[/] [cyan]my-model.eventmodel.json[/] [green]-v slice[/]");
+    AnsiConsole.MarkupLine("  [dim]# Validate against schema and show slice view[/]");
+    AnsiConsole.MarkupLine("  [white]EventModelingParser[/] [cyan]my-model.eventmodel.json[/] [green]-s schema.json -v slice[/]");
     AnsiConsole.WriteLine();
     
     // Legend
@@ -181,12 +170,17 @@ if (!File.Exists(filePath))
 
 var json = await File.ReadAllTextAsync(filePath);
 
-// Schema validation with embedded schema
-var schemaJson = GetEmbeddedSchema();
-
-if (schemaJson != null)
+// Schema validation
+if (schemaPath != null)
 {
+    if (!File.Exists(schemaPath))
+    {
+        AnsiConsole.MarkupLine($"[red]Error:[/] Schema file not found: {schemaPath}");
+        return 1;
+    }
+
     AnsiConsole.MarkupLine("[dim]Validating against schema...[/]");
+    var schemaJson = await File.ReadAllTextAsync(schemaPath);
     var schema = await JsonSchema.FromJsonAsync(schemaJson);
     var errors = schema.Validate(json);
 
@@ -228,7 +222,7 @@ else if (viewMode == "table")
 }
 else
 {
-    RenderTimeline(model, showExamples);
+    RenderTimeline(model);
 }
 
 return 0;
@@ -282,9 +276,8 @@ void RenderTableView(EventModel model)
     var actors = model.Timeline.OfType<ActorElement>().ToList();
     var commands = model.Timeline.OfType<CommandElement>().ToList();
     
-    // Events Table (distinct by name)
-    var distinctEvents = events.GroupBy(e => e.Name).Select(g => g.First()).ToList();
-    if (distinctEvents.Count > 0)
+    // Events Table
+    if (events.Count > 0)
     {
         AnsiConsole.Write(new Rule("[orange1 bold]● Events[/]") { Style = Style.Parse("orange1"), Justification = Justify.Left });
         
@@ -292,26 +285,17 @@ void RenderTableView(EventModel model)
             .Border(TableBorder.Rounded)
             .BorderColor(Color.Orange1)
             .Title("[orange1]Domain Events[/]")
+            .AddColumn(new TableColumn("[dim]Tick[/]").RightAligned())
             .AddColumn(new TableColumn("[orange1 bold]Name[/]"))
             .AddColumn(new TableColumn("[dim]Produced By[/]"))
             .AddColumn(new TableColumn("[dim]External Source[/]"));
         
-        foreach (var evt in distinctEvents.OrderBy(e => e.Name))
+        foreach (var evt in events.OrderBy(e => e.Tick))
         {
-            // Find all commands that produce this event
-            var producedByCommands = events
-                .Where(e => e.Name == evt.Name && !string.IsNullOrEmpty(e.ProducedBy))
-                .Select(e => e.ProducedBy!.Split('-')[0])
-                .Distinct()
-                .ToList();
-            
-            var producedBy = producedByCommands.Count > 0
-                ? string.Join(", ", producedByCommands.Select(c => $"[blue]{Markup.Escape(c)}[/]"))
-                : "[dim]-[/]";
-            
             eventTable.AddRow(
+                $"[dim]@{evt.Tick}[/]",
                 $"[orange1 bold]{Markup.Escape(evt.Name)}[/]",
-                producedBy,
+                !string.IsNullOrEmpty(evt.ProducedBy) ? $"[blue]{Markup.Escape(evt.ProducedBy)}[/]" : "[dim]-[/]",
                 !string.IsNullOrEmpty(evt.ExternalSource) ? Markup.Escape(evt.ExternalSource) : "[dim]-[/]"
             );
         }
@@ -320,9 +304,8 @@ void RenderTableView(EventModel model)
         AnsiConsole.WriteLine();
     }
     
-    // State Views Table (distinct by name)
-    var distinctStateViews = stateViews.GroupBy(sv => sv.Name).Select(g => g.First()).ToList();
-    if (distinctStateViews.Count > 0)
+    // State Views Table
+    if (stateViews.Count > 0)
     {
         AnsiConsole.Write(new Rule("[green bold]◆ State Views[/]") { Style = Style.Parse("green"), Justification = Justify.Left });
         
@@ -330,16 +313,18 @@ void RenderTableView(EventModel model)
             .Border(TableBorder.Rounded)
             .BorderColor(Color.Green)
             .Title("[green]Read Models[/]")
+            .AddColumn(new TableColumn("[dim]Tick[/]").RightAligned())
             .AddColumn(new TableColumn("[green bold]Name[/]"))
             .AddColumn(new TableColumn("[dim]Subscribes To[/]"));
         
-        foreach (var sv in distinctStateViews.OrderBy(e => e.Name))
+        foreach (var sv in stateViews.OrderBy(e => e.Tick))
         {
             var subscribes = sv.SubscribesTo.Count > 0 
                 ? string.Join(", ", sv.SubscribesTo.Select(e => $"[orange1]{Markup.Escape(e)}[/]"))
                 : "[dim]-[/]";
             
             viewTable.AddRow(
+                $"[dim]@{sv.Tick}[/]",
                 $"[green bold]{Markup.Escape(sv.Name)}[/]",
                 subscribes
             );
@@ -349,9 +334,8 @@ void RenderTableView(EventModel model)
         AnsiConsole.WriteLine();
     }
     
-    // Commands Table (distinct by name)
-    var distinctCommands = commands.GroupBy(c => c.Name).Select(g => g.First()).ToList();
-    if (distinctCommands.Count > 0)
+    // Commands Table
+    if (commands.Count > 0)
     {
         AnsiConsole.Write(new Rule("[blue bold]▶ Commands[/]") { Style = Style.Parse("blue"), Justification = Justify.Left });
         
@@ -359,24 +343,21 @@ void RenderTableView(EventModel model)
             .Border(TableBorder.Rounded)
             .BorderColor(Color.Blue)
             .Title("[blue]Commands[/]")
+            .AddColumn(new TableColumn("[dim]Tick[/]").RightAligned())
             .AddColumn(new TableColumn("[blue bold]Name[/]"))
             .AddColumn(new TableColumn("[dim]Produces Events[/]"));
         
-        foreach (var cmd in distinctCommands.OrderBy(e => e.Name))
+        foreach (var cmd in commands.OrderBy(e => e.Tick))
         {
-            // Find all events produced by commands with this name
-            var producedEventNames = commands
-                .Where(c => c.Name == cmd.Name)
-                .SelectMany(c => events.Where(e => e.ProducedBy == $"{c.Name}-{c.Tick}"))
-                .Select(e => e.Name)
-                .Distinct()
-                .ToList();
-            
-            var produces = producedEventNames.Count > 0
-                ? string.Join(", ", producedEventNames.Select(e => $"[orange1]{Markup.Escape(e)}[/]"))
+            // Find events produced by this command
+            var cmdKey = $"{cmd.Name}-{cmd.Tick}";
+            var producedEvents = events.Where(e => e.ProducedBy == cmdKey).ToList();
+            var produces = producedEvents.Count > 0
+                ? string.Join(", ", producedEvents.Select(e => $"[orange1]{Markup.Escape(e.Name)}[/]"))
                 : "[dim]-[/]";
             
             cmdTable.AddRow(
+                $"[dim]@{cmd.Tick}[/]",
                 $"[blue bold]{Markup.Escape(cmd.Name)}[/]",
                 produces
             );
@@ -386,9 +367,8 @@ void RenderTableView(EventModel model)
         AnsiConsole.WriteLine();
     }
     
-    // Actors Table (distinct by name)
-    var distinctActors = actors.GroupBy(a => a.Name).Select(g => g.First()).ToList();
-    if (distinctActors.Count > 0)
+    // Actors Table
+    if (actors.Count > 0)
     {
         AnsiConsole.Write(new Rule("[white bold]○ Actors[/]") { Style = Style.Parse("white"), Justification = Justify.Left });
         
@@ -396,29 +376,18 @@ void RenderTableView(EventModel model)
             .Border(TableBorder.Rounded)
             .BorderColor(Color.Grey)
             .Title("[white]Actors / Users[/]")
+            .AddColumn(new TableColumn("[dim]Tick[/]").RightAligned())
             .AddColumn(new TableColumn("[white bold]Name[/]"))
-            .AddColumn(new TableColumn("[dim]Reads Views[/]"))
-            .AddColumn(new TableColumn("[dim]Sends Commands[/]"));
+            .AddColumn(new TableColumn("[dim]Reads View[/]"))
+            .AddColumn(new TableColumn("[dim]Sends Command[/]"));
         
-        foreach (var actor in distinctActors.OrderBy(e => e.Name))
+        foreach (var actor in actors.OrderBy(e => e.Tick))
         {
-            // Find all views this actor reads and commands they send
-            var readsViews = actors
-                .Where(a => a.Name == actor.Name)
-                .Select(a => a.ReadsView)
-                .Distinct()
-                .ToList();
-            
-            var sendsCommands = actors
-                .Where(a => a.Name == actor.Name)
-                .Select(a => a.SendsCommand)
-                .Distinct()
-                .ToList();
-            
             actorTable.AddRow(
+                $"[dim]@{actor.Tick}[/]",
                 $"[white bold]{Markup.Escape(actor.Name)}[/]",
-                string.Join(", ", readsViews.Select(v => $"[green]{Markup.Escape(v)}[/]")),
-                string.Join(", ", sendsCommands.Select(c => $"[blue]{Markup.Escape(c)}[/]"))
+                $"[green]{Markup.Escape(actor.ReadsView)}[/]",
+                $"[blue]{Markup.Escape(actor.SendsCommand)}[/]"
             );
         }
         
@@ -426,86 +395,87 @@ void RenderTableView(EventModel model)
         AnsiConsole.WriteLine();
     }
     
-    // Flow Tree - Shows the data flow (all elements distinct by name)
+    // Flow Tree - Shows the data flow
     AnsiConsole.Write(new Rule("[cyan bold]🔄 Data Flow[/]") { Style = Style.Parse("cyan"), Justification = Justify.Left });
     
     var flowTree = new Tree("[cyan]Event Model Flow[/]")
         .Style(Style.Parse("dim"));
     
-    // Distinct StateViews as root nodes
-    foreach (var sv in distinctStateViews.OrderBy(sv => sv.Name))
+    // Find commands that are triggered by actors (connected to a StateView flow)
+    var commandsTriggeredByActors = actors.Select(a => a.SendsCommand).ToHashSet();
+    
+    // Find standalone commands (not triggered by any actor) - these are root nodes
+    var standaloneCommands = commands.Where(c => !commandsTriggeredByActors.Contains(c.Name)).ToList();
+    
+    // Build a list of root nodes: StateViews and standalone Commands, sorted by tick
+    var rootNodes = new List<(int Tick, string Type, object Element)>();
+    
+    foreach (var sv in stateViews)
+        rootNodes.Add((sv.Tick, "StateView", sv));
+    
+    foreach (var cmd in standaloneCommands)
+        rootNodes.Add((cmd.Tick, "Command", cmd));
+    
+    // Sort by tick
+    rootNodes = rootNodes.OrderBy(r => r.Tick).ToList();
+    
+    foreach (var (tick, type, element) in rootNodes)
     {
-        var svNode = flowTree.AddNode($"[green]◆ {Markup.Escape(sv.Name)}[/]");
-        
-        // Events this view subscribes to
-        if (sv.SubscribesTo.Count > 0)
+        if (type == "StateView" && element is StateViewElement sv)
         {
-            var subsNode = svNode.AddNode("[dim]← subscribes to[/]");
-            foreach (var eventName in sv.SubscribesTo)
-            {
-                subsNode.AddNode($"[orange1]● {Markup.Escape(eventName)}[/]");
-            }
-        }
-        
-        // Distinct actors that read this view
-        var readingActorNames = actors
-            .Where(a => a.ReadsView == sv.Name)
-            .Select(a => a.Name)
-            .Distinct()
-            .ToList();
-        
-        foreach (var actorName in readingActorNames)
-        {
-            var actorNode = svNode.AddNode($"[white]○ {Markup.Escape(actorName)}[/]");
+            var svNode = flowTree.AddNode($"[green]◆ {Markup.Escape(sv.Name)}[/] [dim]@{sv.Tick}[/]");
             
-            // Distinct commands this actor sends (when reading this view)
-            var commandNames = actors
-                .Where(a => a.Name == actorName && a.ReadsView == sv.Name)
-                .Select(a => a.SendsCommand)
-                .Distinct()
-                .ToList();
-            
-            foreach (var cmdName in commandNames)
+            // Events this view subscribes to
+            if (sv.SubscribesTo.Count > 0)
             {
-                var cmdNode = actorNode.AddNode($"[blue]▶ {Markup.Escape(cmdName)}[/]");
-                
-                // Distinct events produced by this command
-                var producedEventNames = events
-                    .Where(e => !string.IsNullOrEmpty(e.ProducedBy) && e.ProducedBy.StartsWith(cmdName + "-"))
-                    .Select(e => e.Name)
-                    .Distinct()
-                    .ToList();
-                
-                if (producedEventNames.Count > 0)
+                var subsNode = svNode.AddNode("[dim]← subscribes to[/]");
+                foreach (var eventName in sv.SubscribesTo)
                 {
-                    var prodNode = cmdNode.AddNode("[dim]→ produces[/]");
-                    foreach (var evtName in producedEventNames)
+                    subsNode.AddNode($"[orange1]● {Markup.Escape(eventName)}[/]");
+                }
+            }
+            
+            // Actors that read this view
+            var readingActors = actors.Where(a => a.ReadsView == sv.Name).ToList();
+            foreach (var actor in readingActors)
+            {
+                var actorNode = svNode.AddNode($"[white]○ {Markup.Escape(actor.Name)}[/] [dim]@{actor.Tick}[/]");
+                
+                // Command this actor sends
+                var cmd = commands.FirstOrDefault(c => c.Name == actor.SendsCommand);
+                if (cmd != null)
+                {
+                    var cmdNode = actorNode.AddNode($"[blue]▶ {Markup.Escape(cmd.Name)}[/] [dim]@{cmd.Tick}[/]");
+                    
+                    // Events produced by this command
+                    var cmdKey = $"{cmd.Name}-{cmd.Tick}";
+                    var producedEvents = events.Where(e => e.ProducedBy == cmdKey).ToList();
+                    if (producedEvents.Count > 0)
                     {
-                        prodNode.AddNode($"[orange1]● {Markup.Escape(evtName)}[/]");
+                        var prodNode = cmdNode.AddNode("[dim]→ produces[/]");
+                        foreach (var evt in producedEvents)
+                        {
+                            prodNode.AddNode($"[orange1]● {Markup.Escape(evt.Name)}[/] [dim]@{evt.Tick}[/]");
+                        }
                     }
                 }
             }
         }
-    }
-    
-    // All distinct commands as root nodes
-    foreach (var cmd in distinctCommands.OrderBy(c => c.Name))
-    {
-        var cmdNode = flowTree.AddNode($"[blue]▶ {Markup.Escape(cmd.Name)}[/]");
-        
-        // Distinct events produced by this command
-        var producedEventNames = events
-            .Where(e => !string.IsNullOrEmpty(e.ProducedBy) && e.ProducedBy.StartsWith(cmd.Name + "-"))
-            .Select(e => e.Name)
-            .Distinct()
-            .ToList();
-        
-        if (producedEventNames.Count > 0)
+        else if (type == "Command" && element is CommandElement cmd)
         {
-            var prodNode = cmdNode.AddNode("[dim]→ produces[/]");
-            foreach (var evtName in producedEventNames)
+            // Standalone command (not triggered by an actor)
+            var cmdNode = flowTree.AddNode($"[blue]▶ {Markup.Escape(cmd.Name)}[/] [dim]@{cmd.Tick}[/]");
+            
+            // Events produced by this command
+            var cmdKey = $"{cmd.Name}-{cmd.Tick}";
+            var producedEvents = events.Where(e => e.ProducedBy == cmdKey).ToList();
+            if (producedEvents.Count > 0)
             {
-                prodNode.AddNode($"[orange1]● {Markup.Escape(evtName)}[/]");
+                var prodNode = cmdNode.AddNode("[dim]→ produces[/]");
+                foreach (var evt in producedEvents)
+                {
+                    prodNode.AddNode($"[orange1]● {Markup.Escape(evt.Name)}[/] [dim]@{evt.Tick}[/]");
+                }
             }
         }
     }
@@ -530,10 +500,10 @@ void RenderTableView(EventModel model)
 
 void RenderSummaryPanel(EventModel model)
 {
-    var events = model.Timeline.OfType<EventElement>().Select(e => e.Name).Distinct().Count();
-    var stateViews = model.Timeline.OfType<StateViewElement>().Select(sv => sv.Name).Distinct().Count();
-    var actors = model.Timeline.OfType<ActorElement>().Select(a => a.Name).Distinct().Count();
-    var commands = model.Timeline.OfType<CommandElement>().Select(c => c.Name).Distinct().Count();
+    var events = model.Timeline.OfType<EventElement>().Count();
+    var stateViews = model.Timeline.OfType<StateViewElement>().Count();
+    var actors = model.Timeline.OfType<ActorElement>().Count();
+    var commands = model.Timeline.OfType<CommandElement>().Count();
     
     var summaryGrid = new Grid()
         .AddColumn()
@@ -744,9 +714,9 @@ void RenderSliceView(EventModel model)
     }
 }
 
-void RenderTimeline(EventModel model, bool withExamples = false)
+void RenderTimeline(EventModel model)
 {
-    RenderHeader(model, withExamples ? "Timeline View (with examples)" : "Timeline View");
+    RenderHeader(model, "Timeline View");
 
     // Timeline - sorted by tick, with spacing based on tick distance
     var sortedTimeline = model.Timeline.OrderBy(e => e.Tick).ToList();
@@ -765,7 +735,7 @@ void RenderTimeline(EventModel model, bool withExamples = false)
             extraLines = Math.Max(0, (tickDistance / 10) - 1);
         }
         
-        RenderTimelineElement(element, isLast, extraLines, withExamples);
+        RenderTimelineElement(element, isLast, extraLines);
     }
     
     AnsiConsole.WriteLine();
@@ -774,29 +744,58 @@ void RenderTimeline(EventModel model, bool withExamples = false)
     RenderSummaryPanel(model);
 }
 
-void RenderTimelineElement(TimelineElement element, bool isLast, int extraLines = 0, bool showExample = false)
+void RenderTimelineElement(TimelineElement element, bool isLast, int extraLines = 0)
 {
     var line = isLast ? "↓" : "│";
     
-    // Fixed column positions: E=0, V/C=2, A=4, Line=6
-    var (pos, symbol, color) = element switch
+    // Timeline runs through the center (position 3) - through StateView/Command nodes
+    // Layout: [Event col] [gap] [Timeline] [gap] [Actor col] [tick] [name]
+    //         0           1     2-3        4     5           6+
+    var (symbol, color) = element switch
     {
-        EventElement => (0, "●", "orange1"),
-        StateViewElement => (2, "◆", "green"),
-        CommandElement => (2, "▶", "blue"),
-        ActorElement => (4, "○", "white"),
-        _ => (0, "?", "white")
+        EventElement => ("●", "orange1"),
+        StateViewElement => ("◆", "green"),
+        CommandElement => ("▶", "blue"),
+        ActorElement => ("○", "white"),
+        _ => ("?", "white")
     };
     
-    // Build the prefix with proper spacing
-    // Format: Symbol(pos) + padding + tick + │ + name
     var tickStr = $"@{element.Tick}";
     var tickPadded = tickStr.PadLeft(5);
-    var padding = Math.Max(0, 4 - pos);
-    var prefix = new string(' ', pos) + $"[{color}]{symbol}[/]" + new string(' ', padding) + $"[dim]{tickPadded} {line}[/] ";
-    var detailPrefix = "           " + $"[dim]{line}[/]    ";
     
-    // Main line: symbol + tick + │ + name
+    // Build the visual row with timeline running through center
+    // Event (pos 0) | Timeline (pos 3) | Actor (pos 6) | tick | name
+    string prefix;
+    string detailPrefix;
+    
+    switch (element)
+    {
+        case EventElement:
+            // Event is left of timeline: ●  │
+            prefix = $"[{color}]{symbol}[/]  [dim]{line}[/]     {tickPadded}  ";
+            detailPrefix = $"   [dim]{line}[/]            ";
+            break;
+            
+        case StateViewElement:
+        case CommandElement:
+            // StateView/Command IS on the timeline (symbol replaces │)
+            prefix = $"   [{color}]{symbol}[/]     {tickPadded}  ";
+            detailPrefix = $"   [dim]{line}[/]            ";
+            break;
+            
+        case ActorElement:
+            // Actor is right of timeline: │  ○
+            prefix = $"   [dim]{line}[/]  [{color}]{symbol}[/]  {tickPadded}  ";
+            detailPrefix = $"   [dim]{line}[/]            ";
+            break;
+            
+        default:
+            prefix = $"   [dim]{line}[/]     {tickPadded}  ";
+            detailPrefix = $"   [dim]{line}[/]            ";
+            break;
+    }
+    
+    // Main line: layout + name
     AnsiConsole.Markup(prefix);
     AnsiConsole.MarkupLine($"[{color} bold]{Markup.Escape(element.Name)}[/]");
     
@@ -808,8 +807,6 @@ void RenderTimelineElement(TimelineElement element, bool isLast, int extraLines 
                 AnsiConsole.MarkupLine($"{detailPrefix}[dim]producedBy:[/] [blue]{Markup.Escape(evt.ProducedBy)}[/]");
             if (!string.IsNullOrEmpty(evt.ExternalSource))
                 AnsiConsole.MarkupLine($"{detailPrefix}[dim]externalSource:[/] [dim]{Markup.Escape(evt.ExternalSource)}[/]");
-            if (showExample && evt.Example != null)
-                RenderInlineExample(evt.Example, detailPrefix, line);
             break;
             
         case StateViewElement sv:
@@ -818,8 +815,6 @@ void RenderTimelineElement(TimelineElement element, bool isLast, int extraLines 
                 var eventNames = string.Join("[dim],[/] ", sv.SubscribesTo.Select(e => $"[orange1]{Markup.Escape(e)}[/]"));
                 AnsiConsole.MarkupLine($"{detailPrefix}[dim]subscribesTo:[/] {eventNames}");
             }
-            if (showExample && sv.Example != null)
-                RenderInlineExample(sv.Example, detailPrefix, line);
             break;
             
         case ActorElement actor:
@@ -827,33 +822,20 @@ void RenderTimelineElement(TimelineElement element, bool isLast, int extraLines 
             AnsiConsole.MarkupLine($"{detailPrefix}[dim]sendsCommand:[/] [blue]{Markup.Escape(actor.SendsCommand)}[/]");
             break;
             
-        case CommandElement cmd:
-            if (showExample && cmd.Example != null)
-                RenderInlineExample(cmd.Example, detailPrefix, line);
+        case CommandElement:
+            // Commands have no additional details to show
             break;
     }
     
     // Empty line for spacing (except for last element)
     if (!isLast)
     {
-        AnsiConsole.MarkupLine($"           [dim]{line}[/]");
+        AnsiConsole.MarkupLine($"   [dim]{line}[/]");
         
         // Add extra lines for larger tick distances
         for (int i = 0; i < extraLines; i++)
         {
-            AnsiConsole.MarkupLine($"           [dim]{line}[/]");
+            AnsiConsole.MarkupLine($"   [dim]{line}[/]");
         }
-    }
-}
-
-void RenderInlineExample(object example, string detailPrefix, string line)
-{
-    var json = JsonSerializer.Serialize(example, new JsonSerializerOptions { WriteIndented = true });
-    var lines = json.Split('\n');
-    
-    AnsiConsole.MarkupLine($"{detailPrefix}[dim]example:[/]");
-    foreach (var jsonLine in lines)
-    {
-        AnsiConsole.MarkupLine($"           [dim]{line}[/]      [cyan]{Markup.Escape(jsonLine)}[/]");
     }
 }
