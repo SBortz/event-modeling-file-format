@@ -44,8 +44,8 @@
     {
       "type": "actor",
       "name": "Customer",
-      "inbound": "ShoppingCart",
-      "outbound": "PlaceOrder"
+      "readsView": "ShoppingCart",
+      "sendsCommand": "PlaceOrder"
     },
     {
       "type": "command",
@@ -100,8 +100,8 @@
     {
       "type": "actor",
       "name": "PaymentProcessor",
-      "inbound": "PendingOrders",
-      "outbound": "ProcessPayment"
+      "readsView": "PendingOrders",
+      "sendsCommand": "ProcessPayment"
     },
     {
       "type": "command",
@@ -146,8 +146,8 @@
     {
       "type": "actor",
       "name": "WarehouseWorker",
-      "inbound": "OrdersReadyToShip",
-      "outbound": "ShipOrder"
+      "readsView": "OrdersReadyToShip",
+      "sendsCommand": "ShipOrder"
     },
     {
       "type": "command",

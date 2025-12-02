@@ -93,7 +93,7 @@
     "actor": {
       "type": "object",
       "description": "An actor interacts with the system: reads a view and sends a command.",
-      "required": ["type", "name", "inbound", "outbound"],
+      "required": ["type", "name", "readsView", "sendsCommand"],
       "additionalProperties": false,
       "properties": {
         "type": {
@@ -103,11 +103,11 @@
           "type": "string",
           "description": "Name of the actor (e.g. 'Customer', 'WarehouseWorker')"
         },
-        "inbound": {
+        "readsView": {
           "type": "string",
-          "description": "Name of the view that the actor reads"
+          "description": "Name of the state view that the actor reads"
         },
-        "outbound": {
+        "sendsCommand": {
           "type": "string",
           "description": "Name of the command that the actor sends"
         }

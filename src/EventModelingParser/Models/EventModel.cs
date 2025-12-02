@@ -60,11 +60,11 @@ public class ActorElement : TimelineElement
 {
     public override string Type => "actor";
     
-    [JsonPropertyName("inbound")]
-    public string Inbound { get; set; } = string.Empty;
+    [JsonPropertyName("readsView")]
+    public string ReadsView { get; set; } = string.Empty;
     
-    [JsonPropertyName("outbound")]
-    public string Outbound { get; set; } = string.Empty;
+    [JsonPropertyName("sendsCommand")]
+    public string SendsCommand { get; set; } = string.Empty;
 }
 
 public class CommandElement : TimelineElement
