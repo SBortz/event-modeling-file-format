@@ -96,12 +96,24 @@ void RenderTimeline(EventModel model)
     
     AnsiConsole.WriteLine();
 
-    // Timeline
-    for (int i = 0; i < model.Timeline.Count; i++)
+    // Timeline - sorted by tick, with spacing based on tick distance
+    var sortedTimeline = model.Timeline.OrderBy(e => e.Tick).ToList();
+    
+    for (int i = 0; i < sortedTimeline.Count; i++)
     {
-        var element = model.Timeline[i];
-        var isLast = i == model.Timeline.Count - 1;
-        RenderTimelineElement(element, isLast);
+        var element = sortedTimeline[i];
+        var isLast = i == sortedTimeline.Count - 1;
+        
+        // Calculate spacing based on tick distance (10 = normal = 1 empty line)
+        int extraLines = 0;
+        if (!isLast)
+        {
+            var nextElement = sortedTimeline[i + 1];
+            var tickDistance = nextElement.Tick - element.Tick;
+            extraLines = Math.Max(0, (tickDistance / 10) - 1);
+        }
+        
+        RenderTimelineElement(element, isLast, extraLines);
     }
     
     AnsiConsole.WriteLine();
@@ -126,7 +138,7 @@ void RenderTimeline(EventModel model)
     AnsiConsole.Write(summaryTable);
 }
 
-void RenderTimelineElement(TimelineElement element, bool isLast)
+void RenderTimelineElement(TimelineElement element, bool isLast, int extraLines = 0)
 {
     var line = isLast ? "↓" : "│";
     
@@ -182,5 +194,13 @@ void RenderTimelineElement(TimelineElement element, bool isLast)
     
     // Empty line for spacing (except for last element)
     if (!isLast)
+    {
         AnsiConsole.MarkupLine($"           [dim]{line}[/]");
+        
+        // Add extra lines for larger tick distances
+        for (int i = 0; i < extraLines; i++)
+        {
+            AnsiConsole.MarkupLine($"           [dim]{line}[/]");
+        }
+    }
 }
