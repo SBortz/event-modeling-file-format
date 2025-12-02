@@ -768,30 +768,33 @@ void RenderTimelineElement(TimelineElement element, bool isLast, int extraLines 
     string prefix;
     string detailPrefix;
     
+    // Left margin for the entire timeline view
+    const string margin = "    ";
+    
     switch (element)
     {
         case EventElement:
             // Event is left of timeline: ●  │
-            prefix = $"[{color}]{symbol}[/]  [dim]{line}[/]     {tickPadded}  ";
-            detailPrefix = $"   [dim]{line}[/]            ";
+            prefix = $"{margin}[{color}]{symbol}[/]  [dim]{line}[/]     {tickPadded}  ";
+            detailPrefix = $"{margin}   [dim]{line}[/]            ";
             break;
             
         case StateViewElement:
         case CommandElement:
             // StateView/Command IS on the timeline (symbol replaces │)
-            prefix = $"   [{color}]{symbol}[/]     {tickPadded}  ";
-            detailPrefix = $"   [dim]{line}[/]            ";
+            prefix = $"{margin}   [{color}]{symbol}[/]     {tickPadded}  ";
+            detailPrefix = $"{margin}   [dim]{line}[/]            ";
             break;
             
         case ActorElement:
             // Actor is right of timeline: │  ○
-            prefix = $"   [dim]{line}[/]  [{color}]{symbol}[/]  {tickPadded}  ";
-            detailPrefix = $"   [dim]{line}[/]            ";
+            prefix = $"{margin}   [dim]{line}[/]  [{color}]{symbol}[/]  {tickPadded}  ";
+            detailPrefix = $"{margin}   [dim]{line}[/]            ";
             break;
             
         default:
-            prefix = $"   [dim]{line}[/]     {tickPadded}  ";
-            detailPrefix = $"   [dim]{line}[/]            ";
+            prefix = $"{margin}   [dim]{line}[/]     {tickPadded}  ";
+            detailPrefix = $"{margin}   [dim]{line}[/]            ";
             break;
     }
     
@@ -830,12 +833,12 @@ void RenderTimelineElement(TimelineElement element, bool isLast, int extraLines 
     // Empty line for spacing (except for last element)
     if (!isLast)
     {
-        AnsiConsole.MarkupLine($"   [dim]{line}[/]");
+        AnsiConsole.MarkupLine($"{margin}   [dim]{line}[/]");
         
         // Add extra lines for larger tick distances
         for (int i = 0; i < extraLines; i++)
         {
-            AnsiConsole.MarkupLine($"   [dim]{line}[/]");
+            AnsiConsole.MarkupLine($"{margin}   [dim]{line}[/]");
         }
     }
 }
