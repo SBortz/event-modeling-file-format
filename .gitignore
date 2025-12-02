@@ -1,0 +1,95 @@
+# Build results
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+# Visual Studio files
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.rsuser
+
+# Rider files
+.idea/
+
+# Build results
+*.dll
+*.exe
+*.pdb
+*.ilk
+*.meta
+*.obj
+*.iobj
+*.pch
+*.ipch
+*.pgc
+*.pgd
+*.rsp
+*.sbr
+*.tlb
+*.tli
+*.tlh
+*.tmp
+*.tmp_proj
+*_wpftmp.csproj
+*.vspscc
+*.vssscc
+
+# Test Results
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+*.trx
+*.log
+
+# NuGet
+*.nupkg
+*.snupkg
+**/[Pp]ackages/*
+!**/[Pp]ackages/build/
+*.nuget.props
+*.nuget.targets
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# ASP.NET
+ScaffoldingReadMe.txt
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# User-specific files
+*.userprefs
+mono_crash.*
+
+# Publish/deploy
+publish/
+*.azurePubxml
+*.pubxml
+*.publishproj
+
+# dotnet
+global.json
+.dotnet/
+.config/dotnet-tools.json
+
+# Local test files
+*.local.json
+
