@@ -119,17 +119,21 @@ void RenderSliceView(EventModel model)
         .OrderBy(e => e.Tick)
         .ToList();
     
-    foreach (var slice in slices)
+    for (int i = 0; i < slices.Count; i++)
     {
+        var slice = slices[i];
+        var isLast = i == slices.Count - 1;
         var content = new List<string>();
         string title;
         Color borderColor;
+        string symbol;
         
         switch (slice)
         {
             case StateViewElement sv:
-                title = $"[green]◆[/] {Markup.Escape(sv.Name)} [dim]@{sv.Tick}[/]";
+                title = $"[green]◆[/] {Markup.Escape(sv.Name)}";
                 borderColor = Color.Green;
+                symbol = "[green]◆[/]";
                 
                 // Events this view subscribes to
                 if (sv.SubscribesTo.Count > 0)
@@ -157,8 +161,9 @@ void RenderSliceView(EventModel model)
                 break;
                 
             case CommandElement cmd:
-                title = $"[blue]▶[/] {Markup.Escape(cmd.Name)} [dim]@{cmd.Tick}[/]";
+                title = $"[blue]▶[/] {Markup.Escape(cmd.Name)}";
                 borderColor = Color.Blue;
+                symbol = "[blue]▶[/]";
                 
                 // Actors that trigger this command
                 var triggeringActors = actors.Where(a => a.SendsCommand == cmd.Name).ToList();
@@ -187,10 +192,28 @@ void RenderSliceView(EventModel model)
             default:
                 title = slice.Name;
                 borderColor = Color.Grey;
+                symbol = "?";
                 break;
         }
         
-        var panel = new Panel(string.Join("\n", content.Count > 0 ? content : new[] { "[dim](no details)[/]" }))
+        // Calculate extra lines based on tick distance
+        int extraLines = 0;
+        if (!isLast)
+        {
+            var nextSlice = slices[i + 1];
+            var tickDistance = nextSlice.Tick - slice.Tick;
+            extraLines = Math.Max(0, (tickDistance / 10) - 1);
+        }
+        
+        var line = isLast ? "↓" : "│";
+        var tickStr = $"@{slice.Tick}".PadLeft(5);
+        
+        // Timeline prefix
+        AnsiConsole.MarkupLine($"{symbol} [dim]{tickStr} │[/]");
+        
+        // Panel content with timeline on the left
+        var panelContent = string.Join("\n", content.Count > 0 ? content : new[] { "[dim](no details)[/]" });
+        var panel = new Panel(panelContent)
         {
             Header = new PanelHeader(title),
             Border = BoxBorder.Rounded,
@@ -199,7 +222,20 @@ void RenderSliceView(EventModel model)
         };
         
         AnsiConsole.Write(panel);
-        AnsiConsole.WriteLine();
+        
+        // Timeline continuation
+        if (!isLast)
+        {
+            AnsiConsole.MarkupLine($"        [dim]│[/]");
+            for (int j = 0; j < extraLines; j++)
+            {
+                AnsiConsole.MarkupLine($"        [dim]│[/]");
+            }
+        }
+        else
+        {
+            AnsiConsole.MarkupLine($"        [dim]↓[/]");
+        }
     }
     
     // External Events (standalone, not produced by any command)
