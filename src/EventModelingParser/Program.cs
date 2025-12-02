@@ -5,18 +5,23 @@ using Spectre.Console;
 
 if (args.Length == 0)
 {
-    AnsiConsole.MarkupLine("[red]Usage:[/] EventModelingParser <path-to-eventmodel.json> [--schema <path-to-schema.json>]");
+    AnsiConsole.MarkupLine("[red]Usage:[/] EventModelingParser <path-to-eventmodel.json> [--schema <path-to-schema.json>] [--view timeline|slice]");
     return 1;
 }
 
 var filePath = args[0];
 string? schemaPath = null;
+string viewMode = "timeline";
 
 for (int i = 1; i < args.Length; i++)
 {
     if (args[i] == "--schema" && i + 1 < args.Length)
     {
         schemaPath = args[++i];
+    }
+    else if (args[i] == "--view" && i + 1 < args.Length)
+    {
+        viewMode = args[++i].ToLower();
     }
 }
 
@@ -69,10 +74,148 @@ catch (JsonException ex)
     return 1;
 }
 
-// Render the timeline
-RenderTimeline(model);
+// Render based on view mode
+if (viewMode == "slice")
+{
+    RenderSliceView(model);
+}
+else
+{
+    RenderTimeline(model);
+}
 
 return 0;
+
+void RenderSliceView(EventModel model)
+{
+    // Header
+    var rule = new Rule($"[bold cyan]{Markup.Escape(model.Name)}[/] [dim](Slice View)[/]")
+    {
+        Justification = Justify.Center,
+        Style = Style.Parse("cyan")
+    };
+    AnsiConsole.Write(rule);
+    
+    if (!string.IsNullOrEmpty(model.Version))
+    {
+        AnsiConsole.MarkupLine($"[dim]Version {model.Version}[/]");
+    }
+    
+    AnsiConsole.WriteLine();
+    
+    // Collect all elements
+    var events = model.Timeline.OfType<EventElement>().ToList();
+    var actors = model.Timeline.OfType<ActorElement>().ToList();
+    
+    // Build lookup: which events are produced by which command (by tick)
+    var eventsByCommandTick = events
+        .Where(e => !string.IsNullOrEmpty(e.ProducedBy))
+        .GroupBy(e => e.ProducedBy!) // Full "CommandName-Tick"
+        .ToDictionary(g => g.Key, g => g.ToList());
+    
+    // Get slices: StateViews and Commands, sorted by tick
+    var slices = model.Timeline
+        .Where(e => e is StateViewElement || e is CommandElement)
+        .OrderBy(e => e.Tick)
+        .ToList();
+    
+    foreach (var slice in slices)
+    {
+        var content = new List<string>();
+        string title;
+        Color borderColor;
+        
+        switch (slice)
+        {
+            case StateViewElement sv:
+                title = $"[green]◆[/] {Markup.Escape(sv.Name)} [dim]@{sv.Tick}[/]";
+                borderColor = Color.Green;
+                
+                // Events this view subscribes to
+                if (sv.SubscribesTo.Count > 0)
+                {
+                    content.Add("[dim]subscribesTo:[/]");
+                    foreach (var eventName in sv.SubscribesTo)
+                    {
+                        var evt = events.FirstOrDefault(e => e.Name == eventName);
+                        var tickInfo = evt != null ? $" [dim]@{evt.Tick}[/]" : "";
+                        content.Add($"  [orange1]● {Markup.Escape(eventName)}[/]{tickInfo}");
+                    }
+                }
+                
+                // Actors that read this view
+                var readingActors = actors.Where(a => a.ReadsView == sv.Name).ToList();
+                if (readingActors.Any())
+                {
+                    if (content.Count > 0) content.Add("");
+                    content.Add("[dim]readBy:[/]");
+                    foreach (var actor in readingActors)
+                    {
+                        content.Add($"  [white]○ {Markup.Escape(actor.Name)}[/] [dim]@{actor.Tick}[/] → [blue]{Markup.Escape(actor.SendsCommand)}[/]");
+                    }
+                }
+                break;
+                
+            case CommandElement cmd:
+                title = $"[blue]▶[/] {Markup.Escape(cmd.Name)} [dim]@{cmd.Tick}[/]";
+                borderColor = Color.Blue;
+                
+                // Actors that trigger this command
+                var triggeringActors = actors.Where(a => a.SendsCommand == cmd.Name).ToList();
+                if (triggeringActors.Any())
+                {
+                    content.Add("[dim]triggeredBy:[/]");
+                    foreach (var actor in triggeringActors)
+                    {
+                        content.Add($"  [white]○ {Markup.Escape(actor.Name)}[/] [dim]@{actor.Tick}[/] ← [green]{Markup.Escape(actor.ReadsView)}[/]");
+                    }
+                }
+                
+                // Events produced by this command
+                var cmdKey = $"{cmd.Name}-{cmd.Tick}";
+                if (eventsByCommandTick.TryGetValue(cmdKey, out var producedEvents))
+                {
+                    if (content.Count > 0) content.Add("");
+                    content.Add("[dim]produces:[/]");
+                    foreach (var evt in producedEvents.OrderBy(e => e.Tick))
+                    {
+                        content.Add($"  [orange1]● {Markup.Escape(evt.Name)}[/] [dim]@{evt.Tick}[/]");
+                    }
+                }
+                break;
+                
+            default:
+                title = slice.Name;
+                borderColor = Color.Grey;
+                break;
+        }
+        
+        var panel = new Panel(string.Join("\n", content.Count > 0 ? content : new[] { "[dim](no details)[/]" }))
+        {
+            Header = new PanelHeader(title),
+            Border = BoxBorder.Rounded,
+            BorderStyle = new Style(borderColor),
+            Padding = new Padding(1, 0, 1, 0)
+        };
+        
+        AnsiConsole.Write(panel);
+        AnsiConsole.WriteLine();
+    }
+    
+    // External Events (standalone, not produced by any command)
+    var externalEvents = events.Where(e => !string.IsNullOrEmpty(e.ExternalSource)).ToList();
+    if (externalEvents.Any())
+    {
+        AnsiConsole.MarkupLine("[dim]─────────────────────────────────────────[/]");
+        AnsiConsole.MarkupLine("[orange1 bold]● EXTERNAL EVENTS[/]");
+        
+        foreach (var evt in externalEvents.OrderBy(e => e.Tick))
+        {
+            AnsiConsole.MarkupLine($"  [orange1]{Markup.Escape(evt.Name)}[/] [dim]@{evt.Tick}[/]");
+            AnsiConsole.MarkupLine($"    [dim]source:[/] {Markup.Escape(evt.ExternalSource!)}");
+        }
+    }
+}
 
 void RenderTimeline(EventModel model)
 {
