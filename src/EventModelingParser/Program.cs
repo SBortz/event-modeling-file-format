@@ -15,6 +15,7 @@ if (args.Length == 0 || args.Contains("--help") || args.Contains("-h") || args.C
 var filePath = args[0];
 string? schemaPath = null;
 string viewMode = "timeline";
+bool showExamples = false;
 
 for (int i = 1; i < args.Length; i++)
 {
@@ -25,6 +26,10 @@ for (int i = 1; i < args.Length; i++)
     else if ((args[i] == "--view" || args[i] == "-v") && i + 1 < args.Length)
     {
         viewMode = args[++i].ToLower();
+    }
+    else if (args[i] == "--example" || args[i] == "-e")
+    {
+        showExamples = true;
     }
 }
 
@@ -86,6 +91,10 @@ void ShowHelp()
         "  [blue]timeline[/] - Vertical timeline view [dim](default)[/]\n" +
         "  [blue]slice[/]    - Detailed slice view with JSON examples\n" +
         "  [blue]table[/]    - Tabular overview with data flow tree"
+    );
+    optionsTable.AddRow(
+        "[green]-e[/], [green]--example[/]",
+        "Show example data in timeline view"
     );
     optionsTable.AddRow(
         "[green]-s[/], [green]--schema[/] [dim]<path>[/]",
@@ -222,7 +231,7 @@ else if (viewMode == "table")
 }
 else
 {
-    RenderTimeline(model);
+    RenderTimeline(model, showExamples);
 }
 
 return 0;
@@ -714,7 +723,7 @@ void RenderSliceView(EventModel model)
     }
 }
 
-void RenderTimeline(EventModel model)
+void RenderTimeline(EventModel model, bool showExamples = false)
 {
     RenderHeader(model, "Timeline View");
 
@@ -735,7 +744,7 @@ void RenderTimeline(EventModel model)
             extraLines = Math.Max(0, (tickDistance / 10) - 1);
         }
         
-        RenderTimelineElement(element, isLast, extraLines);
+        RenderTimelineElement(element, isLast, extraLines, showExamples);
     }
     
     AnsiConsole.WriteLine();
@@ -744,7 +753,7 @@ void RenderTimeline(EventModel model)
     RenderSummaryPanel(model);
 }
 
-void RenderTimelineElement(TimelineElement element, bool isLast, int extraLines = 0)
+void RenderTimelineElement(TimelineElement element, bool isLast, int extraLines = 0, bool showExamples = false)
 {
     var line = isLast ? "↓" : "│";
     
@@ -828,6 +837,27 @@ void RenderTimelineElement(TimelineElement element, bool isLast, int extraLines 
         case CommandElement:
             // Commands have no additional details to show
             break;
+    }
+    
+    // Show example data if requested
+    if (showExamples)
+    {
+        object? exampleData = element switch
+        {
+            StateViewElement sv => sv.Example,
+            CommandElement cmd => cmd.Example,
+            _ => null
+        };
+        
+        if (exampleData != null)
+        {
+            var exampleJson = JsonSerializer.Serialize(exampleData, new JsonSerializerOptions { WriteIndented = true });
+            var jsonLines = exampleJson.Split('\n');
+            foreach (var jsonLine in jsonLines)
+            {
+                AnsiConsole.MarkupLine($"{detailPrefix}[grey]{Markup.Escape(jsonLine)}[/]");
+            }
+        }
     }
     
     // Empty line for spacing (except for last element)
