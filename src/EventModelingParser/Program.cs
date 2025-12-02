@@ -156,7 +156,7 @@ void PrintTimelineElement(TimelineElement element, int index)
             
         case ActorElement actor:
             Console.ForegroundColor = ConsoleColor.DarkGray;
-            Console.Write($" ({actor.Inbound} → {actor.Outbound})");
+            Console.Write($" ({actor.ReadsView} → {actor.SendsCommand})");
             Console.ResetColor();
             break;
             
