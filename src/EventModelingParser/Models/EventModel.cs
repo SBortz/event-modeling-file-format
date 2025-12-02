@@ -22,7 +22,7 @@ public class EventModel
 
 [JsonPolymorphic(TypeDiscriminatorPropertyName = "type")]
 [JsonDerivedType(typeof(EventElement), "event")]
-[JsonDerivedType(typeof(StateViewElement), "stateView")]
+[JsonDerivedType(typeof(StateViewElement), "stateview")]
 [JsonDerivedType(typeof(ActorElement), "actor")]
 [JsonDerivedType(typeof(CommandElement), "command")]
 public abstract class TimelineElement
@@ -47,7 +47,7 @@ public class EventElement : TimelineElement
 
 public class StateViewElement : TimelineElement
 {
-    public override string Type => "stateView";
+    public override string Type => "stateview";
     
     [JsonPropertyName("inbound")]
     public List<string> Inbound { get; set; } = new();

@@ -32,7 +32,7 @@
       "items": {
         "oneOf": [
           { "$ref": "#/definitions/event" },
-          { "$ref": "#/definitions/stateView" },
+          { "$ref": "#/definitions/stateview" },
           { "$ref": "#/definitions/actor" },
           { "$ref": "#/definitions/command" }
         ]
@@ -65,14 +65,14 @@
       }
     },
     
-    "stateView": {
+    "stateview": {
       "type": "object",
       "description": "A state view (read model) is a projected representation of data built from events.",
       "required": ["type", "name", "inbound"],
       "additionalProperties": false,
       "properties": {
         "type": {
-          "const": "stateView"
+          "const": "stateview"
         },
         "name": {
           "type": "string",
