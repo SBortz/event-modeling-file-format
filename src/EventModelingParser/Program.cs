@@ -313,7 +313,7 @@ void RenderTableView(EventModel model)
         AnsiConsole.WriteLine();
     }
     
-    // State Views Table
+    // State Views Table (distinct by name)
     if (stateViews.Count > 0)
     {
         AnsiConsole.Write(new Rule("[green bold]◆ State Views[/]") { Style = Style.Parse("green"), Justification = Justify.Left });
@@ -322,18 +322,25 @@ void RenderTableView(EventModel model)
             .Border(TableBorder.Rounded)
             .BorderColor(Color.Green)
             .Title("[green]Read Models[/]")
-            .AddColumn(new TableColumn("[dim]Tick[/]").RightAligned())
             .AddColumn(new TableColumn("[green bold]Name[/]"))
             .AddColumn(new TableColumn("[dim]Subscribes To[/]"));
         
-        foreach (var sv in stateViews.OrderBy(e => e.Tick))
+        // Group by name and merge SubscribesTo lists
+        var distinctStateViews = stateViews
+            .GroupBy(sv => sv.Name)
+            .Select(g => new {
+                Name = g.Key,
+                SubscribesTo = g.SelectMany(sv => sv.SubscribesTo).Distinct().ToList()
+            })
+            .OrderBy(sv => sv.Name);
+        
+        foreach (var sv in distinctStateViews)
         {
             var subscribes = sv.SubscribesTo.Count > 0 
                 ? string.Join(", ", sv.SubscribesTo.Select(e => $"[orange1]{Markup.Escape(e)}[/]"))
                 : "[dim]-[/]";
             
             viewTable.AddRow(
-                $"[dim]@{sv.Tick}[/]",
                 $"[green bold]{Markup.Escape(sv.Name)}[/]",
                 subscribes
             );
@@ -343,7 +350,7 @@ void RenderTableView(EventModel model)
         AnsiConsole.WriteLine();
     }
     
-    // Commands Table
+    // Commands Table (distinct by name)
     if (commands.Count > 0)
     {
         AnsiConsole.Write(new Rule("[blue bold]▶ Commands[/]") { Style = Style.Parse("blue"), Justification = Justify.Left });
@@ -352,21 +359,28 @@ void RenderTableView(EventModel model)
             .Border(TableBorder.Rounded)
             .BorderColor(Color.Blue)
             .Title("[blue]Commands[/]")
-            .AddColumn(new TableColumn("[dim]Tick[/]").RightAligned())
             .AddColumn(new TableColumn("[blue bold]Name[/]"))
             .AddColumn(new TableColumn("[dim]Produces Events[/]"));
         
-        foreach (var cmd in commands.OrderBy(e => e.Tick))
+        // Group by name and collect all produced events
+        var distinctCommands = commands
+            .GroupBy(cmd => cmd.Name)
+            .Select(g => new {
+                Name = g.Key,
+                ProducedEvents = g.SelectMany(cmd => {
+                    var cmdKey = $"{cmd.Name}-{cmd.Tick}";
+                    return events.Where(e => e.ProducedBy == cmdKey).Select(e => e.Name);
+                }).Distinct().ToList()
+            })
+            .OrderBy(cmd => cmd.Name);
+        
+        foreach (var cmd in distinctCommands)
         {
-            // Find events produced by this command
-            var cmdKey = $"{cmd.Name}-{cmd.Tick}";
-            var producedEvents = events.Where(e => e.ProducedBy == cmdKey).ToList();
-            var produces = producedEvents.Count > 0
-                ? string.Join(", ", producedEvents.Select(e => $"[orange1]{Markup.Escape(e.Name)}[/]"))
+            var produces = cmd.ProducedEvents.Count > 0
+                ? string.Join(", ", cmd.ProducedEvents.Select(e => $"[orange1]{Markup.Escape(e)}[/]"))
                 : "[dim]-[/]";
             
             cmdTable.AddRow(
-                $"[dim]@{cmd.Tick}[/]",
                 $"[blue bold]{Markup.Escape(cmd.Name)}[/]",
                 produces
             );
@@ -376,7 +390,7 @@ void RenderTableView(EventModel model)
         AnsiConsole.WriteLine();
     }
     
-    // Actors Table
+    // Actors Table (distinct by name)
     if (actors.Count > 0)
     {
         AnsiConsole.Write(new Rule("[white bold]○ Actors[/]") { Style = Style.Parse("white"), Justification = Justify.Left });
@@ -385,18 +399,29 @@ void RenderTableView(EventModel model)
             .Border(TableBorder.Rounded)
             .BorderColor(Color.Grey)
             .Title("[white]Actors / Users[/]")
-            .AddColumn(new TableColumn("[dim]Tick[/]").RightAligned())
             .AddColumn(new TableColumn("[white bold]Name[/]"))
-            .AddColumn(new TableColumn("[dim]Reads View[/]"))
-            .AddColumn(new TableColumn("[dim]Sends Command[/]"));
+            .AddColumn(new TableColumn("[dim]Reads Views[/]"))
+            .AddColumn(new TableColumn("[dim]Sends Commands[/]"));
         
-        foreach (var actor in actors.OrderBy(e => e.Tick))
+        // Group by name and collect all views/commands
+        var distinctActors = actors
+            .GroupBy(a => a.Name)
+            .Select(g => new {
+                Name = g.Key,
+                ReadsViews = g.Select(a => a.ReadsView).Distinct().ToList(),
+                SendsCommands = g.Select(a => a.SendsCommand).Distinct().ToList()
+            })
+            .OrderBy(a => a.Name);
+        
+        foreach (var actor in distinctActors)
         {
+            var views = string.Join(", ", actor.ReadsViews.Select(v => $"[green]{Markup.Escape(v)}[/]"));
+            var cmds = string.Join(", ", actor.SendsCommands.Select(c => $"[blue]{Markup.Escape(c)}[/]"));
+            
             actorTable.AddRow(
-                $"[dim]@{actor.Tick}[/]",
                 $"[white bold]{Markup.Escape(actor.Name)}[/]",
-                $"[green]{Markup.Escape(actor.ReadsView)}[/]",
-                $"[blue]{Markup.Escape(actor.SendsCommand)}[/]"
+                views,
+                cmds
             );
         }
         
@@ -404,87 +429,108 @@ void RenderTableView(EventModel model)
         AnsiConsole.WriteLine();
     }
     
-    // Flow Tree - Shows the data flow
+    // Flow Tree - Shows the data flow (distinct by name)
     AnsiConsole.Write(new Rule("[cyan bold]🔄 Data Flow[/]") { Style = Style.Parse("cyan"), Justification = Justify.Left });
     
     var flowTree = new Tree("[cyan]Event Model Flow[/]")
         .Style(Style.Parse("dim"));
     
-    // Find commands that are triggered by actors (connected to a StateView flow)
-    var commandsTriggeredByActors = actors.Select(a => a.SendsCommand).ToHashSet();
+    // All distinct command names (shown as root nodes)
+    var allCommandNames = commands
+        .Select(c => c.Name)
+        .Distinct()
+        .ToList();
     
-    // Find standalone commands (not triggered by any actor) - these are root nodes
-    var standaloneCommands = commands.Where(c => !commandsTriggeredByActors.Contains(c.Name)).ToList();
+    // Distinct StateView names
+    var distinctStateViewNames = stateViews.Select(sv => sv.Name).Distinct().OrderBy(n => n).ToList();
     
-    // Build a list of root nodes: StateViews and standalone Commands, sorted by tick
-    var rootNodes = new List<(int Tick, string Type, object Element)>();
+    // Build grouped data for StateViews
+    var stateViewData = stateViews
+        .GroupBy(sv => sv.Name)
+        .ToDictionary(
+            g => g.Key,
+            g => g.SelectMany(sv => sv.SubscribesTo).Distinct().ToList()
+        );
     
-    foreach (var sv in stateViews)
-        rootNodes.Add((sv.Tick, "StateView", sv));
+    // Build grouped data for Commands (all events produced by commands with same name)
+    var commandEventData = commands
+        .GroupBy(c => c.Name)
+        .ToDictionary(
+            g => g.Key,
+            g => g.SelectMany(cmd => {
+                var cmdKey = $"{cmd.Name}-{cmd.Tick}";
+                return events.Where(e => e.ProducedBy == cmdKey).Select(e => e.Name);
+            }).Distinct().ToList()
+        );
     
-    foreach (var cmd in standaloneCommands)
-        rootNodes.Add((cmd.Tick, "Command", cmd));
-    
-    // Sort by tick
-    rootNodes = rootNodes.OrderBy(r => r.Tick).ToList();
-    
-    foreach (var (tick, type, element) in rootNodes)
-    {
-        if (type == "StateView" && element is StateViewElement sv)
-        {
-            var svNode = flowTree.AddNode($"[green]◆ {Markup.Escape(sv.Name)}[/] [dim]@{sv.Tick}[/]");
-            
-            // Events this view subscribes to
-            if (sv.SubscribesTo.Count > 0)
-            {
-                var subsNode = svNode.AddNode("[dim]← subscribes to[/]");
-                foreach (var eventName in sv.SubscribesTo)
-                {
-                    subsNode.AddNode($"[orange1]● {Markup.Escape(eventName)}[/]");
-                }
+    // Build grouped data for Actors
+    var actorData = actors
+        .GroupBy(a => a.Name)
+        .ToDictionary(
+            g => g.Key,
+            g => new {
+                ReadsViews = g.Select(a => a.ReadsView).Distinct().ToList(),
+                SendsCommands = g.Select(a => a.SendsCommand).Distinct().ToList()
             }
-            
-            // Actors that read this view
-            var readingActors = actors.Where(a => a.ReadsView == sv.Name).ToList();
-            foreach (var actor in readingActors)
+        );
+    
+    // Render distinct StateViews as root nodes
+    foreach (var svName in distinctStateViewNames)
+    {
+        var svNode = flowTree.AddNode($"[green]◆ {Markup.Escape(svName)}[/]");
+        
+        // Events this view subscribes to
+        if (stateViewData.TryGetValue(svName, out var subscribesTo) && subscribesTo.Count > 0)
+        {
+            var subsNode = svNode.AddNode("[dim]← subscribes to[/]");
+            foreach (var eventName in subscribesTo.OrderBy(e => e))
             {
-                var actorNode = svNode.AddNode($"[white]○ {Markup.Escape(actor.Name)}[/] [dim]@{actor.Tick}[/]");
+                subsNode.AddNode($"[orange1]● {Markup.Escape(eventName)}[/]");
+            }
+        }
+        
+        // Distinct actors that read this view
+        var readingActorNames = actorData
+            .Where(kv => kv.Value.ReadsViews.Contains(svName))
+            .Select(kv => kv.Key)
+            .OrderBy(n => n)
+            .ToList();
+        
+        foreach (var actorName in readingActorNames)
+        {
+            var actorNode = svNode.AddNode($"[white]○ {Markup.Escape(actorName)}[/]");
+            
+            // Commands this actor sends
+            var actorCommands = actorData[actorName].SendsCommands.OrderBy(c => c).ToList();
+            foreach (var cmdName in actorCommands)
+            {
+                var cmdNode = actorNode.AddNode($"[blue]▶ {Markup.Escape(cmdName)}[/]");
                 
-                // Command this actor sends
-                var cmd = commands.FirstOrDefault(c => c.Name == actor.SendsCommand);
-                if (cmd != null)
+                // Events produced by this command
+                if (commandEventData.TryGetValue(cmdName, out var producedEvents) && producedEvents.Count > 0)
                 {
-                    var cmdNode = actorNode.AddNode($"[blue]▶ {Markup.Escape(cmd.Name)}[/] [dim]@{cmd.Tick}[/]");
-                    
-                    // Events produced by this command
-                    var cmdKey = $"{cmd.Name}-{cmd.Tick}";
-                    var producedEvents = events.Where(e => e.ProducedBy == cmdKey).ToList();
-                    if (producedEvents.Count > 0)
+                    var prodNode = cmdNode.AddNode("[dim]→ produces[/]");
+                    foreach (var evtName in producedEvents.OrderBy(e => e))
                     {
-                        var prodNode = cmdNode.AddNode("[dim]→ produces[/]");
-                        foreach (var evt in producedEvents)
-                        {
-                            prodNode.AddNode($"[orange1]● {Markup.Escape(evt.Name)}[/] [dim]@{evt.Tick}[/]");
-                        }
+                        prodNode.AddNode($"[orange1]● {Markup.Escape(evtName)}[/]");
                     }
                 }
             }
         }
-        else if (type == "Command" && element is CommandElement cmd)
+    }
+    
+    // Render all distinct commands as root nodes
+    foreach (var cmdName in allCommandNames.OrderBy(n => n))
+    {
+        var cmdNode = flowTree.AddNode($"[blue]▶ {Markup.Escape(cmdName)}[/]");
+        
+        // Events produced by this command
+        if (commandEventData.TryGetValue(cmdName, out var producedEvents) && producedEvents.Count > 0)
         {
-            // Standalone command (not triggered by an actor)
-            var cmdNode = flowTree.AddNode($"[blue]▶ {Markup.Escape(cmd.Name)}[/] [dim]@{cmd.Tick}[/]");
-            
-            // Events produced by this command
-            var cmdKey = $"{cmd.Name}-{cmd.Tick}";
-            var producedEvents = events.Where(e => e.ProducedBy == cmdKey).ToList();
-            if (producedEvents.Count > 0)
+            var prodNode = cmdNode.AddNode("[dim]→ produces[/]");
+            foreach (var evtName in producedEvents.OrderBy(e => e))
             {
-                var prodNode = cmdNode.AddNode("[dim]→ produces[/]");
-                foreach (var evt in producedEvents)
-                {
-                    prodNode.AddNode($"[orange1]● {Markup.Escape(evt.Name)}[/] [dim]@{evt.Tick}[/]");
-                }
+                prodNode.AddNode($"[orange1]● {Markup.Escape(evtName)}[/]");
             }
         }
     }
