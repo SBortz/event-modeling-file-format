@@ -1,3 +1,4 @@
+using System.Reflection;
 using System.Text.Json;
 using EventModelingParser.Models;
 using NJsonSchema;
@@ -26,6 +27,16 @@ for (int i = 1; i < args.Length; i++)
     {
         viewMode = args[++i].ToLower();
     }
+}
+
+// Helper to load embedded schema
+string? GetEmbeddedSchema()
+{
+    var assembly = Assembly.GetExecutingAssembly();
+    using var stream = assembly.GetManifestResourceStream("EventModelingParser.event-modeling.schema.json");
+    if (stream == null) return null;
+    using var reader = new StreamReader(stream);
+    return reader.ReadToEnd();
 }
 
 void ShowHelp()
@@ -89,7 +100,7 @@ void ShowHelp()
     );
     optionsTable.AddRow(
         "[green]-s[/], [green]--schema[/] [dim]<path>[/]",
-        "Path to JSON schema file for validation"
+        "Use custom JSON schema for validation\n[dim](by default, uses embedded schema)[/]"
     );
     optionsTable.AddRow(
         "[green]-h[/], [green]--help[/], [green]-?[/]",
@@ -131,7 +142,7 @@ void ShowHelp()
     AnsiConsole.Write(new Rule("[yellow]Examples[/]") { Style = Style.Parse("yellow"), Justification = Justify.Left });
     AnsiConsole.WriteLine();
     
-    AnsiConsole.MarkupLine("  [dim]# Basic usage with default timeline view[/]");
+    AnsiConsole.MarkupLine("  [dim]# Basic usage (validates with embedded schema, timeline view)[/]");
     AnsiConsole.MarkupLine("  [white]EventModelingParser[/] [cyan]my-model.eventmodel.json[/]");
     AnsiConsole.WriteLine();
     
@@ -139,8 +150,8 @@ void ShowHelp()
     AnsiConsole.MarkupLine("  [white]EventModelingParser[/] [cyan]my-model.eventmodel.json[/] [green]--view table[/]");
     AnsiConsole.WriteLine();
     
-    AnsiConsole.MarkupLine("  [dim]# Validate against schema and show slice view[/]");
-    AnsiConsole.MarkupLine("  [white]EventModelingParser[/] [cyan]my-model.eventmodel.json[/] [green]-s schema.json -v slice[/]");
+    AnsiConsole.MarkupLine("  [dim]# Slice view with custom schema[/]");
+    AnsiConsole.MarkupLine("  [white]EventModelingParser[/] [cyan]my-model.eventmodel.json[/] [green]-v slice -s custom-schema.json[/]");
     AnsiConsole.WriteLine();
     
     // Legend
@@ -170,17 +181,30 @@ if (!File.Exists(filePath))
 
 var json = await File.ReadAllTextAsync(filePath);
 
-// Schema validation
+// Schema validation (always enabled with embedded schema)
+string? schemaJson = null;
+string schemaSource = "embedded";
+
 if (schemaPath != null)
 {
+    // Use external schema if provided
     if (!File.Exists(schemaPath))
     {
         AnsiConsole.MarkupLine($"[red]Error:[/] Schema file not found: {schemaPath}");
         return 1;
     }
+    schemaJson = await File.ReadAllTextAsync(schemaPath);
+    schemaSource = schemaPath;
+}
+else
+{
+    // Use embedded schema
+    schemaJson = GetEmbeddedSchema();
+}
 
-    AnsiConsole.MarkupLine("[dim]Validating against schema...[/]");
-    var schemaJson = await File.ReadAllTextAsync(schemaPath);
+if (schemaJson != null)
+{
+    AnsiConsole.MarkupLine($"[dim]Validating against {schemaSource} schema...[/]");
     var schema = await JsonSchema.FromJsonAsync(schemaJson);
     var errors = schema.Validate(json);
 
@@ -196,6 +220,10 @@ if (schemaPath != null)
 
     AnsiConsole.MarkupLine("[green]✓ Schema validation passed![/]");
     AnsiConsole.WriteLine();
+}
+else
+{
+    AnsiConsole.MarkupLine("[yellow]⚠ No embedded schema found, skipping validation[/]");
 }
 
 // Parse the model

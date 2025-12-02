@@ -13,5 +13,12 @@
     <PackageReference Include="Spectre.Console.Json" Version="0.49.1" />
   </ItemGroup>
 
+  <!-- Embed the schema file from the repository root -->
+  <ItemGroup>
+    <EmbeddedResource Include="..\..\event-modeling.schema.json" Link="event-modeling.schema.json">
+      <LogicalName>EventModelingParser.event-modeling.schema.json</LogicalName>
+    </EmbeddedResource>
+  </ItemGroup>
+
 </Project>
 
