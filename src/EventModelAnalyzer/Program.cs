@@ -1,6 +1,6 @@
 using System.Text.Json;
 using System.Reflection;
-using EventModeling.Chronomat.Models;
+using EventModelAnalyzer.Models;
 using NJsonSchema;
 using Spectre.Console;
 using Spectre.Console.Json;
@@ -67,7 +67,7 @@ void ShowHelp()
     // Header with logo
     AnsiConsole.WriteLine();
     
-    var figlet = new FigletText("Chronomat")
+    var figlet = new FigletText("EM Analyzer")
         .Color(Color.Cyan1);
     
     // Try to load and display logo
@@ -98,7 +98,7 @@ void ShowHelp()
     
     // Usage
     var usagePanel = new Panel(
-        new Markup("[white]chronomat[/] [cyan]<file>[/] [dim][[options]][/]"))
+        new Markup("[white]ema[/] [cyan]<file>[/] [dim][[options]][/]"))
     {
         Header = new PanelHeader("[yellow bold]Usage[/]"),
         Border = BoxBorder.Rounded,
@@ -192,19 +192,19 @@ void ShowHelp()
     AnsiConsole.WriteLine();
     
     AnsiConsole.MarkupLine("  [dim]# Basic usage with default timeline view[/]");
-    AnsiConsole.MarkupLine("  [white]chronomat[/] [cyan]my-model.eventmodel.json[/]");
+    AnsiConsole.MarkupLine("  [white]ema[/] [cyan]my-model.eventmodel.json[/]");
     AnsiConsole.WriteLine();
     
     AnsiConsole.MarkupLine("  [dim]# Use table view for documentation[/]");
-    AnsiConsole.MarkupLine("  [white]chronomat[/] [cyan]my-model.eventmodel.json[/] [green]--view table[/]");
+    AnsiConsole.MarkupLine("  [white]ema[/] [cyan]my-model.eventmodel.json[/] [green]--view table[/]");
     AnsiConsole.WriteLine();
     
     AnsiConsole.MarkupLine("  [dim]# Validate against schema and show slice view[/]");
-    AnsiConsole.MarkupLine("  [white]chronomat[/] [cyan]my-model.eventmodel.json[/] [green]-s schema.json -v slice[/]");
+    AnsiConsole.MarkupLine("  [white]ema[/] [cyan]my-model.eventmodel.json[/] [green]-s schema.json -v slice[/]");
     AnsiConsole.WriteLine();
     
     AnsiConsole.MarkupLine("  [dim]# Export timeline to a text file[/]");
-    AnsiConsole.MarkupLine("  [white]chronomat[/] [cyan]my-model.eventmodel.json[/] [green]-v timeline -e -o output.txt[/]");
+    AnsiConsole.MarkupLine("  [white]ema[/] [cyan]my-model.eventmodel.json[/] [green]-v timeline -e -o output.txt[/]");
     AnsiConsole.WriteLine();
     
     // Legend
@@ -385,7 +385,7 @@ void RenderHeader(EventModel model, string? viewName = null)
 {
     AnsiConsole.WriteLine();
     
-    var figlet = new FigletText("Chronomat")
+    var figlet = new FigletText("EM Analyzer")
         .Color(Color.Cyan1);
     
     // Try to load logo image, fallback to hourglass canvas

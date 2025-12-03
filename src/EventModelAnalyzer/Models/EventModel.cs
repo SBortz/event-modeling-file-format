@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace EventModeling.Chronomat.Models;
+namespace EventModelAnalyzer.Models;
 
 public class EventModel
 {
