@@ -14,8 +14,8 @@ if (args.Length == 0 || args.Contains("--help") || args.Contains("-h") || args.C
 
 var filePath = args[0];
 string? schemaPath = null;
-string viewMode = "timeline";
-bool showExamples = false;
+string? viewMode = null;
+bool? showExamples = null;
 
 for (int i = 1; i < args.Length; i++)
 {
@@ -33,16 +33,39 @@ for (int i = 1; i < args.Length; i++)
     }
 }
 
+// Interactive prompts if options not specified
+if (viewMode == null)
+{
+    viewMode = AnsiConsole.Prompt(
+        new SelectionPrompt<string>()
+            .Title("[cyan]Which view would you like?[/]")
+            .PageSize(5)
+            .HighlightStyle(new Style(Color.Cyan1))
+            .AddChoices(new[] {
+                "timeline - Vertical timeline view",
+                "slice    - Detailed slice view with JSON examples", 
+                "table    - Tabular overview with data flow tree"
+            }))
+        .Split(' ')[0]; // Extract just the view name
+}
+
+if (showExamples == null && viewMode == "timeline")
+{
+    showExamples = AnsiConsole.Confirm("[cyan]Show example data in timeline?[/]", false);
+}
+
+showExamples ??= false;
+
 void ShowHelp()
 {
     // Header
     AnsiConsole.WriteLine();
-    var title = new FigletText("EM Parser")
+    var title = new FigletText("Chronos")
         .Color(Color.Cyan1)
         .Centered();
     AnsiConsole.Write(title);
     
-    AnsiConsole.Write(new Rule("[dim]Event Modeling File Format Parser & Visualizer[/]")
+    AnsiConsole.Write(new Rule("[dim]Event Modeling Visualizer[/]")
     {
         Justification = Justify.Center,
         Style = Style.Parse("grey")
@@ -51,7 +74,7 @@ void ShowHelp()
     
     // Usage
     var usagePanel = new Panel(
-        new Markup("[white]EventModelingParser[/] [cyan]<file>[/] [dim][[options]][/]"))
+        new Markup("[white]chronos[/] [cyan]<file>[/] [dim][[options]][/]"))
     {
         Header = new PanelHeader("[yellow bold]Usage[/]"),
         Border = BoxBorder.Rounded,
@@ -141,15 +164,15 @@ void ShowHelp()
     AnsiConsole.WriteLine();
     
     AnsiConsole.MarkupLine("  [dim]# Basic usage with default timeline view[/]");
-    AnsiConsole.MarkupLine("  [white]EventModelingParser[/] [cyan]my-model.eventmodel.json[/]");
+    AnsiConsole.MarkupLine("  [white]chronos[/] [cyan]my-model.eventmodel.json[/]");
     AnsiConsole.WriteLine();
     
     AnsiConsole.MarkupLine("  [dim]# Use table view for documentation[/]");
-    AnsiConsole.MarkupLine("  [white]EventModelingParser[/] [cyan]my-model.eventmodel.json[/] [green]--view table[/]");
+    AnsiConsole.MarkupLine("  [white]chronos[/] [cyan]my-model.eventmodel.json[/] [green]--view table[/]");
     AnsiConsole.WriteLine();
     
     AnsiConsole.MarkupLine("  [dim]# Validate against schema and show slice view[/]");
-    AnsiConsole.MarkupLine("  [white]EventModelingParser[/] [cyan]my-model.eventmodel.json[/] [green]-s schema.json -v slice[/]");
+    AnsiConsole.MarkupLine("  [white]chronos[/] [cyan]my-model.eventmodel.json[/] [green]-s schema.json -v slice[/]");
     AnsiConsole.WriteLine();
     
     // Legend
@@ -231,36 +254,107 @@ else if (viewMode == "table")
 }
 else
 {
-    RenderTimeline(model, showExamples);
+    RenderTimeline(model, showExamples ?? false);
 }
 
 return 0;
+
+Canvas CreateHourglassLogo()
+{
+    var canvas = new Canvas(26, 24);
+    var cyan = Color.Cyan1;
+    var cyanDark = Color.DarkCyan;
+    var gold = Color.Gold1;
+    var sand = Color.Yellow3;
+    var sandLight = Color.LightYellow3;
+    
+    // Top bar (thicker)
+    for (int x = 3; x <= 22; x++) { canvas.SetPixel(x, 0, cyan); canvas.SetPixel(x, 1, cyan); }
+    
+    // Upper chamber - mostly empty (sand has fallen)
+    for (int x = 4; x <= 21; x++) canvas.SetPixel(x, 2, cyanDark);
+    for (int x = 5; x <= 20; x++) canvas.SetPixel(x, 3, cyanDark);
+    for (int x = 6; x <= 19; x++) canvas.SetPixel(x, 4, cyanDark);
+    // Some sand remaining at top
+    for (int x = 7; x <= 18; x++) canvas.SetPixel(x, 5, sandLight);
+    for (int x = 8; x <= 17; x++) canvas.SetPixel(x, 6, sand);
+    for (int x = 9; x <= 16; x++) canvas.SetPixel(x, 7, sand);
+    for (int x = 10; x <= 15; x++) canvas.SetPixel(x, 8, gold);
+    for (int x = 11; x <= 14; x++) canvas.SetPixel(x, 9, gold);
+    
+    // Neck (narrow passage)
+    for (int x = 12; x <= 13; x++) { 
+        canvas.SetPixel(x, 10, cyan); 
+        canvas.SetPixel(x, 11, gold);  // Sand falling through
+        canvas.SetPixel(x, 12, gold);
+        canvas.SetPixel(x, 13, cyan); 
+    }
+    
+    // Lower chamber - filled with sand
+    for (int x = 11; x <= 14; x++) canvas.SetPixel(x, 14, gold);
+    for (int x = 10; x <= 15; x++) canvas.SetPixel(x, 15, gold);
+    for (int x = 9; x <= 16; x++) canvas.SetPixel(x, 16, gold);
+    for (int x = 8; x <= 17; x++) canvas.SetPixel(x, 17, gold);
+    for (int x = 7; x <= 18; x++) canvas.SetPixel(x, 18, gold);
+    for (int x = 6; x <= 19; x++) canvas.SetPixel(x, 19, sand);
+    for (int x = 5; x <= 20; x++) canvas.SetPixel(x, 20, sand);
+    for (int x = 4; x <= 21; x++) canvas.SetPixel(x, 21, sandLight);
+    
+    // Bottom bar (thicker)
+    for (int x = 3; x <= 22; x++) { canvas.SetPixel(x, 22, cyan); canvas.SetPixel(x, 23, cyan); }
+    
+    // Glass frame sides - left diagonal
+    canvas.SetPixel(3, 2, cyan); canvas.SetPixel(4, 3, cyan); canvas.SetPixel(5, 4, cyan);
+    canvas.SetPixel(6, 5, cyan); canvas.SetPixel(7, 6, cyan); canvas.SetPixel(8, 7, cyan);
+    canvas.SetPixel(9, 8, cyan); canvas.SetPixel(10, 9, cyan); canvas.SetPixel(11, 10, cyan);
+    canvas.SetPixel(11, 11, cyan); canvas.SetPixel(11, 12, cyan); canvas.SetPixel(11, 13, cyan);
+    canvas.SetPixel(10, 14, cyan); canvas.SetPixel(9, 15, cyan); canvas.SetPixel(8, 16, cyan);
+    canvas.SetPixel(7, 17, cyan); canvas.SetPixel(6, 18, cyan); canvas.SetPixel(5, 19, cyan);
+    canvas.SetPixel(4, 20, cyan); canvas.SetPixel(3, 21, cyan);
+    
+    // Glass frame sides - right diagonal
+    canvas.SetPixel(22, 2, cyan); canvas.SetPixel(21, 3, cyan); canvas.SetPixel(20, 4, cyan);
+    canvas.SetPixel(19, 5, cyan); canvas.SetPixel(18, 6, cyan); canvas.SetPixel(17, 7, cyan);
+    canvas.SetPixel(16, 8, cyan); canvas.SetPixel(15, 9, cyan); canvas.SetPixel(14, 10, cyan);
+    canvas.SetPixel(14, 11, cyan); canvas.SetPixel(14, 12, cyan); canvas.SetPixel(14, 13, cyan);
+    canvas.SetPixel(15, 14, cyan); canvas.SetPixel(16, 15, cyan); canvas.SetPixel(17, 16, cyan);
+    canvas.SetPixel(18, 17, cyan); canvas.SetPixel(19, 18, cyan); canvas.SetPixel(20, 19, cyan);
+    canvas.SetPixel(21, 20, cyan); canvas.SetPixel(22, 21, cyan);
+    
+    return canvas;
+}
 
 void RenderHeader(EventModel model, string? viewName = null)
 {
     AnsiConsole.WriteLine();
     
-    // Figlet header
-    var figlet = new FigletText(model.Name)
-        .Color(Color.Cyan1)
-        .Centered();
-    AnsiConsole.Write(figlet);
+    // Create logo and figlet
+    var logo = CreateHourglassLogo();
+    var figlet = new FigletText("Chronos")
+        .Color(Color.Cyan1);
     
-    // Subtitle with version and view mode
+    // Combine logo and figlet side by side
+    var headerGrid = new Grid()
+        .AddColumn(new GridColumn().Width(28).NoWrap())
+        .AddColumn(new GridColumn().NoWrap());
+    
+    headerGrid.AddRow(logo, figlet);
+    
+    AnsiConsole.Write(Align.Center(headerGrid));
+    
+    // Subtitle with model name, version and view mode
     var subtitle = new List<string>();
+    subtitle.Add($"[cyan]{Markup.Escape(model.Name)}[/]");
     if (!string.IsNullOrEmpty(model.Version))
         subtitle.Add($"v{model.Version}");
     if (viewName != null)
         subtitle.Add(viewName);
     
-    if (subtitle.Count > 0)
+    AnsiConsole.Write(new Rule($"[dim]{string.Join(" • ", subtitle)}[/]")
     {
-        AnsiConsole.Write(new Rule($"[dim]{string.Join(" • ", subtitle)}[/]")
-        {
-            Justification = Justify.Center,
-            Style = Style.Parse("grey")
-        });
-    }
+        Justification = Justify.Center,
+        Style = Style.Parse("grey")
+    });
     
     if (!string.IsNullOrEmpty(model.Description))
     {
