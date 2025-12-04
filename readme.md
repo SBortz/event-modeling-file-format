@@ -24,10 +24,10 @@ A simple, human-readable JSON format that:
 ## 2. Philosophy
 
 - **Event Modeling is a continuous process.**  
-  The format must allow incomplete systems to be saved. You don't need a "valid" model to start. 
+  The format must allow incomplete systems to be saved. The format itself should allow invalid models.
 
 - **Validation belongs in tools, not the format.**  
-  The file specification stays simple. Applications derive insights and validate as needed.
+  The file specification stays simple. Applications derive insights and validates.
 
 - **No Slices in the file.**  
   Slices are implementation/project management concerns. They belong in a separate view, not the design file.
