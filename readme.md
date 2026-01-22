@@ -1,6 +1,6 @@
 # Information Flow Tooling
 
-A human-readable JSON format for describing event-driven systems using [Event Modeling](https://eventmodeling.org/) methodology.
+A human-readable JSON format for describing event-driven systems using [Event Modeling](https://eventmodeling.org/) methodology. It provides a very simple cli tooling to visualise and analyze a model.
 
 ![Timeline View](docs/images/timeline-view.png)
 
