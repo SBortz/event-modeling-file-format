@@ -41,6 +41,88 @@
   },
 
   "$defs": {
+    "EventReference": {
+      "type": "object",
+      "description": "A reference to an event with optional example data for scenarios",
+      "required": ["event"],
+      "properties": {
+        "event": {
+          "type": "string",
+          "description": "Name of the event"
+        },
+        "data": {
+          "description": "Event payload data for this scenario"
+        }
+      }
+    },
+
+    "CommandScenario": {
+      "type": "object",
+      "description": "A Given-When-Then scenario describing command behavior",
+      "required": ["name", "given", "when", "then"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Descriptive name of the scenario (e.g. 'Successfully place order', 'Reject duplicate order')"
+        },
+        "given": {
+          "type": "array",
+          "description": "Pre-existing events that establish the preconditions",
+          "items": { "$ref": "#/$defs/EventReference" }
+        },
+        "when": {
+          "description": "The command input/payload for this scenario"
+        },
+        "then": {
+          "oneOf": [
+            {
+              "type": "object",
+              "description": "Successful outcome producing events",
+              "required": ["produces"],
+              "properties": {
+                "produces": {
+                  "type": "array",
+                  "description": "Events that should be produced",
+                  "items": { "$ref": "#/$defs/EventReference" }
+                }
+              }
+            },
+            {
+              "type": "object",
+              "description": "Failure outcome",
+              "required": ["fails"],
+              "properties": {
+                "fails": {
+                  "type": "string",
+                  "description": "Expected error or rejection reason"
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+
+    "StateViewScenario": {
+      "type": "object",
+      "description": "A Given-Then scenario describing how events project to state",
+      "required": ["name", "given", "then"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Descriptive name of the scenario (e.g. 'Show available books after return')"
+        },
+        "given": {
+          "type": "array",
+          "description": "Events that have occurred to build up the state",
+          "items": { "$ref": "#/$defs/EventReference" }
+        },
+        "then": {
+          "description": "The expected state of the view after processing the given events"
+        }
+      }
+    },
+
     "Event": {
       "type": "object",
       "description": "An event represents something that has happened. Named in past tense (e.g. OrderPlaced, OrderShipped).",
@@ -96,6 +178,11 @@
         },
         "example": {
           "description": "Example state of the view"
+        },
+        "scenarios": {
+          "type": "array",
+          "description": "Given-Then scenarios showing how events project to different states",
+          "items": { "$ref": "#/$defs/StateViewScenario" }
         }
       }
     },
@@ -147,6 +234,11 @@
         },
         "example": {
           "description": "Example payload of the command"
+        },
+        "scenarios": {
+          "type": "array",
+          "description": "Given-When-Then scenarios describing different command behaviors and outcomes",
+          "items": { "$ref": "#/$defs/CommandScenario" }
         }
       }
     }
