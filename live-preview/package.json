@@ -1,0 +1,31 @@
+{
+  "name": "information-flow-live-preview",
+  "version": "0.1.0",
+  "description": "Live preview server for Information Flow models with hot reload",
+  "main": "dist/index.js",
+  "bin": {
+    "ift-live": "dist/index.js"
+  },
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/index.ts",
+    "start": "node dist/index.js"
+  },
+  "keywords": [
+    "event-modeling",
+    "information-flow",
+    "live-preview",
+    "hot-reload"
+  ],
+  "author": "Sebastian Bortz <sebastianbortz@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "open": "^10.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}
