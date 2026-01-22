@@ -150,14 +150,14 @@ The **Information Flow Tooling CLI** (`ift`) is a CLI tool to visualize `.inform
 
 ```bash
 git clone https://github.com/SBortz/information-flow-tooling.git
-cd information-flow-tooling
+cd information-flow-tooling/src
 dotnet build
 ```
 
 ### Usage
 
 ```bash
-dotnet run --project src/InformationFlowToolingCli -- <file> [options]
+dotnet run --project InformationFlowToolingCli -- <file> [options]
 ```
 
 ### Options
@@ -182,19 +182,19 @@ dotnet run --project src/InformationFlowToolingCli -- <file> [options]
 
 ```bash
 # Interactive mode - prompts for view selection
-dotnet run --project src/InformationFlowToolingCli -- model.informationflow.json
+dotnet run --project InformationFlowToolingCli -- model.informationflow.json
 
 # Timeline view with example data
-dotnet run --project src/InformationFlowToolingCli -- model.informationflow.json -v timeline -e
+dotnet run --project InformationFlowToolingCli -- model.informationflow.json -v timeline -e
 
 # Table view for documentation
-dotnet run --project src/InformationFlowToolingCli -- model.informationflow.json -v table
+dotnet run --project InformationFlowToolingCli -- model.informationflow.json -v table
 
 # Export to file (header excluded from file)
-dotnet run --project src/InformationFlowToolingCli -- model.informationflow.json -v timeline -e -o output.txt
+dotnet run --project InformationFlowToolingCli -- model.informationflow.json -v timeline -e -o output.txt
 
 # Validate against schema first
-dotnet run --project src/InformationFlowToolingCli -- model.informationflow.json -s information-flow.schema.json -v timeline
+dotnet run --project InformationFlowToolingCli -- model.informationflow.json -s information-flow.schema.json -v timeline
 ```
 
 ### Output Example (Timeline)
@@ -250,7 +250,7 @@ The **IFT Converter** converts other Information Flow formats into the `.informa
 ### Usage
 
 ```bash
-dotnet run --project src/InformationFlowToolkit.Converter -- <input-file> [options]
+dotnet run --project InformationFlowToolkit.Converter -- <input-file> [options]
 ```
 
 ### Options
