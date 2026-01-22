@@ -254,6 +254,17 @@ body {
 .detail-item .command { color: var(--color-command); }
 .detail-item .actor { color: var(--color-actor); }
 
+.detail-item .tick-ref {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+}
+
+.detail-item .muted-ref {
+  color: var(--text-muted);
+  opacity: 0.6;
+  font-size: 0.8rem;
+}
+
 /* Scenarios */
 .scenarios {
   grid-column: 1 / -1;
@@ -307,6 +318,16 @@ body {
   padding: 0.125rem 0.375rem;
   border-radius: 0.25rem;
   font-size: 0.75rem;
+}
+
+.scenario-step .step-items {
+  display: inline-flex;
+  flex-direction: column;
+  vertical-align: top;
+}
+
+.scenario-step .step-item {
+  padding: 0.125rem 0;
 }
 
 /* Timeline View - CLI Style */

@@ -51,10 +51,10 @@ function renderCommandScenarios(scenarios: CommandScenario[], commandName: strin
     
     let givenHtml = '';
     if (scenario.given.length > 0) {
-      givenHtml = scenario.given.map(ref => {
+      givenHtml = `<div class="step-items">${scenario.given.map(ref => {
         const data = ref.data ? ` <code>${escapeHtml(JSON.stringify(ref.data))}</code>` : '';
-        return `<span class="event">${escapeHtml(ref.event)}</span>${data}`;
-      }).join('<br>');
+        return `<div class="step-item"><span class="event">${escapeHtml(ref.event)}</span>${data}</div>`;
+      }).join('')}</div>`;
     } else {
       givenHtml = '<em>(keine Vorbedingungen)</em>';
     }
@@ -67,10 +67,10 @@ function renderCommandScenarios(scenarios: CommandScenario[], commandName: strin
     if (scenario.then.fails) {
       thenHtml = `<span class="icon failure">✗</span> ${escapeHtml(scenario.then.fails)}`;
     } else if (scenario.then.produces && scenario.then.produces.length > 0) {
-      thenHtml = scenario.then.produces.map(ref => {
+      thenHtml = `<div class="step-items">${scenario.then.produces.map(ref => {
         const data = ref.data ? ` <code>${escapeHtml(JSON.stringify(ref.data))}</code>` : '';
-        return `→ <span class="event">${escapeHtml(ref.event)}</span>${data}`;
-      }).join('<br>');
+        return `<div class="step-item">→ <span class="event">${escapeHtml(ref.event)}</span>${data}</div>`;
+      }).join('')}</div>`;
     }
     
     return `
@@ -91,10 +91,10 @@ function renderStateViewScenarios(scenarios: StateViewScenario[]): string {
   return scenarios.map(scenario => {
     let givenHtml = '';
     if (scenario.given.length > 0) {
-      givenHtml = scenario.given.map(ref => {
+      givenHtml = `<div class="step-items">${scenario.given.map(ref => {
         const data = ref.data ? ` <code>${escapeHtml(JSON.stringify(ref.data))}</code>` : '';
-        return `<span class="event">${escapeHtml(ref.event)}</span>${data}`;
-      }).join('<br>');
+        return `<div class="step-item"><span class="event">${escapeHtml(ref.event)}</span>${data}</div>`;
+      }).join('')}</div>`;
     } else {
       givenHtml = '<em>(keine Events)</em>';
     }
@@ -159,8 +159,8 @@ function renderSliceView(model: InformationFlowModel): string {
             ${readingActors.map(a => `
               <div class="detail-item">
                 <span class="actor">○ ${escapeHtml(a.name)}</span>
-                <span>→</span>
-                <span class="command">${escapeHtml(a.sendsCommand)}</span>
+                <span class="tick-ref">@${a.tick}</span>
+                <span class="muted-ref">(→ ${escapeHtml(a.sendsCommand)})</span>
               </div>
             `).join('')}
           </div>
