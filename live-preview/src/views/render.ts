@@ -273,8 +273,7 @@ function renderTimelineView(model: InformationFlowModel): string {
         details += `<pre class="tl-json">${syntaxHighlightJson(el.example)}</pre>`;
       }
     } else if (isActor(el)) {
-      details += `<div class="tl-detail">readsView: <span class="state">${escapeHtml(el.readsView)}</span></div>`;
-      details += `<div class="tl-detail">sendsCommand: <span class="command">${escapeHtml(el.sendsCommand)}</span></div>`;
+      details += `<div class="tl-detail">reads <span class="state">${escapeHtml(el.readsView)}</span> → triggers <span class="command">${escapeHtml(el.sendsCommand)}</span></div>`;
     } else if (isCommand(el)) {
       if (el.example) {
         details += `<pre class="tl-json">${syntaxHighlightJson(el.example)}</pre>`;
@@ -414,9 +413,9 @@ export function renderHtml(model: InformationFlowModel, view: ViewMode, error?: 
   </header>
   
   <nav class="tabs">
-    <button class="tab ${view === 'slice' ? 'active' : ''}" onclick="setView('slice')">Slice</button>
-    <button class="tab ${view === 'timeline' ? 'active' : ''}" onclick="setView('timeline')">Timeline</button>
-    <button class="tab ${view === 'table' ? 'active' : ''}" onclick="setView('table')">Table</button>
+    <button class="tab ${view === 'timeline' ? 'active' : ''}" onclick="setView('timeline')">Timeline</button>  
+    <button class="tab ${view === 'slice' ? 'active' : ''}" onclick="setView('slice')">Slices & Scenarios</button>
+    <button class="tab ${view === 'table' ? 'active' : ''}" onclick="setView('table')">Consolidated</button>
     
     <label class="toggle-details">
       <input type="checkbox" id="showDetails" onchange="toggleDetails(this.checked)" checked>
