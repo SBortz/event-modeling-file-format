@@ -1,0 +1,171 @@
+import * as http from 'node:http';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { InformationFlowModel } from './types.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+export interface ServerOptions {
+  filePath: string;
+  port: number;
+}
+
+const MIME_TYPES: Record<string, string> = {
+  '.html': 'text/html',
+  '.js': 'application/javascript',
+  '.css': 'text/css',
+  '.json': 'application/json',
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.svg': 'image/svg+xml',
+  '.woff': 'font/woff',
+  '.woff2': 'font/woff2',
+};
+
+export function createServer(options: ServerOptions): {
+  start: () => void;
+  stop: () => void;
+  triggerReload: () => void;
+} {
+  const { filePath, port } = options;
+  const clients = new Set<http.ServerResponse>();
+
+  let currentModel: InformationFlowModel | null = null;
+  let currentError: string | null = null;
+
+  // Path to built client assets
+  const clientDistPath = path.join(__dirname, '../client');
+  const isDev = !fs.existsSync(clientDistPath);
+
+  function loadModel(): void {
+    try {
+      const content = fs.readFileSync(filePath, 'utf-8');
+      currentModel = JSON.parse(content) as InformationFlowModel;
+      currentError = null;
+    } catch (err) {
+      currentError = err instanceof Error ? err.message : String(err);
+      // Keep old model for display, just show error
+    }
+  }
+
+  // Initial load
+  loadModel();
+
+  function triggerReload(): void {
+    loadModel();
+    for (const client of clients) {
+      client.write('data: reload\n\n');
+    }
+  }
+
+  function serveStaticFile(res: http.ServerResponse, filePath: string): boolean {
+    try {
+      const ext = path.extname(filePath);
+      const mimeType = MIME_TYPES[ext] || 'application/octet-stream';
+      const content = fs.readFileSync(filePath);
+      res.writeHead(200, { 'Content-Type': mimeType });
+      res.end(content);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  const server = http.createServer((req, res) => {
+    const url = new URL(req.url || '/', `http://localhost:${port}`);
+
+    // SSE endpoint for live reload
+    if (url.pathname === '/events') {
+      res.writeHead(200, {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+        'Access-Control-Allow-Origin': '*',
+      });
+
+      clients.add(res);
+
+      // Keep-alive ping
+      const interval = setInterval(() => {
+        res.write(': ping\n\n');
+      }, 30000);
+
+      req.on('close', () => {
+        clearInterval(interval);
+        clients.delete(res);
+      });
+
+      return;
+    }
+
+    // API endpoint for model data
+    if (url.pathname === '/api/model') {
+      res.writeHead(200, {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-cache',
+        'Access-Control-Allow-Origin': '*',
+      });
+      res.end(
+        JSON.stringify({
+          model: currentModel,
+          error: currentError,
+          watchedFile: path.basename(filePath),
+        })
+      );
+      return;
+    }
+
+    // In development mode, let Vite handle everything except API/events
+    if (isDev) {
+      res.writeHead(404, { 'Content-Type': 'text/plain' });
+      res.end('Development mode: Use Vite dev server for client assets');
+      return;
+    }
+
+    // Production: Serve static files from dist/client
+    if (url.pathname === '/' || url.pathname === '/index.html') {
+      const indexPath = path.join(clientDistPath, 'index.html');
+      if (serveStaticFile(res, indexPath)) return;
+    }
+
+    // Try to serve the requested file
+    const requestedPath = path.join(clientDistPath, url.pathname);
+    // Prevent directory traversal
+    if (requestedPath.startsWith(clientDistPath)) {
+      if (serveStaticFile(res, requestedPath)) return;
+    }
+
+    // Fallback: serve index.html for SPA routing
+    const indexPath = path.join(clientDistPath, 'index.html');
+    if (serveStaticFile(res, indexPath)) return;
+
+    // 404
+    res.writeHead(404, { 'Content-Type': 'text/plain' });
+    res.end('Not Found');
+  });
+
+  return {
+    start: () => {
+      server.listen(port, () => {
+        const fileName = path.basename(filePath);
+        console.log(`\n  🔴 Information Flow Live Preview`);
+        console.log(`  ────────────────────────────────`);
+        console.log(`  Watching: ${fileName}`);
+        console.log(`  Server:   http://localhost:${port}`);
+        if (isDev) {
+          console.log(`  Mode:     Development (use Vite on port 5173)`);
+        }
+        console.log(`\n  Press Ctrl+C to stop\n`);
+      });
+    },
+    stop: () => {
+      for (const client of clients) {
+        client.end();
+      }
+      server.close();
+    },
+    triggerReload,
+  };
+}
