@@ -118,43 +118,32 @@
     top: 0;
     bottom: 0;
     left: 0;
-    width: 58px;
+    width: 122px;
     pointer-events: none;
     z-index: 2;
     background-image:
-      repeating-linear-gradient(
-        -45deg,
-        transparent,
-        transparent 3px,
-        rgba(107, 114, 128, 0.18) 3px,
-        rgba(107, 114, 128, 0.18) 4px
-      ),
-      linear-gradient(
-        rgba(107, 114, 128, 0.05),
-        rgba(107, 114, 128, 0.05)
-      );
-    background-position: 26px 0, 26px 0;
-    background-size: 30px 100%, 30px 100%;
-    background-repeat: no-repeat, no-repeat;
-  }
-
-  .tl-line::before,
-  .tl-line::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    width: 2px;
-    background: var(--text-secondary);
-    opacity: 0.4;
-  }
-
-  .tl-line::before {
-    left: 24px;
-  }
-
-  .tl-line::after {
-    left: 56px;
+      /* Hatching for all 3 lanes */
+      repeating-linear-gradient(-45deg, transparent, transparent 3px, rgba(107,114,128,0.18) 3px, rgba(107,114,128,0.18) 4px),
+      repeating-linear-gradient(-45deg, transparent, transparent 3px, rgba(107,114,128,0.18) 3px, rgba(107,114,128,0.18) 4px),
+      repeating-linear-gradient(-45deg, transparent, transparent 3px, rgba(107,114,128,0.18) 3px, rgba(107,114,128,0.18) 4px),
+      /* Tint for all 3 lanes */
+      linear-gradient(rgba(107,114,128,0.05), rgba(107,114,128,0.05)),
+      linear-gradient(rgba(107,114,128,0.05), rgba(107,114,128,0.05)),
+      linear-gradient(rgba(107,114,128,0.05), rgba(107,114,128,0.05)),
+      /* 4 vertical lines */
+      linear-gradient(rgba(107,114,128,0.4), rgba(107,114,128,0.4)),
+      linear-gradient(rgba(107,114,128,0.4), rgba(107,114,128,0.4)),
+      linear-gradient(rgba(107,114,128,0.4), rgba(107,114,128,0.4)),
+      linear-gradient(rgba(107,114,128,0.4), rgba(107,114,128,0.4));
+    background-position:
+      26px 0, 58px 0, 90px 0,
+      26px 0, 58px 0, 90px 0,
+      24px 0, 56px 0, 88px 0, 120px 0;
+    background-size:
+      30px 100%, 30px 100%, 30px 100%,
+      30px 100%, 30px 100%, 30px 100%,
+      2px 100%, 2px 100%, 2px 100%, 2px 100%;
+    background-repeat: no-repeat;
   }
 
   .tl-item {
@@ -211,20 +200,20 @@
 
   details.tl-item > .tl-details {
     padding: 0 1rem 0.75rem 0;
-    margin-left: 80px;
+    margin-left: 136px;
     padding-left: 4.25rem;
   }
 
   .tl-symbol {
-    width: 80px;
+    width: 136px;
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
     font-size: 1.1rem;
     font-weight: bold;
     flex-shrink: 0;
     position: relative;
-    z-index: 1;
+    z-index: 3;
   }
 
   .tl-symbol.event { color: var(--color-event); }
@@ -233,15 +222,15 @@
   .tl-symbol.actor { color: var(--color-actor); }
 
   .tl-left .tl-symbol {
-    padding-left: 6px;
+    padding-left: 35px;
   }
 
   .tl-center .tl-symbol {
-    padding-left: 34px;
+    padding-left: 67px;
   }
 
   .tl-right .tl-symbol {
-    padding-left: 66px;
+    padding-left: 99px;
   }
 
   .tl-tick {
