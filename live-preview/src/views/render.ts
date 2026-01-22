@@ -382,7 +382,7 @@ function renderTableView(model: InformationFlowModel): string {
   return `<div class="table-view">${eventsTable}${statesTable}${commandsTable}${actorsTable}</div>`;
 }
 
-export function renderHtml(model: InformationFlowModel, view: ViewMode, error?: string): string {
+export function renderHtml(model: InformationFlowModel, view: ViewMode, error?: string, watchedFile?: string): string {
   const viewContent = error
     ? `<div class="error"><h2>Error</h2><pre>${escapeHtml(error)}</pre></div>`
     : view === 'slice' ? renderSliceView(model)
@@ -408,7 +408,7 @@ export function renderHtml(model: InformationFlowModel, view: ViewMode, error?: 
     </div>
     <div>
       ${model.version ? `<span class="meta">v${escapeHtml(model.version)}</span>` : ''}
-      <span class="status">Live</span>
+      <span class="status">Watching ${watchedFile ? `${escapeHtml(watchedFile)}` : ''}</span>
     </div>
   </header>
   

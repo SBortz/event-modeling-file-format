@@ -97,7 +97,8 @@ export function createServer(options: ServerOptions): {
         timeline: [],
       };
       
-      const html = renderHtml(model, view, currentError || undefined);
+      const fileName = path.basename(filePath);
+      const html = renderHtml(model, view, currentError || undefined, fileName);
       
       res.writeHead(200, { 'Content-Type': 'text/html' });
       res.end(html);
