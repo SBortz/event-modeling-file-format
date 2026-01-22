@@ -257,7 +257,7 @@ function renderTimelineView(model: InformationFlowModel): string {
     let details = '';
     if (isEvent(el)) {
       if (el.producedBy) {
-        details += `<div class="tl-detail">producedBy: <span class="command">${escapeHtml(el.producedBy)}-${el.tick}</span></div>`;
+        details += `<div class="tl-detail">producedBy: <span class="command">${escapeHtml(el.producedBy)}</span></div>`;
       }
       if (el.externalSource) {
         details += `<div class="tl-detail">externalSource: ${escapeHtml(el.externalSource)}</div>`;

@@ -1,0 +1,40 @@
+{
+  "$schema": "../information-flow.schema.json",
+  "name": "Todo App",
+  "description": "Eine einfache Todo-Anwendung zum Verwalten von Aufgaben",
+  "version": "1.0.0",
+  "timeline": [
+    {
+      "type": "command",
+      "name": "PlaceOrder",
+      "tick": 1,
+      "example": {
+        "orderId": "ord-123",
+        "customerId": "cust-456",
+        "amount": 99.99
+      }
+    },
+    {
+      "type": "event",
+      "name": "OrderPlaced",
+      "producedBy": "PlaceOrder-1",
+      "tick": 10,
+      "example": {
+        "orderId": "ord-123",
+        "customerId": "cust-456",
+        "amount": 99.99
+      }
+    },
+    {
+      "type": "event",
+      "name": "OrderPlaced",
+      "tick": 11,
+      "example": {
+        "orderId": "ord-123",
+        "customerId": "cust-456",
+        "amount": 10.99
+      }
+    }
+
+  ]
+}
