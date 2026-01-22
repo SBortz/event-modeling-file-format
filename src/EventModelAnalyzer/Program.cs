@@ -447,10 +447,10 @@ void RenderTableView(EventModel model, bool renderHeader = true)
 {
     if (renderHeader) RenderHeader(model, "Table View");
     
-    var events = model.Timeline.OfType<EventElement>().ToList();
-    var stateViews = model.Timeline.OfType<StateViewElement>().ToList();
-    var actors = model.Timeline.OfType<ActorElement>().ToList();
-    var commands = model.Timeline.OfType<CommandElement>().ToList();
+    var events = model.Timeline.Events;
+    var stateViews = model.Timeline.StateViews;
+    var actors = model.Timeline.Actors;
+    var commands = model.Timeline.Commands;
     
     // Events Table
     if (events.Count > 0)
@@ -722,10 +722,10 @@ void RenderTableView(EventModel model, bool renderHeader = true)
 
 void RenderSummaryPanel(EventModel model)
 {
-    var events = model.Timeline.OfType<EventElement>().Count();
-    var stateViews = model.Timeline.OfType<StateViewElement>().Count();
-    var actors = model.Timeline.OfType<ActorElement>().Count();
-    var commands = model.Timeline.OfType<CommandElement>().Count();
+    var events = model.Timeline.Events.Count;
+    var stateViews = model.Timeline.StateViews.Count;
+    var actors = model.Timeline.Actors.Count;
+    var commands = model.Timeline.Commands.Count;
     
     var summaryGrid = new Grid()
         .AddColumn()
@@ -751,8 +751,8 @@ void RenderSliceView(EventModel model, bool renderHeader = true)
     AnsiConsole.WriteLine();
     
     // Collect all elements
-    var events = model.Timeline.OfType<EventElement>().ToList();
-    var actors = model.Timeline.OfType<ActorElement>().ToList();
+    var events = model.Timeline.Events;
+    var actors = model.Timeline.Actors;
     
     // Build lookup: which events are produced by which command (by tick)
     var eventsByCommandTick = events
@@ -761,9 +761,14 @@ void RenderSliceView(EventModel model, bool renderHeader = true)
         .ToDictionary(g => g.Key, g => g.ToList());
     
     // Get slices: StateViews and Commands, sorted by tick
-    var slices = model.Timeline
-        .Where(e => e is StateViewElement || e is CommandElement)
-        .OrderBy(e => e.Tick)
+    var slices = model.Timeline.StateViews.Cast<object>()
+        .Concat(model.Timeline.Commands)
+        .OrderBy(e => e switch
+        {
+            State sv => sv.Tick,
+            Command c => c.Tick,
+            _ => 0
+        })
         .ToList();
     
     for (int i = 0; i < slices.Count; i++)
@@ -777,7 +782,7 @@ void RenderSliceView(EventModel model, bool renderHeader = true)
         
         switch (slice)
         {
-            case StateViewElement sv:
+            case State sv:
                 title = $"[green]◆[/] {Markup.Escape(sv.Name)}";
                 borderColor = Color.Green;
                 symbol = "[green]◆[/]";
@@ -810,7 +815,7 @@ void RenderSliceView(EventModel model, bool renderHeader = true)
                 
                 break;
                 
-            case CommandElement cmd:
+            case Command cmd:
                 title = $"[blue]▶[/] {Markup.Escape(cmd.Name)}";
                 borderColor = Color.Blue;
                 symbol = "[blue]▶[/]";
@@ -843,23 +848,30 @@ void RenderSliceView(EventModel model, bool renderHeader = true)
                 break;
                 
             default:
-                title = slice.Name;
+                title = "Unknown";
                 borderColor = Color.Grey;
                 symbol = "?";
                 break;
         }
+        
+        int GetSliceTick(object s) => s switch
+        {
+            State sv => sv.Tick,
+            Command c => c.Tick,
+            _ => 0
+        };
         
         // Calculate extra lines based on tick distance
         int extraLines = 0;
         if (!isLast)
         {
             var nextSlice = slices[i + 1];
-            var tickDistance = nextSlice.Tick - slice.Tick;
+            var tickDistance = GetSliceTick(nextSlice) - GetSliceTick(slice);
             extraLines = Math.Max(0, (tickDistance / 10) - 1);
         }
         
         var line = isLast ? "↓" : "│";
-        var tickStr = $"@{slice.Tick}".PadLeft(5);
+        var tickStr = $"@{GetSliceTick(slice)}".PadLeft(5);
         
         // Timeline prefix
         AnsiConsole.MarkupLine($"{symbol} [dim]{tickStr} │[/]");
@@ -867,8 +879,8 @@ void RenderSliceView(EventModel model, bool renderHeader = true)
         // Get example data if available
         object? exampleData = slice switch
         {
-            StateViewElement sv => sv.Example,
-            CommandElement cmd => cmd.Example,
+            State sv => sv.Example,
+            Command cmd => cmd.Example,
             _ => null
         };
         
@@ -941,7 +953,7 @@ void RenderTimeline(EventModel model, bool showExamples = false, bool renderHead
     if (renderHeader) RenderHeader(model, "Timeline View");
 
     // Timeline - sorted by tick, with spacing based on tick distance
-    var sortedTimeline = model.Timeline.OrderBy(e => e.Tick).ToList();
+    var sortedTimeline = model.Timeline.All.ToList();
     
     for (int i = 0; i < sortedTimeline.Count; i++)
     {
@@ -953,7 +965,7 @@ void RenderTimeline(EventModel model, bool showExamples = false, bool renderHead
         if (!isLast)
         {
             var nextElement = sortedTimeline[i + 1];
-            var tickDistance = nextElement.Tick - element.Tick;
+            var tickDistance = GetTick(nextElement) - GetTick(element);
             extraLines = Math.Max(0, (tickDistance / 10) - 1);
         }
         
@@ -966,7 +978,25 @@ void RenderTimeline(EventModel model, bool showExamples = false, bool renderHead
     RenderSummaryPanel(model);
 }
 
-void RenderTimelineElement(TimelineElement element, bool isLast, int extraLines = 0, bool showExamples = false)
+int GetTick(object element) => element switch
+{
+    Event e => e.Tick,
+    State s => s.Tick,
+    Actor a => a.Tick,
+    Command c => c.Tick,
+    _ => 0
+};
+
+string GetName(object element) => element switch
+{
+    Event e => e.Name,
+    State s => s.Name,
+    Actor a => a.Name,
+    Command c => c.Name,
+    _ => ""
+};
+
+void RenderTimelineElement(object element, bool isLast, int extraLines = 0, bool showExamples = false)
 {
     var line = isLast ? "↓" : "│";
     
@@ -975,14 +1005,14 @@ void RenderTimelineElement(TimelineElement element, bool isLast, int extraLines 
     //         0           1     2-3        4     5           6+
     var (symbol, color) = element switch
     {
-        EventElement => ("●", "orange1"),
-        StateViewElement => ("◆", "green"),
-        CommandElement => ("▶", "blue"),
-        ActorElement => ("○", "white"),
+        Event => ("●", "orange1"),
+        State => ("◆", "green"),
+        Command => ("▶", "blue"),
+        Actor => ("○", "white"),
         _ => ("?", "white")
     };
     
-    var tickStr = $"@{element.Tick}";
+    var tickStr = $"@{GetTick(element)}";
     var tickPadded = tickStr.PadLeft(5);
     
     // Build the visual row with timeline running through center
@@ -995,20 +1025,20 @@ void RenderTimelineElement(TimelineElement element, bool isLast, int extraLines 
     
     switch (element)
     {
-        case EventElement:
+        case Event:
             // Event is left of timeline: ●  │
             prefix = $"{margin}[{color}]{symbol}[/]  [dim]{line}[/]     {tickPadded}  ";
             detailPrefix = $"{margin}   [dim]{line}[/]            ";
             break;
             
-        case StateViewElement:
-        case CommandElement:
+        case State:
+        case Command:
             // StateView/Command IS on the timeline (symbol replaces │)
             prefix = $"{margin}   [{color}]{symbol}[/]     {tickPadded}  ";
             detailPrefix = $"{margin}   [dim]{line}[/]            ";
             break;
             
-        case ActorElement:
+        case Actor:
             // Actor is right of timeline: │  ○
             prefix = $"{margin}   [dim]{line}[/]  [{color}]{symbol}[/]  {tickPadded}  ";
             detailPrefix = $"{margin}   [dim]{line}[/]            ";
@@ -1022,19 +1052,19 @@ void RenderTimelineElement(TimelineElement element, bool isLast, int extraLines 
     
     // Main line: layout + name
     AnsiConsole.Markup(prefix);
-    AnsiConsole.MarkupLine($"[{color} bold]{Markup.Escape(element.Name)}[/]");
+    AnsiConsole.MarkupLine($"[{color} bold]{Markup.Escape(GetName(element))}[/]");
     
     // Detail lines (indented) - referenced elements in their type's color
     switch (element)
     {
-        case EventElement evt:
+        case Event evt:
             if (!string.IsNullOrEmpty(evt.ProducedBy))
                 AnsiConsole.MarkupLine($"{detailPrefix}[dim]producedBy:[/] [blue]{Markup.Escape(evt.ProducedBy)}[/]");
             if (!string.IsNullOrEmpty(evt.ExternalSource))
                 AnsiConsole.MarkupLine($"{detailPrefix}[dim]externalSource:[/] [dim]{Markup.Escape(evt.ExternalSource)}[/]");
             break;
             
-        case StateViewElement sv:
+        case State sv:
             if (sv.SubscribesTo.Count > 0)
             {
                 var eventNames = string.Join("[dim],[/] ", sv.SubscribesTo.Select(e => $"[orange1]{Markup.Escape(e)}[/]"));
@@ -1042,12 +1072,12 @@ void RenderTimelineElement(TimelineElement element, bool isLast, int extraLines 
             }
             break;
             
-        case ActorElement actor:
+        case Actor actor:
             AnsiConsole.MarkupLine($"{detailPrefix}[dim]readsView:[/] [green]{Markup.Escape(actor.ReadsView)}[/]");
             AnsiConsole.MarkupLine($"{detailPrefix}[dim]sendsCommand:[/] [blue]{Markup.Escape(actor.SendsCommand)}[/]");
             break;
             
-        case CommandElement:
+        case Command:
             // Commands have no additional details to show
             break;
     }
@@ -1057,9 +1087,9 @@ void RenderTimelineElement(TimelineElement element, bool isLast, int extraLines 
     {
         object? exampleData = element switch
         {
-            EventElement evt => evt.Example,
-            StateViewElement sv => sv.Example,
-            CommandElement cmd => cmd.Example,
+            Event evt => evt.Example,
+            State sv => sv.Example,
+            Command cmd => cmd.Example,
             _ => null
         };
         
