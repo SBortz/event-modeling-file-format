@@ -656,6 +656,7 @@ void RenderSliceView(InformationFlowModel model, bool renderHeader = true)
         string title;
         Color borderColor;
         string symbol;
+        List<IRenderable> scenarioRenderables = new();
         
         switch (slice)
         {
@@ -688,7 +689,11 @@ void RenderSliceView(InformationFlowModel model, bool renderHeader = true)
                     }
                 }
                 
-                // Example data handled separately
+                // Scenarios (Given-Then)
+                if (sv.Scenarios?.Count > 0)
+                {
+                    scenarioRenderables = RenderStateViewScenarios(sv.Scenarios);
+                }
                 
                 break;
                 
@@ -720,7 +725,11 @@ void RenderSliceView(InformationFlowModel model, bool renderHeader = true)
                     }
                 }
                 
-                // Example data handled separately
+                // Scenarios (Given-When-Then)
+                if (cmd.Scenarios?.Count > 0)
+                {
+                    scenarioRenderables = RenderCommandScenarios(cmd.Scenarios);
+                }
                 
                 break;
                 
@@ -756,28 +765,30 @@ void RenderSliceView(InformationFlowModel model, bool renderHeader = true)
             _ => null
         };
         
-        // Build panel content with JSON first, then details
-        IRenderable panelContent;
+        // Build panel content with JSON first, then details, then scenarios
+        var renderables = new List<IRenderable>();
+        
         if (exampleData != null)
         {
             var exampleJson = JsonSerializer.Serialize(exampleData, new JsonSerializerOptions { WriteIndented = true });
-            var jsonContent = new JsonText(exampleJson);
-            
-            if (content.Count > 0)
-            {
-                // JSON first, then empty line, then details
-                var textContent = new Markup(string.Join("\n", content));
-                panelContent = new Rows(jsonContent, new Text(""), textContent);
-            }
-            else
-            {
-                panelContent = jsonContent;
-            }
+            renderables.Add(new JsonText(exampleJson));
         }
-        else
+        
+        if (content.Count > 0)
         {
-            panelContent = new Markup(string.Join("\n", content.Count > 0 ? content : new[] { "[dim](no details)[/]" }));
+            if (renderables.Count > 0) renderables.Add(new Text(""));
+            renderables.Add(new Markup(string.Join("\n", content)));
         }
+        
+        if (scenarioRenderables.Count > 0)
+        {
+            if (renderables.Count > 0) renderables.Add(new Text(""));
+            renderables.AddRange(scenarioRenderables);
+        }
+        
+        IRenderable panelContent = renderables.Count > 0 
+            ? new Rows(renderables)
+            : new Markup("[dim](no details)[/]");
         
         var panel = new Panel(panelContent)
         {
@@ -818,6 +829,104 @@ void RenderSliceView(InformationFlowModel model, bool renderHeader = true)
             AnsiConsole.MarkupLine($"    [dim]source:[/] {Markup.Escape(evt.ExternalSource!)}");
         }
     }
+}
+
+List<IRenderable> RenderCommandScenarios(List<CommandScenario> scenarios)
+{
+    var result = new List<IRenderable>();
+    result.Add(new Markup($"[yellow bold]Scenarios[/] [dim]({scenarios.Count})[/]"));
+    
+    foreach (var scenario in scenarios)
+    {
+        var lines = new List<string>();
+        
+        // Scenario name with outcome indicator
+        var outcomeSymbol = scenario.Then.Fails != null ? "[red]✗[/]" : "[green]✓[/]";
+        lines.Add($"  {outcomeSymbol} [yellow]{Markup.Escape(scenario.Name)}[/]");
+        
+        // Given (compact)
+        if (scenario.Given.Count > 0)
+        {
+            var givenEvents = string.Join(", ", scenario.Given.Select(e => $"[orange1]{Markup.Escape(e.Event)}[/]"));
+            lines.Add($"      [dim]Given:[/] {givenEvents}");
+        }
+        else
+        {
+            lines.Add($"      [dim]Given:[/] [dim italic](keine Vorbedingungen)[/]");
+        }
+        
+        // When (compact JSON on single line if small)
+        if (scenario.When != null)
+        {
+            var whenJson = JsonSerializer.Serialize(scenario.When);
+            if (whenJson.Length <= 60)
+            {
+                lines.Add($"      [dim]When:[/] [grey]{Markup.Escape(whenJson)}[/]");
+            }
+            else
+            {
+                lines.Add($"      [dim]When:[/] [grey]{Markup.Escape(whenJson.Substring(0, 57))}...[/]");
+            }
+        }
+        
+        // Then
+        if (scenario.Then.Fails != null)
+        {
+            lines.Add($"      [dim]Then:[/] [red]✗ {Markup.Escape(scenario.Then.Fails)}[/]");
+        }
+        else if (scenario.Then.Produces?.Count > 0)
+        {
+            var producedEvents = string.Join(", ", scenario.Then.Produces.Select(e => $"[orange1]{Markup.Escape(e.Event)}[/]"));
+            lines.Add($"      [dim]Then:[/] → {producedEvents}");
+        }
+        
+        result.Add(new Markup(string.Join("\n", lines)));
+    }
+    
+    return result;
+}
+
+List<IRenderable> RenderStateViewScenarios(List<StateViewScenario> scenarios)
+{
+    var result = new List<IRenderable>();
+    result.Add(new Markup($"[yellow bold]Scenarios[/] [dim]({scenarios.Count})[/]"));
+    
+    foreach (var scenario in scenarios)
+    {
+        var lines = new List<string>();
+        
+        // Scenario name
+        lines.Add($"  [green]◇[/] [yellow]{Markup.Escape(scenario.Name)}[/]");
+        
+        // Given (compact)
+        if (scenario.Given.Count > 0)
+        {
+            var givenEvents = string.Join(", ", scenario.Given.Select(e => $"[orange1]{Markup.Escape(e.Event)}[/]"));
+            lines.Add($"      [dim]Given:[/] {givenEvents}");
+        }
+        else
+        {
+            lines.Add($"      [dim]Given:[/] [dim italic](keine Events)[/]");
+        }
+        
+        // Then (compact JSON on single line if small)
+        if (scenario.Then != null)
+        {
+            var thenJson = JsonSerializer.Serialize(scenario.Then);
+            if (thenJson.Length <= 60)
+            {
+                lines.Add($"      [dim]Then:[/] [grey]{Markup.Escape(thenJson)}[/]");
+            }
+            else
+            {
+                lines.Add($"      [dim]Then:[/] [grey]{Markup.Escape(thenJson.Substring(0, 57))}...[/]");
+            }
+        }
+        
+        result.Add(new Markup(string.Join("\n", lines)));
+    }
+    
+    return result;
 }
 
 void RenderTimeline(InformationFlowModel model, bool showExamples = false, bool renderHeader = true)

@@ -7,5 +7,6 @@ public record State(
     [property: JsonPropertyName("name")] string Name,
     [property: JsonPropertyName("tick")] int Tick,
     [property: JsonPropertyName("sourcedFrom")] List<string> SourcedFrom,
-    [property: JsonPropertyName("example")] object? Example
+    [property: JsonPropertyName("example")] object? Example = null,
+    [property: JsonPropertyName("scenarios")] List<StateViewScenario>? Scenarios = null
 ) : ITimelineElement;
