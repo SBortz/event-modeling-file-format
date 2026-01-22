@@ -185,6 +185,7 @@
     border: 1px solid var(--border);
     border-radius: 0.75rem;
     overflow: hidden;
+    box-shadow: var(--shadow-card);
   }
 
   .slice-panel.state {

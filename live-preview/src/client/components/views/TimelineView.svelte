@@ -110,6 +110,7 @@
     border: 1px solid var(--border);
     border-radius: 0.5rem;
     overflow: hidden;
+    box-shadow: var(--shadow-card);
   }
 
   .tl-line {

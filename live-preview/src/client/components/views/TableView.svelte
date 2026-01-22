@@ -149,6 +149,7 @@
     background: var(--bg-card);
     border-radius: 0.5rem;
     overflow: hidden;
+    box-shadow: var(--shadow-card);
   }
 
   th, td {
