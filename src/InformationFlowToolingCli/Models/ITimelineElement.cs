@@ -1,4 +1,4 @@
-namespace EventModelAnalyzer.Models;
+namespace InformationFlowToolingCli.Models;
 
 public interface ITimelineElement
 {

@@ -1,0 +1,144 @@
+{
+  "$schema": "./information-flow.schema.json",
+  "name": "Neue Todo-Listen Anwendung",
+  "description": "Eine Todo-Anwendung mit Use Cases: Todos eintragen, abhaken und Übersicht ansehen",
+  "version": "1.0.0",
+
+  "timeline": [
+    
+    {
+      "type": "state",
+      "name": "TodoÜbersicht",
+      "tick": 10,
+      "sourcedFrom": ["TodoEingetragen", "TodoAbgehakt"],
+      "example": {
+        "todos": []
+      }
+    },
+    {
+      "type": "actor",
+      "name": "Benutzer",
+      "tick": 20,
+      "readsView": "TodoÜbersicht",
+      "sendsCommand": "TodoEintragen"
+    },
+    {
+      "type": "command",
+      "name": "TodoEintragen",
+      "tick": 30,
+      "example": {
+        "titel": "Milch kaufen"
+      }
+    },
+    {
+      "type": "event",
+      "name": "TodoEingetragen",
+      "tick": 40,
+      "producedBy": "TodoEintragen-30",
+      "example": {
+        "todoId": "todo-001",
+        "titel": "Milch kaufen",
+        "eingetragenAm": "2026-01-22T09:00:00Z"
+      }
+    },
+
+    
+    {
+      "type": "state",
+      "name": "TodoÜbersicht",
+      "tick": 50,
+      "sourcedFrom": ["TodoEingetragen", "TodoAbgehakt"],
+      "example": {
+        "todos": [
+          { "id": "todo-001", "titel": "Milch kaufen", "erledigt": false }
+        ]
+      }
+    },
+    {
+      "type": "actor",
+      "name": "Benutzer",
+      "tick": 60,
+      "readsView": "TodoÜbersicht",
+      "sendsCommand": "TodoEintragen"
+    },
+    {
+      "type": "command",
+      "name": "TodoEintragen",
+      "tick": 70,
+      "example": {
+        "titel": "E-Mails beantworten"
+      }
+    },
+    {
+      "type": "event",
+      "name": "TodoEingetragen",
+      "tick": 80,
+      "producedBy": "TodoEintragen-70",
+      "example": {
+        "todoId": "todo-002",
+        "titel": "E-Mails beantworten",
+        "eingetragenAm": "2026-01-22T09:05:00Z"
+      }
+    },
+
+    
+    {
+      "type": "state",
+      "name": "TodoÜbersicht",
+      "tick": 90,
+      "sourcedFrom": ["TodoEingetragen", "TodoAbgehakt"],
+      "example": {
+        "todos": [
+          { "id": "todo-001", "titel": "Milch kaufen", "erledigt": false },
+          { "id": "todo-002", "titel": "E-Mails beantworten", "erledigt": false }
+        ]
+      }
+    },
+    {
+      "type": "actor",
+      "name": "Benutzer",
+      "tick": 100,
+      "readsView": "TodoÜbersicht",
+      "sendsCommand": "TodoAbhaken"
+    },
+    {
+      "type": "command",
+      "name": "TodoAbhaken",
+      "tick": 110,
+      "example": {
+        "todoId": "todo-001"
+      }
+    },
+    {
+      "type": "event",
+      "name": "TodoAbgehakt",
+      "tick": 120,
+      "producedBy": "TodoAbhaken-110",
+      "example": {
+        "todoId": "todo-001",
+        "abgehaktAm": "2026-01-22T10:30:00Z"
+      }
+    },
+
+    
+    {
+      "type": "state",
+      "name": "TodoÜbersicht",
+      "tick": 130,
+      "sourcedFrom": ["TodoEingetragen", "TodoAbgehakt"],
+      "example": {
+        "todos": [
+          { "id": "todo-001", "titel": "Milch kaufen", "erledigt": true },
+          { "id": "todo-002", "titel": "E-Mails beantworten", "erledigt": false }
+        ]
+      }
+    },
+    {
+      "type": "actor",
+      "name": "Benutzer",
+      "tick": 140,
+      "readsView": "TodoÜbersicht",
+      "sendsCommand": "TodoEintragen"
+    }
+  ]
+}

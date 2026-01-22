@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://event-modeling.org/schema/v1",
-  "title": "Event Modeling File Format",
-  "description": "A human-readable format for describing event-driven systems using the Event Modeling methodology.",
+  "$id": "https://information-flow-tooling.org/schema/v1",
+  "title": "Information Flow Schema",
+  "description": "A human-readable format for describing event-driven systems using the Information Flow methodology.",
   "type": "object",
   
   "required": ["name", "timeline"],

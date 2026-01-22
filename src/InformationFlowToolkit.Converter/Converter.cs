@@ -1,10 +1,10 @@
-using EventModelingToolkit.Converter.Models;
+using InformationFlowToolkit.Converter.Models;
 
-namespace EventModelingToolkit.Converter;
+namespace InformationFlowToolkit.Converter;
 
 public class ConversionResult
 {
-    public EventModelDocument Document { get; set; } = new();
+    public InformationFlowDocument Document { get; set; } = new();
     public List<ConversionWarning> Warnings { get; set; } = new();
     public ConversionStatistics Statistics { get; set; } = new();
 }
@@ -44,7 +44,7 @@ public class Converter
     public ConversionResult Convert(DilgerModel source, string name)
     {
         var result = new ConversionResult();
-        var document = new EventModelDocument
+        var document = new InformationFlowDocument
         {
             Name = name,
             Description = $"Converted from Dilger format. Context: {source.Context ?? "unknown"}",
@@ -90,7 +90,7 @@ public class Converter
         }
     }
 
-    private void ConvertSlice(DilgerSlice slice, EventModelDocument document)
+    private void ConvertSlice(DilgerSlice slice, InformationFlowDocument document)
     {
         // Determine the actor for this slice
         var sliceActor = slice.Actors.FirstOrDefault()?.Name ?? "System";
@@ -112,7 +112,7 @@ public class Converter
         }
     }
 
-    private void ConvertStateChangeSlice(DilgerSlice slice, EventModelDocument document, string actorName)
+    private void ConvertStateChangeSlice(DilgerSlice slice, InformationFlowDocument document, string actorName)
     {
         foreach (var command in slice.Commands)
         {
@@ -230,7 +230,7 @@ public class Converter
         }
     }
 
-    private void ConvertStateViewSlice(DilgerSlice slice, EventModelDocument document)
+    private void ConvertStateViewSlice(DilgerSlice slice, InformationFlowDocument document)
     {
         foreach (var readModel in slice.ReadModels)
         {
@@ -307,4 +307,3 @@ public class Converter
         });
     }
 }
-

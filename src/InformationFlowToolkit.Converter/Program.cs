@@ -1,7 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using EventModelingToolkit.Converter;
-using EventModelingToolkit.Converter.Models;
+using InformationFlowToolkit.Converter;
+using InformationFlowToolkit.Converter.Models;
 
 // Configure JSON options
 var jsonReadOptions = new JsonSerializerOptions
@@ -73,7 +73,7 @@ if (!File.Exists(inputFile))
 }
 
 // Default output file name
-outputFile ??= Path.ChangeExtension(inputFile, ".eventmodel.json");
+outputFile ??= Path.ChangeExtension(inputFile, ".informationflow.json");
 name ??= Path.GetFileNameWithoutExtension(inputFile);
 
 try
@@ -130,25 +130,25 @@ catch (Exception ex)
 void PrintUsage()
 {
     Console.WriteLine(@"
-Event Modeling Toolkit Converter - Converts various formats to Event Model format
+Information Flow Toolkit Converter - Converts various formats to Information Flow format
 
 Usage:
-  emt-converter <input-file> [options]
-  emt-converter -i <input-file> -o <output-file> [options]
+  ift-converter <input-file> [options]
+  ift-converter -i <input-file> -o <output-file> [options]
 
 Supported Input Formats:
-  - Dilger Event Modeling format (.json)
+  - Dilger format (.json)
 
 Options:
   -i, --input <file>    Input file
-  -o, --output <file>   Output file (defaults to <input>.eventmodel.json)
+  -o, --output <file>   Output file (defaults to <input>.informationflow.json)
   -n, --name <name>     Name for the model (defaults to filename)
   -q, --quiet           Suppress conversion report
   -h, --help            Show this help
 
 Examples:
-  emt-converter dilger-store-example.json
-  emt-converter -i input.json -o output.eventmodel.json -n ""My System""
+  ift-converter dilger-store-example.json
+  ift-converter -i input.json -o output.informationflow.json -n ""My System""
 ");
 }
 
@@ -209,4 +209,3 @@ void PrintReport(ConversionResult result)
     Console.WriteLine();
     Console.WriteLine("─────────────────────────────────────────────────────────────────");
 }
-

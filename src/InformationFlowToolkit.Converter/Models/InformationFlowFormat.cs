@@ -1,14 +1,14 @@
 using System.Text.Json.Serialization;
 
-namespace EventModelingToolkit.Converter.Models;
+namespace InformationFlowToolkit.Converter.Models;
 
 /// <summary>
-/// Our Event Modeling file format
+/// Our Information Flow file format
 /// </summary>
-public class EventModelDocument
+public class InformationFlowDocument
 {
     [JsonPropertyName("$schema")]
-    public string Schema { get; set; } = "./event-modeling.schema.json";
+    public string Schema { get; set; } = "./information-flow.schema.json";
 
     [JsonPropertyName("name")]
     public string Name { get; set; } = string.Empty;

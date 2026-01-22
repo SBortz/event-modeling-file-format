@@ -1,12 +1,12 @@
-# Event Modeling File Format
+# Information Flow Tooling
 
-A human-readable JSON format for describing event-driven systems using [Event Modeling](https://eventmodeling.org/).
+A human-readable JSON format for describing event-driven systems using [Information Flow](https://eventmodeling.org/) methodology.
 
 ---
 
 ## 1. Why
 
-Event Modeling is a powerful methodology for designing software systems. But where do you store the model?
+Information Flow is a powerful methodology for designing software systems. But where do you store the model?
 
 **The Problem:**
 - Proprietary tools lock your designs into their platforms
@@ -16,14 +16,14 @@ Event Modeling is a powerful methodology for designing software systems. But whe
 A simple, human-readable JSON format that:
 -  Can be checked into Git alongside your code
 -  Is easy to read and manually edit
--  Follows the natural flow of Event Modeling (Timeline → Events → Views → Commands)
+-  Follows the natural flow of Information Flow (Timeline → Events → Views → Commands)
 -  Supports tooling while remaining tool-agnostic
 
 ---
 
 ## 2. Philosophy
 
-- **Event Modeling is a continuous process.**  
+- **Information Flow is a continuous process.**  
   The format must allow incomplete systems to be saved. The format itself should allow invalid models.
 
 - **Validation belongs in tools, not the format.**  
@@ -42,11 +42,11 @@ A simple, human-readable JSON format that:
 
 ## 3. Simple Example
 
-A minimal event model showing the core flow: **Event → StateView → Actor → Command → Event**
+A minimal information flow model showing the core flow: **Event → StateView → Actor → Command → Event**
 
 ```json
 {
-  "$schema": "./event-modeling.schema.json",
+  "$schema": "./information-flow.schema.json",
   "name": "Simple Order Flow",
   "version": "1.0.0",
   "timeline": [
@@ -129,22 +129,22 @@ There are still some challenges to be solved. I will write more about them soon.
 
 ---
 
-## 4. EM Analyzer
+## 4. Information Flow Tooling CLI
 
-The **EM Analyzer** (`ema`) is a CLI tool to visualize `.eventmodel.json` files.
+The **Information Flow Tooling CLI** (`ift`) is a CLI tool to visualize `.informationflow.json` files.
 
 ### Installation
 
 ```bash
-git clone https://github.com/your-org/event-modeling-file-format.git
-cd event-modeling-file-format
+git clone https://github.com/your-org/information-flow-tooling.git
+cd information-flow-tooling
 dotnet build
 ```
 
 ### Usage
 
 ```bash
-dotnet run --project src/EventModelAnalyzer -- <file> [options]
+dotnet run --project src/InformationFlowToolingCli -- <file> [options]
 ```
 
 ### Options
@@ -169,19 +169,19 @@ dotnet run --project src/EventModelAnalyzer -- <file> [options]
 
 ```bash
 # Interactive mode - prompts for view selection
-dotnet run --project src/EventModelAnalyzer -- model.eventmodel.json
+dotnet run --project src/InformationFlowToolingCli -- model.informationflow.json
 
 # Timeline view with example data
-dotnet run --project src/EventModelAnalyzer -- model.eventmodel.json -v timeline -e
+dotnet run --project src/InformationFlowToolingCli -- model.informationflow.json -v timeline -e
 
 # Table view for documentation
-dotnet run --project src/EventModelAnalyzer -- model.eventmodel.json -v table
+dotnet run --project src/InformationFlowToolingCli -- model.informationflow.json -v table
 
 # Export to file (header excluded from file)
-dotnet run --project src/EventModelAnalyzer -- model.eventmodel.json -v timeline -e -o output.txt
+dotnet run --project src/InformationFlowToolingCli -- model.informationflow.json -v timeline -e -o output.txt
 
 # Validate against schema first
-dotnet run --project src/EventModelAnalyzer -- model.eventmodel.json -s event-modeling.schema.json -v timeline
+dotnet run --project src/InformationFlowToolingCli -- model.informationflow.json -s information-flow.schema.json -v timeline
 ```
 
 ### Output Example (Timeline)
@@ -226,18 +226,18 @@ dotnet run --project src/EventModelAnalyzer -- model.eventmodel.json -s event-mo
 
 ---
 
-## 5. Event Modeling Toolkit Converter
+## 5. Information Flow Toolkit Converter
 
-The **EMT Converter** converts other Event Modeling formats into the `.eventmodel.json` format.
+The **IFT Converter** converts other Information Flow formats into the `.informationflow.json` format.
 
 ### Supported Formats
 
-- **Miro Event Modeling Toolkit** - Export from Martin Dilgers tool available on miro (https://www.nebulit.de/en/eventmodeling-tooling)
+- **Miro Information Flow Toolkit** - Export from Martin Dilgers tool available on miro (https://www.nebulit.de/en/eventmodeling-tooling)
 
 ### Usage
 
 ```bash
-dotnet run --project src/EventModelingToolkit.Converter -- <input-file> [options]
+dotnet run --project src/InformationFlowToolkit.Converter -- <input-file> [options]
 ```
 
 ### Options
@@ -245,7 +245,7 @@ dotnet run --project src/EventModelingToolkit.Converter -- <input-file> [options
 | Option | Description |
 |--------|-------------|
 | `-i, --input <file>` | Input file path |
-| `-o, --output <file>` | Output file (default: `<input>.eventmodel.json`) |
+| `-o, --output <file>` | Output file (default: `<input>.informationflow.json`) |
 | `-n, --name <name>` | Model name (default: filename) |
 | `-q, --quiet` | Suppress conversion report |
 | `-h, --help` | Show help |
@@ -254,10 +254,10 @@ dotnet run --project src/EventModelingToolkit.Converter -- <input-file> [options
 
 ```bash
 # Basic conversion
-dotnet run --project src/EventModelingToolkit.Converter -- dilger-export.json
+dotnet run --project src/InformationFlowToolkit.Converter -- dilger-export.json
 
 # With custom output and name
-dotnet run --project src/EventModelingToolkit.Converter -- dilger-export.json -o my-model.eventmodel.json -n "My System"
+dotnet run --project src/InformationFlowToolkit.Converter -- dilger-export.json -o my-model.informationflow.json -n "My System"
 ```
 
 ### Conversion Report

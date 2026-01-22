@@ -1,6 +1,6 @@
 using System.Text.Json;
 using System.Reflection;
-using EventModelAnalyzer.Models;
+using InformationFlowToolingCli.Models;
 using NJsonSchema;
 using Spectre.Console;
 using Spectre.Console.Json;
@@ -66,12 +66,7 @@ void ShowHelp()
 {
     AnsiConsole.WriteLine();
     
-    var figlet = new FigletText("EM Analyzer")
-        .Color(Color.Cyan1);
-    
-    AnsiConsole.Write(Align.Center(figlet));
-    
-    AnsiConsole.Write(new Rule("[dim]Event Modeling Visualizer[/]")
+    AnsiConsole.Write(new Rule("[cyan bold]Information Flow Tooling CLI[/]")
     {
         Justification = Justify.Center,
         Style = Style.Parse("grey")
@@ -80,7 +75,7 @@ void ShowHelp()
     
     // Usage
     var usagePanel = new Panel(
-        new Markup("[white]ema[/] [cyan]<file>[/] [dim][[options]][/]"))
+        new Markup("[white]ift[/] [cyan]<file>[/] [dim][[options]][/]"))
     {
         Header = new PanelHeader("[yellow bold]Usage[/]"),
         Border = BoxBorder.Rounded,
@@ -100,7 +95,7 @@ void ShowHelp()
     
     argsTable.AddRow(
         "[cyan]<file>[/]",
-        "Path to the [yellow].eventmodel.json[/] file to parse"
+        "Path to the [yellow].informationflow.json[/] file to parse"
     );
     
     AnsiConsole.Write(argsTable);
@@ -116,7 +111,7 @@ void ShowHelp()
     
     optionsTable.AddRow(
         "[green]-v[/], [green]--view[/] [dim]<mode>[/]",
-        "Display mode for the event model\n" +
+        "Display mode for the information flow model\n" +
         "  [blue]timeline[/] - Vertical timeline view [dim](default)[/]\n" +
         "  [blue]slice[/]    - Detailed slice view with JSON examples\n" +
         "  [blue]table[/]    - Tabular overview with data flow tree"
@@ -174,19 +169,19 @@ void ShowHelp()
     AnsiConsole.WriteLine();
     
     AnsiConsole.MarkupLine("  [dim]# Basic usage with default timeline view[/]");
-    AnsiConsole.MarkupLine("  [white]ema[/] [cyan]my-model.eventmodel.json[/]");
+    AnsiConsole.MarkupLine("  [white]ift[/] [cyan]my-model.informationflow.json[/]");
     AnsiConsole.WriteLine();
     
     AnsiConsole.MarkupLine("  [dim]# Use table view for documentation[/]");
-    AnsiConsole.MarkupLine("  [white]ema[/] [cyan]my-model.eventmodel.json[/] [green]--view table[/]");
+    AnsiConsole.MarkupLine("  [white]ift[/] [cyan]my-model.informationflow.json[/] [green]--view table[/]");
     AnsiConsole.WriteLine();
     
     AnsiConsole.MarkupLine("  [dim]# Validate against schema and show slice view[/]");
-    AnsiConsole.MarkupLine("  [white]ema[/] [cyan]my-model.eventmodel.json[/] [green]-s schema.json -v slice[/]");
+    AnsiConsole.MarkupLine("  [white]ift[/] [cyan]my-model.informationflow.json[/] [green]-s schema.json -v slice[/]");
     AnsiConsole.WriteLine();
     
     AnsiConsole.MarkupLine("  [dim]# Export timeline to a text file[/]");
-    AnsiConsole.MarkupLine("  [white]ema[/] [cyan]my-model.eventmodel.json[/] [green]-v timeline -e -o output.txt[/]");
+    AnsiConsole.MarkupLine("  [white]ift[/] [cyan]my-model.informationflow.json[/] [green]-v timeline -e -o output.txt[/]");
     AnsiConsole.WriteLine();
     
     // Legend
@@ -245,11 +240,11 @@ if (schemaPath != null)
 }
 
 // Parse the model
-EventModel model;
+InformationFlowModel model;
 try
 {
-    model = JsonSerializer.Deserialize<EventModel>(json) 
-        ?? throw new JsonException("Failed to deserialize event model");
+    model = JsonSerializer.Deserialize<InformationFlowModel>(json) 
+        ?? throw new JsonException("Failed to deserialize information flow model");
 }
 catch (JsonException ex)
 {
@@ -298,14 +293,9 @@ if (outputFile != null)
 
 return 0;
 
-void RenderHeader(EventModel model, string? viewName = null)
+void RenderHeader(InformationFlowModel model, string? viewName = null)
 {
     AnsiConsole.WriteLine();
-    
-    var figlet = new FigletText("EM Analyzer")
-        .Color(Color.Cyan1);
-    
-    AnsiConsole.Write(Align.Center(figlet));
     
     // Subtitle with model name, version and view mode
     var subtitle = new List<string>();
@@ -335,7 +325,7 @@ void RenderHeader(EventModel model, string? viewName = null)
     AnsiConsole.WriteLine();
 }
 
-void RenderTableView(EventModel model, bool renderHeader = true)
+void RenderTableView(InformationFlowModel model, bool renderHeader = true)
 {
     if (renderHeader) RenderHeader(model, "Table View");
     
@@ -491,7 +481,7 @@ void RenderTableView(EventModel model, bool renderHeader = true)
     // Flow Tree - Shows the data flow (distinct by name)
     AnsiConsole.Write(new Rule("[cyan bold]🔄 Data Flow[/]") { Style = Style.Parse("cyan"), Justification = Justify.Left });
     
-    var flowTree = new Tree("[cyan]Event Model Flow[/]")
+    var flowTree = new Tree("[cyan]Information Flow[/]")
         .Style(Style.Parse("dim"));
     
     // All distinct command names (shown as root nodes)
@@ -612,7 +602,7 @@ void RenderTableView(EventModel model, bool renderHeader = true)
     RenderSummaryPanel(model);
 }
 
-void RenderSummaryPanel(EventModel model)
+void RenderSummaryPanel(InformationFlowModel model)
 {
     var events = model.Timeline.OfType<Event>().Count();
     var stateViews = model.Timeline.OfType<State>().Count();
@@ -637,7 +627,7 @@ void RenderSummaryPanel(EventModel model)
     AnsiConsole.WriteLine();
 }
 
-void RenderSliceView(EventModel model, bool renderHeader = true)
+void RenderSliceView(InformationFlowModel model, bool renderHeader = true)
 {
     if (renderHeader) RenderHeader(model, "Slice View");
     AnsiConsole.WriteLine();
@@ -830,7 +820,7 @@ void RenderSliceView(EventModel model, bool renderHeader = true)
     }
 }
 
-void RenderTimeline(EventModel model, bool showExamples = false, bool renderHeader = true)
+void RenderTimeline(InformationFlowModel model, bool showExamples = false, bool renderHeader = true)
 {
     if (renderHeader) RenderHeader(model, "Timeline View");
 

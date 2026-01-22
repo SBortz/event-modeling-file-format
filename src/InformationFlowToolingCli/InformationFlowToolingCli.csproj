@@ -15,8 +15,8 @@
 
   <!-- Embed the schema file from the repository root -->
   <ItemGroup>
-    <EmbeddedResource Include="..\..\event-modeling.schema.json" Link="event-modeling.schema.json">
-      <LogicalName>EventModeling.Chronomat.event-modeling.schema.json</LogicalName>
+    <EmbeddedResource Include="..\..\information-flow.schema.json" Link="information-flow.schema.json">
+      <LogicalName>InformationFlowTooling.information-flow.schema.json</LogicalName>
     </EmbeddedResource>
   </ItemGroup>
 

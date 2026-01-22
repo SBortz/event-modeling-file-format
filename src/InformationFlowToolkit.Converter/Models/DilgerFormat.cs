@@ -1,9 +1,9 @@
 using System.Text.Json.Serialization;
 
-namespace EventModelingToolkit.Converter.Models;
+namespace InformationFlowToolkit.Converter.Models;
 
 /// <summary>
-/// Root model for Dilger Event Modeling format
+/// Root model for Dilger format
 /// </summary>
 public class DilgerModel
 {
@@ -177,4 +177,3 @@ public class DilgerActorDefinition
     [JsonPropertyName("title")]
     public string Title { get; set; } = string.Empty;
 }
-

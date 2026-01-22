@@ -1,13 +1,13 @@
-﻿
+
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{7D29AD96-F2A1-4027-A46B-1EF499EE0756}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventModelingToolkit.Converter", "src\EventModelingToolkit.Converter\EventModelingToolkit.Converter.csproj", "{BF54D012-068F-453D-A2D2-5711EBE0DBB3}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InformationFlowToolkit.Converter", "src\InformationFlowToolkit.Converter\InformationFlowToolkit.Converter.csproj", "{BF54D012-068F-453D-A2D2-5711EBE0DBB3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EventModelAnalyzer", "src\EventModelAnalyzer\EventModelAnalyzer.csproj", "{51A0FB6A-62CA-419F-9EC4-62B19A3A6029}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InformationFlowToolingCli", "src\InformationFlowToolingCli\InformationFlowToolingCli.csproj", "{51A0FB6A-62CA-419F-9EC4-62B19A3A6029}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
