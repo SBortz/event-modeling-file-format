@@ -4,8 +4,24 @@ import type { Plugin, ViteDevServer } from 'vite';
 import type { InformationFlowModel } from './server/types.js';
 import type { ServerResponse } from 'node:http';
 
+const MIME_TYPES: Record<string, string> = {
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.gif': 'image/gif',
+  '.svg': 'image/svg+xml',
+  '.webp': 'image/webp',
+  '.pdf': 'application/pdf',
+  '.json': 'application/json',
+  '.xml': 'application/xml',
+  '.txt': 'text/plain',
+  '.md': 'text/plain',
+  '.csv': 'text/csv',
+};
+
 export function ifLivePlugin(): Plugin {
   let filePath: string | null = null;
+  let fileDir: string = process.cwd();
   let currentModel: InformationFlowModel | null = null;
   let currentError: string | null = null;
   let watcher: fs.FSWatcher | null = null;
@@ -54,6 +70,8 @@ export function ifLivePlugin(): Plugin {
         return;
       }
 
+      fileDir = path.dirname(filePath);
+
       // Initial load
       loadModel();
 
@@ -86,6 +104,30 @@ export function ifLivePlugin(): Plugin {
             error: currentError,
             watchedFile: filePath ? path.basename(filePath) : null,
           }));
+          return;
+        }
+
+        if (req.url?.startsWith('/attachments/')) {
+          const relativePath = decodeURIComponent(req.url.slice('/attachments/'.length));
+          const absolutePath = path.resolve(fileDir, relativePath);
+
+          // Prevent directory traversal
+          if (!absolutePath.startsWith(fileDir)) {
+            res.writeHead(403);
+            res.end('Forbidden');
+            return;
+          }
+
+          try {
+            const content = fs.readFileSync(absolutePath);
+            const ext = path.extname(absolutePath).toLowerCase();
+            const mimeType = MIME_TYPES[ext] || 'application/octet-stream';
+            res.writeHead(200, { 'Content-Type': mimeType });
+            res.end(content);
+          } catch {
+            res.writeHead(404);
+            res.end('Not found');
+          }
           return;
         }
 

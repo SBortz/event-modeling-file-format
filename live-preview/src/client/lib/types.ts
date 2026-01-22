@@ -25,6 +25,14 @@ export interface StateViewScenario {
   then?: unknown;
 }
 
+export interface Attachment {
+  type: 'image' | 'link' | 'note' | 'file';
+  label: string;
+  path?: string;
+  url?: string;
+  content?: string;
+}
+
 export interface Event {
   type: 'event';
   name: string;
@@ -41,6 +49,7 @@ export interface StateView {
   sourcedFrom: string[];
   example?: unknown;
   scenarios?: StateViewScenario[];
+  attachments?: Attachment[];
 }
 
 export interface Actor {
@@ -57,6 +66,7 @@ export interface Command {
   tick: number;
   example?: unknown;
   scenarios?: CommandScenario[];
+  attachments?: Attachment[];
 }
 
 export type TimelineElement = Event | StateView | Actor | Command;

@@ -115,6 +115,10 @@
             "fails": "TooManyItemsInCartException: Can only add 3 items to cart"
           }
         }
+      ],
+      "attachments": [
+        { "type": "note", "label": "Business Rule", "content": "A cart can hold a maximum of 3 items. This limit is enforced at the command level." },
+        { "type": "link", "label": "Cart API Documentation", "url": "https://example.com/api/cart" }
       ]
     },
     {

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { modelStore } from '../../stores/model.svelte';
-  import type { StateView, Command, Event, Actor } from '../../lib/types';
+  import type { StateView, Command, Event, Actor, Attachment } from '../../lib/types';
   import { isState, isCommand } from '../../lib/types';
   import JsonDisplay from '../shared/JsonDisplay.svelte';
   import Scenario from '../shared/Scenario.svelte';
@@ -117,6 +117,40 @@
             {/if}
           {/if}
         </div>
+
+        {#if slice.attachments && slice.attachments.length > 0}
+          <div class="attachments">
+            <h3>Attachments ({slice.attachments.length})</h3>
+            <div class="attachment-list">
+              {#each slice.attachments as attachment}
+                <div class="attachment-item {attachment.type}">
+                  {#if attachment.type === 'image' && attachment.path}
+                    <figure>
+                      <img src="/attachments/{attachment.path}" alt={attachment.label} />
+                      <figcaption>{attachment.label}</figcaption>
+                    </figure>
+                  {:else if attachment.type === 'link' && attachment.url}
+                    <a href={attachment.url} target="_blank" rel="noopener noreferrer">
+                      <span class="attachment-icon">🔗</span>
+                      {attachment.label}
+                    </a>
+                  {:else if attachment.type === 'note' && attachment.content}
+                    <div class="attachment-note">
+                      <span class="attachment-label">{attachment.label}</span>
+                      <p>{attachment.content}</p>
+                    </div>
+                  {:else if attachment.type === 'file' && attachment.path}
+                    <a href="/attachments/{attachment.path}" target="_blank" rel="noopener noreferrer" class="attachment-file">
+                      <span class="attachment-icon">📄</span>
+                      {attachment.label}
+                      <span class="attachment-path">{attachment.path}</span>
+                    </a>
+                  {/if}
+                </div>
+              {/each}
+            </div>
+          </div>
+        {/if}
 
         {#if isState(slice) && slice.scenarios && slice.scenarios.length > 0}
           <div class="scenarios">
@@ -247,6 +281,87 @@
     color: var(--text-secondary);
     opacity: 0.6;
     font-size: 0.8rem;
+  }
+
+  .attachments {
+    grid-column: 1 / -1;
+    border-top: 1px solid var(--border);
+    padding-top: 1.5rem;
+  }
+
+  .attachments h3 {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    margin-bottom: 1rem;
+  }
+
+  .attachment-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .attachment-item.image figure {
+    margin: 0;
+  }
+
+  .attachment-item.image img {
+    max-width: 100%;
+    border-radius: 0.5rem;
+    border: 1px solid var(--border);
+  }
+
+  .attachment-item.image figcaption {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-top: 0.25rem;
+  }
+
+  .attachment-item.link a,
+  .attachment-item.file a {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--color-link, #5b9fd4);
+    text-decoration: none;
+    font-size: 0.875rem;
+    padding: 0.5rem 0.75rem;
+    background: var(--bg-secondary);
+    border-radius: 0.375rem;
+    border: 1px solid var(--border);
+  }
+
+  .attachment-item.link a:hover,
+  .attachment-item.file a:hover {
+    border-color: var(--color-link, #5b9fd4);
+  }
+
+  .attachment-path {
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    font-family: var(--font-mono);
+    margin-left: auto;
+  }
+
+  .attachment-note {
+    padding: 0.5rem 0.75rem;
+    background: var(--bg-secondary);
+    border-radius: 0.375rem;
+    border: 1px solid var(--border);
+  }
+
+  .attachment-note .attachment-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .attachment-note p {
+    margin: 0.25rem 0 0;
+    font-size: 0.875rem;
+    color: var(--text-primary);
   }
 
   .scenarios {
