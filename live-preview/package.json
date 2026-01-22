@@ -9,8 +9,7 @@
   "type": "module",
   "scripts": {
     "build": "vite build && tsc -p tsconfig.server.json",
-    "dev": "concurrently \"npm run dev:client\" \"npm run dev:server\"",
-    "dev:client": "vite --port 5173",
+    "dev": "sh -c 'IF_FILE=\"$1\" vite --port 5173' --",
     "dev:server": "tsx watch src/server/index.ts",
     "start": "node dist/server/index.js",
     "check": "svelte-check --tsconfig ./tsconfig.json"
@@ -29,8 +28,7 @@
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^6.2.4",
     "@types/node": "^22.10.0",
-    "concurrently": "^9.2.1",
-    "svelte": "^5.48.0",
+"svelte": "^5.48.0",
     "svelte-check": "^4.3.5",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2",
