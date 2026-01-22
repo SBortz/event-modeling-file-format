@@ -27,9 +27,6 @@
     padding: 1rem 2rem;
     background: var(--bg-secondary);
     border-bottom: 1px solid var(--border);
-    position: sticky;
-    top: 0;
-    z-index: 100;
   }
 
   .header-left {

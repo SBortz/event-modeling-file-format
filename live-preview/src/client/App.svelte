@@ -7,8 +7,10 @@
   import TableView from './components/views/TableView.svelte';
 </script>
 
-<Header />
-<Navigation />
+<div class="sticky-header">
+  <Header />
+  <Navigation />
+</div>
 
 <main>
   {#if modelStore.error && !modelStore.model}
@@ -36,6 +38,12 @@
 </main>
 
 <style>
+  .sticky-header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
   main {
     min-height: calc(100vh - 120px);
   }

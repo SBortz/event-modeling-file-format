@@ -122,9 +122,7 @@
     pointer-events: none;
     z-index: 2;
     background-image:
-      /* Hatching for all 3 lanes */
-      repeating-linear-gradient(-45deg, transparent, transparent 3px, rgba(107,114,128,0.18) 3px, rgba(107,114,128,0.18) 4px),
-      repeating-linear-gradient(-45deg, transparent, transparent 3px, rgba(107,114,128,0.18) 3px, rgba(107,114,128,0.18) 4px),
+      /* Hatching for middle lane only */
       repeating-linear-gradient(-45deg, transparent, transparent 3px, rgba(107,114,128,0.18) 3px, rgba(107,114,128,0.18) 4px),
       /* Tint for all 3 lanes */
       linear-gradient(rgba(107,114,128,0.05), rgba(107,114,128,0.05)),
@@ -136,11 +134,11 @@
       linear-gradient(rgba(107,114,128,0.4), rgba(107,114,128,0.4)),
       linear-gradient(rgba(107,114,128,0.4), rgba(107,114,128,0.4));
     background-position:
-      26px 0, 58px 0, 90px 0,
+      58px 0,
       26px 0, 58px 0, 90px 0,
       24px 0, 56px 0, 88px 0, 120px 0;
     background-size:
-      30px 100%, 30px 100%, 30px 100%,
+      30px 100%,
       30px 100%, 30px 100%, 30px 100%,
       2px 100%, 2px 100%, 2px 100%, 2px 100%;
     background-repeat: no-repeat;

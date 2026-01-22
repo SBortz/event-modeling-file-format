@@ -38,33 +38,33 @@
 <style>
   .tabs {
     display: flex;
-    gap: 0.5rem;
-    padding: 1rem 2rem;
-    background: var(--bg-secondary);
+    align-items: stretch;
+    padding: 0 2rem;
+    background: var(--bg-card);
     border-bottom: 1px solid var(--border);
   }
 
   .tab {
-    padding: 0.5rem 1rem;
+    padding: 0.75rem 1.25rem;
     background: transparent;
-    border: 1px solid var(--border);
-    border-radius: 0.5rem;
+    border: none;
+    border-bottom: 2px solid transparent;
     color: var(--text-secondary);
     cursor: pointer;
     font-size: 0.875rem;
-    transition: all 0.2s;
+    font-weight: 500;
     font-family: inherit;
+    transition: color 0.15s, border-color 0.15s;
+    margin-bottom: -1px;
   }
 
   .tab:hover {
-    background: var(--bg-card);
     color: var(--text-primary);
   }
 
   .tab.active {
-    background: var(--color-command);
-    border-color: var(--color-command);
-    color: var(--bg-primary);
+    color: var(--color-command);
+    border-bottom-color: var(--color-command);
   }
 
   .toggle-expand {
@@ -72,14 +72,15 @@
     align-items: center;
     gap: 0.5rem;
     margin-left: auto;
-    padding: 0.4rem 0.75rem;
-    background: var(--bg-card);
+    align-self: center;
+    padding: 0.35rem 0.7rem;
+    background: transparent;
     border: 1px solid var(--border);
-    border-radius: 0.5rem;
+    border-radius: 0.375rem;
     cursor: pointer;
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     color: var(--text-secondary);
-    transition: all 0.2s;
+    transition: all 0.15s;
   }
 
   .toggle-expand:hover {
