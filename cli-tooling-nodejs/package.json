@@ -1,6 +1,6 @@
 {
   "name": "information-flow-tooling",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "description": "CLI tool for analyzing and visualizing Information Flow models",
   "main": "dist/index.js",
   "bin": {
@@ -30,11 +30,11 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/sebastianbortz/event-modeling-file-format.git"
+    "url": "git+https://github.com/SBortz/information-flow-tooling.git"
   },
-  "homepage": "https://github.com/sebastianbortz/event-modeling-file-format#readme",
+  "homepage": "https://github.com/SBortz/information-flow-tooling#readme",
   "bugs": {
-    "url": "https://github.com/sebastianbortz/event-modeling-file-format/issues"
+    "url": "https://github.com/SBortz/information-flow-tooling/issues"
   },
   "engines": {
     "node": ">=18.0.0"
