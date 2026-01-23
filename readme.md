@@ -142,7 +142,53 @@ There are still some challenges to be solved. I will write more about them soon.
 
 ---
 
-## 5. Giraflow CLI
+## 5. Giraflow Web
+
+A lightweight dev server that watches `.informationflow.json` files and provides a live-updating browser preview.
+
+### Features
+
+- **Live Reload** – Browser refreshes automatically on file changes
+- **Three Views** – Info, Timeline, Slices & Scenarios
+- **Expand All** – Toggle to show/hide JSON data and details
+- **Scenario Display** – Given-When-Then scenarios for Commands and State Views
+
+### Quick Start
+
+```bash
+cd giraflow
+npm install
+npm run build
+npm start ../examples/shopping.informationflow.json --open
+```
+
+The browser opens at `http://localhost:3000`.
+
+### Views
+
+#### Info
+
+Consolidated overview showing model name, description, and tables for all element types (Events, State Views, Commands, Actors) with their relationships.
+
+![Info View](docs/images/web-consolidated.png)
+
+#### Timeline
+
+Swimlane-style timeline with color-coded symbols. Events, Commands, State Views, and Actors are arranged chronologically along a vertical axis.
+
+![Timeline View](docs/images/web-timeline.png)
+
+#### Slices & Scenarios
+
+Expandable cards for Commands and State Views. Each card shows JSON examples, relationships (sourced from, read by), and Given-When-Then scenarios when expanded.
+
+![Slices & Scenarios](docs/images/web-slices.png)
+
+![Expanded Slice with Scenario](docs/images/web-slice-expanded.png)
+
+---
+
+## 6. Giraflow CLI
 
 The **Giraflow CLI** (`giraflow-cli`) is a CLI tool to visualize `.informationflow.json` files.
 
@@ -154,7 +200,7 @@ Both provide identical functionality and output.
 
 ---
 
-### 5.1 Node.js / TypeScript CLI
+### 6.1 Node.js / TypeScript CLI
 
 #### Installation
 
@@ -197,7 +243,7 @@ node dist/index.js model.informationflow.json -v timeline -e -o output.txt
 
 ---
 
-### 5.2 .NET CLI
+### 6.2 .NET CLI
 
 #### Installation
 
@@ -293,7 +339,7 @@ dotnet run --project InformationFlowToolingCli -- model.informationflow.json -s 
 
 ---
 
-## 6. Information Flow Toolkit Converter
+## 7. Information Flow Toolkit Converter
 
 The **IFT Converter** converts other Information Flow formats into the `.informationflow.json` format.
 
