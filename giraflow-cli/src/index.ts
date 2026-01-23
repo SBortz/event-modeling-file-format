@@ -13,8 +13,8 @@ import { colors, rule } from './views/colors.js';
 
 // CLI setup
 program
-  .name('ift')
-  .description('Information Flow Tooling CLI - Analyze and visualize Information Flow models')
+  .name('giraflow-cli')
+  .description('Giraflow CLI - Analyze and visualize Information Flow models')
   .version('1.0.0')
   .argument('<file>', 'Path to the .informationflow.json file to parse')
   .option('-v, --view <mode>', 'Display mode: timeline, slice, or table')
@@ -30,9 +30,9 @@ ${colors.dim('View Modes:')}
   ${colors.cyan('table')}     Tabular overview with data flow tree
 
 ${colors.dim('Examples:')}
-  ${colors.white('ift')} ${colors.cyan('my-model.informationflow.json')}
-  ${colors.white('ift')} ${colors.cyan('my-model.informationflow.json')} ${colors.green('--view table')}
-  ${colors.white('ift')} ${colors.cyan('my-model.informationflow.json')} ${colors.green('-v slice -s schema.json')}
+  ${colors.white('giraflow-cli')} ${colors.cyan('my-model.informationflow.json')}
+  ${colors.white('giraflow-cli')} ${colors.cyan('my-model.informationflow.json')} ${colors.green('--view table')}
+  ${colors.white('giraflow-cli')} ${colors.cyan('my-model.informationflow.json')} ${colors.green('-v slice -s schema.json')}
 
 ${colors.dim('Symbol Legend:')}
   ${colors.event('● Event')}   ${colors.state('◆ State View')}   ${colors.command('▶ Command')}   ${colors.actor('○ Actor')}
