@@ -32,7 +32,7 @@ async function runCreateWizard(outputArg?: string): Promise<void> {
   let addMore = true;
 
   while (addMore) {
-    const element = await promptElement(tick);
+    const element = await promptElement(tick, timeline);
     timeline.push(element);
     tick += 10;
 
@@ -68,7 +68,7 @@ async function runCreateWizard(outputArg?: string): Promise<void> {
   console.log(`\n${colors.green.bold('✓ Saved:')} ${outputPath}`);
 }
 
-async function promptElement(tick: number): Promise<TimelineElement> {
+async function promptElement(tick: number, timeline: TimelineElement[]): Promise<TimelineElement> {
   const type = await select({
     message: 'Element type:',
     choices: [
@@ -120,7 +120,11 @@ async function promptElement(tick: number): Promise<TimelineElement> {
       return el;
     }
     case 'actor': {
-      const readsView = await input({ message: 'readsView (state view name, optional):' });
+      const lastState = [...timeline].reverse().find((el) => el.type === 'state');
+      const readsView = await input({
+        message: 'readsView (state view name, optional):',
+        ...(lastState && { default: lastState.name }),
+      });
       const sendsCommand = await input({ message: 'sendsCommand (command name, optional):' });
       const el: TimelineElement = {
         type: 'actor',
