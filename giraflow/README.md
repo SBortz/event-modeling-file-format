@@ -1,6 +1,6 @@
 # Information Flow Live Preview
 
-A lightweight web server that watches `.if` (Information Flow) files and provides an automatically updating HTML preview.
+A lightweight web server that watches `.giraflow.json` (Information Flow) files and provides an automatically updating HTML preview.
 
 ## Features
 
@@ -15,7 +15,7 @@ A lightweight web server that watches `.if` (Information Flow) files and provide
 cd live-preview
 npm install
 npm run build
-npm start ../examples/todo-app.if --open
+npm start ../example-giraflows/todo-app.giraflow.json --open
 ```
 
 The browser will automatically open at `http://localhost:3000`.
@@ -32,13 +32,13 @@ The browser will automatically open at `http://localhost:3000`.
 
 ```bash
 # With automatic browser start
-npm start ../examples/todo-app.if --open
+npm start ../example-giraflows/todo-app.giraflow.json --open
 
 # On port 8080
-npm start model.if --port 8080
+npm start model.giraflow.json --port 8080
 
 # Development mode (no build required)
-npm run dev -- ../examples/todo-app.if -o
+npm run dev -- ../example-giraflows/todo-app.giraflow.json -o
 ```
 
 ---
@@ -103,7 +103,7 @@ A compact table view with all elements:
 
 ### Live Reload
 
-The tool watches the specified `.if` file. On every change, the browser automatically refreshes – ideal for iterative development of Information Flow models.
+The tool watches the specified `.giraflow.json` file. On every change, the browser automatically refreshes – ideal for iterative development of Information Flow models.
 
 ---
 
@@ -126,7 +126,7 @@ live-preview/
 
 ### How It Works
 
-1. **File Watcher**: Watches the `.if` file using `fs.watch`
+1. **File Watcher**: Watches the `.giraflow.json` file using `fs.watch`
 2. **HTTP Server**: Serves the rendered HTML
 3. **Server-Sent Events (SSE)**: Sends reload notifications to the browser
 4. **Hot Reload**: Browser automatically refreshes on changes
@@ -135,7 +135,7 @@ live-preview/
 
 ```bash
 # Development mode with tsx (no build required)
-npm run dev -- ../examples/todo-app.if -o
+npm run dev -- ../example-giraflows/todo-app.giraflow.json -o
 
 # Production build
 npm run build

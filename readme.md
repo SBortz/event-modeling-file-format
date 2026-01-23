@@ -50,17 +50,14 @@ A minimal information flow model showing the core flow: **Event → StateView �
 {
   "$schema": "./information-flow.schema.json",
   "name": "Simple Order Flow",
+  "description": "Minimal example showing the core cycle: Event → State → Actor → Command → Event",
   "version": "1.0.0",
   "timeline": [
     {
       "type": "event",
       "name": "OrderPlaced",
       "tick": 10,
-      "example": {
-        "orderId": "ord-123",
-        "customerId": "cust-456",
-        "amount": 99.99
-      }
+      "example": { "orderId": "ord-123", "customerId": "cust-456", "amount": 99.99 }
     },
     {
       "type": "state",
@@ -68,9 +65,7 @@ A minimal information flow model showing the core flow: **Event → StateView �
       "tick": 20,
       "sourcedFrom": ["OrderPlaced", "OrderShipped"],
       "example": {
-        "orders": [
-          { "orderId": "ord-123", "status": "pending", "amount": 99.99 }
-        ]
+        "orders": [{ "orderId": "ord-123", "status": "pending", "amount": 99.99 }]
       }
     },
     {
@@ -84,22 +79,14 @@ A minimal information flow model showing the core flow: **Event → StateView �
       "type": "command",
       "name": "ShipOrder",
       "tick": 40,
-      "example": {
-        "orderId": "ord-123",
-        "trackingNumber": "DHL-789",
-        "carrier": "DHL"
-      }
+      "example": { "orderId": "ord-123", "trackingNumber": "DHL-789", "carrier": "DHL" }
     },
     {
       "type": "event",
       "name": "OrderShipped",
       "tick": 50,
       "producedBy": "ShipOrder-40",
-      "example": {
-        "orderId": "ord-123",
-        "trackingNumber": "DHL-789",
-        "shippedAt": "2024-01-15T14:30:00Z"
-      }
+      "example": { "orderId": "ord-123", "trackingNumber": "DHL-789", "shippedAt": "2024-01-15T14:30:00Z" }
     }
   ]
 }
@@ -120,10 +107,11 @@ The `tick` determines position on the timeline. Elements display in ascending or
 
 ### Example Files
 
-See the `examples/` folder for example models:
-- `order-system.informationflow.json` - E-commerce order flow
-- `library-management.informationflow.json` - Library with loans, reservations, reminders
-- `todo-app.informationflow.json` - Simple todo application
+See the `example-giraflows/` folder for example models:
+- `order-system.giraflow.json` - E-commerce order flow with scenarios
+- `shopping.giraflow.json` - Shopping cart with inventory and archiving
+- `todo-app.giraflow.json` - Simple todo application
+- `library-management.giraflow.json` - Library with loans, reservations, reminders
 
 ---
 
@@ -144,7 +132,7 @@ There are still some challenges to be solved. I will write more about them soon.
 
 ## 5. Giraflow Web
 
-A lightweight dev server that watches `.informationflow.json` files and provides a live-updating browser preview.
+A lightweight dev server that watches `.giraflow.json` files and provides a live-updating browser preview.
 
 ### Features
 
@@ -159,7 +147,7 @@ A lightweight dev server that watches `.informationflow.json` files and provides
 cd giraflow
 npm install
 npm run build
-npm start ../examples/shopping.informationflow.json --open
+npm start ../example-giraflows/shopping.giraflow.json --open
 ```
 
 The browser opens at `http://localhost:3000`.
@@ -190,7 +178,7 @@ Expandable cards for Commands and State Views. Each card shows JSON examples, re
 
 ## 6. Giraflow CLI
 
-The **Giraflow CLI** (`giraflow-cli`) is a Node.js/TypeScript CLI tool to visualize `.informationflow.json` files in the terminal. Requires Node.js 18+.
+The **Giraflow CLI** (`giraflow-cli`) is a Node.js/TypeScript CLI tool to visualize `.giraflow.json` files in the terminal. Requires Node.js 18+.
 
 ### Installation
 
@@ -216,19 +204,19 @@ giraflow-cli <file> [options]
 
 ```bash
 # Interactive mode - prompts for view selection
-node dist/index.js model.informationflow.json
+node dist/index.js model.giraflow.json
 
 # Timeline view with example data
-node dist/index.js model.informationflow.json -v timeline -e
+node dist/index.js model.giraflow.json -v timeline -e
 
 # Table view for documentation
-node dist/index.js model.informationflow.json -v table
+node dist/index.js model.giraflow.json -v table
 
 # Validate against schema first
-node dist/index.js model.informationflow.json -s information-flow.schema.json -v slice
+node dist/index.js model.giraflow.json -s information-flow.schema.json -v slice
 
 # Export to file
-node dist/index.js model.informationflow.json -v timeline -e -o output.txt
+node dist/index.js model.giraflow.json -v timeline -e -o output.txt
 ```
 
 ### Options
