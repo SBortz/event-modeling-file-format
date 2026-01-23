@@ -1,6 +1,6 @@
 {
   "name": "giraflow-cli",
-  "version": "0.0.1",
+  "version": "0.0.3",
   "description": "Giraflow CLI – analyze and visualize Information Flow models in the terminal",
   "main": "dist/index.js",
   "bin": {
