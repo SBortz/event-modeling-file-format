@@ -1,5 +1,5 @@
 {
-  "$schema": "../information-flow.schema.json",
+  "$schema": "../giraflow.schema.json",
   "name": "New Todo List Application",
   "description": "A todo application with use cases: add todos, check off and view overview",
   "version": "1.0.0",

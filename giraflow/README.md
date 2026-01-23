@@ -66,7 +66,7 @@ Consolidated tabular overview of all elements grouped by type.
 
 ## File Format
 
-Models are JSON files following the [Giraflow JSON Schema](https://github.com/SBortz/giraflow/blob/main/information-flow.schema.json). A minimal example:
+Models are JSON files following the [Giraflow JSON Schema](https://github.com/SBortz/giraflow/blob/main/giraflow.schema.json). A minimal example:
 
 ```json
 {
@@ -85,5 +85,5 @@ See more in the [examples directory](https://github.com/SBortz/giraflow/tree/mai
 ## Links
 
 - [GitHub](https://github.com/SBortz/giraflow)
-- [JSON Schema](https://github.com/SBortz/giraflow/blob/main/information-flow.schema.json)
+- [JSON Schema](https://github.com/SBortz/giraflow/blob/main/giraflow.schema.json)
 - [Examples](https://github.com/SBortz/giraflow/tree/main/example-giraflows)

@@ -113,5 +113,5 @@ Tabular overview per element type with data flow tree.
 ## Links
 
 - [GitHub](https://github.com/SBortz/giraflow)
-- [JSON Schema](https://github.com/SBortz/giraflow/blob/main/information-flow.schema.json)
+- [JSON Schema](https://github.com/SBortz/giraflow/blob/main/giraflow.schema.json)
 - [Examples](https://github.com/SBortz/giraflow/tree/main/example-giraflows)

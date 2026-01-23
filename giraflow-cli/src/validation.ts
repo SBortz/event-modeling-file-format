@@ -12,7 +12,7 @@ import { colors } from './views/colors.js';
 export function getBundledSchemaPath(): string | null {
   const __filename = fileURLToPath(import.meta.url);
   const __dirname = dirname(__filename);
-  const schemaPath = join(__dirname, 'information-flow.schema.json');
+  const schemaPath = join(__dirname, 'giraflow.schema.json');
   return existsSync(schemaPath) ? schemaPath : null;
 }
 

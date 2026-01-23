@@ -1,5 +1,5 @@
 {
-  "$schema": "../information-flow.schema.json",
+  "$schema": "../giraflow.schema.json",
   "name": "Order Management System",
   "description": "A simple order system demonstrating the Information Flow format",
   "version": "1.0.0",

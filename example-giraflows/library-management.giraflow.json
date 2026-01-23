@@ -1,5 +1,5 @@
 {
-  "$schema": "../information-flow.schema.json",
+  "$schema": "../giraflow.schema.json",
   "name": "Library Management System",
   "description": "A library management system with borrowing, returns, reservations and automatic reminders",
   "version": "1.0.0",

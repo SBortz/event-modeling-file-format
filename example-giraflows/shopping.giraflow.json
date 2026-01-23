@@ -1,5 +1,5 @@
 {
-  "$schema": "./information-flow.schema.json",
+  "$schema": "./giraflow.schema.json",
   "name": "Shopping Cart",
   "description": "An event-sourced shopping cart system using the decider pattern. Customers can add items to their cart, submit for checkout (with inventory validation), and carts are published to an external system via Kafka. External price changes trigger automatic archival of affected items.",
   "version": "1.0.0",

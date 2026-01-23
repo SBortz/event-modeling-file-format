@@ -48,7 +48,7 @@ A minimal information flow model showing the core flow: **Event → StateView �
 
 ```json
 {
-  "$schema": "./information-flow.schema.json",
+  "$schema": "./giraflow.schema.json",
   "name": "Simple Order Flow",
   "description": "Minimal example showing the core cycle: Event → State → Actor → Command → Event",
   "version": "1.0.0",
@@ -213,7 +213,7 @@ node dist/index.js model.giraflow.json -v timeline -e
 node dist/index.js model.giraflow.json -v table
 
 # Validate against schema first
-node dist/index.js model.giraflow.json -s information-flow.schema.json -v slice
+node dist/index.js model.giraflow.json -s giraflow.schema.json -v slice
 
 # Export to file
 node dist/index.js model.giraflow.json -v timeline -e -o output.txt
