@@ -1,8 +1,8 @@
 # Giraflow
 
-A human-readable JSON format for describing event-driven systems using [Event Modeling](https://eventmodeling.org/) methodology. It provides a very simple cli tooling to visualise and analyze a model.
+A human-readable JSON format for describing event-driven systems using [Event Modeling](https://eventmodeling.org/) methodology – with a live-reloading web preview and a terminal CLI to visualize and analyze models.
 
-![Timeline View](docs/images/timeline-view.png)
+![Timeline View](docs/images/web-timeline.png)
 
 ---
 
@@ -190,19 +190,9 @@ Expandable cards for Commands and State Views. Each card shows JSON examples, re
 
 ## 6. Giraflow CLI
 
-The **Giraflow CLI** (`giraflow-cli`) is a CLI tool to visualize `.informationflow.json` files.
+The **Giraflow CLI** (`giraflow-cli`) is a Node.js/TypeScript CLI tool to visualize `.informationflow.json` files in the terminal. Requires Node.js 18+.
 
-Two implementations are available:
-- **.NET** - Full-featured, requires .NET 10 SDK
-- **Node.js/TypeScript** - Cross-platform, requires Node.js 18+
-
-Both provide identical functionality and output.
-
----
-
-### 6.1 Node.js / TypeScript CLI
-
-#### Installation
+### Installation
 
 ```bash
 cd giraflow-cli
@@ -210,7 +200,7 @@ npm install
 npm run build
 ```
 
-#### Usage
+### Usage
 
 ```bash
 node dist/index.js <file> [options]
@@ -222,7 +212,7 @@ npm link
 giraflow-cli <file> [options]
 ```
 
-#### Examples
+### Examples
 
 ```bash
 # Interactive mode - prompts for view selection
@@ -241,45 +231,7 @@ node dist/index.js model.informationflow.json -s information-flow.schema.json -v
 node dist/index.js model.informationflow.json -v timeline -e -o output.txt
 ```
 
----
-
-### 6.2 .NET CLI
-
-#### Installation
-
-```bash
-cd dotnet-cli-tooling
-dotnet build
-```
-
-#### Usage
-
-```bash
-dotnet run --project InformationFlowToolingCli -- <file> [options]
-```
-
-#### Examples
-
-```bash
-# Interactive mode - prompts for view selection
-dotnet run --project InformationFlowToolingCli -- model.informationflow.json
-
-# Timeline view with example data
-dotnet run --project InformationFlowToolingCli -- model.informationflow.json -v timeline -e
-
-# Table view for documentation
-dotnet run --project InformationFlowToolingCli -- model.informationflow.json -v table
-
-# Export to file (header excluded from file)
-dotnet run --project InformationFlowToolingCli -- model.informationflow.json -v timeline -e -o output.txt
-
-# Validate against schema first
-dotnet run --project InformationFlowToolingCli -- model.informationflow.json -s information-flow.schema.json -v timeline
-```
-
----
-
-### CLI Options (both versions)
+### Options
 
 | Option | Description |
 |--------|-------------|
@@ -337,47 +289,3 @@ dotnet run --project InformationFlowToolingCli -- model.informationflow.json -s 
 
 ![Table View](docs/images/table-view.png)
 
----
-
-## 7. Information Flow Toolkit Converter
-
-The **IFT Converter** converts other Information Flow formats into the `.informationflow.json` format.
-
-### Supported Formats
-
-- **Event Modeling Toolkit** - Export from the Event Modeling toolkit available on miro
-
-### Usage
-
-```bash
-dotnet run --project InformationFlowToolkit.Converter -- <input-file> [options]
-```
-
-### Options
-
-| Option | Description |
-|--------|-------------|
-| `-i, --input <file>` | Input file path |
-| `-o, --output <file>` | Output file (default: `<input>.informationflow.json`) |
-| `-n, --name <name>` | Model name (default: filename) |
-| `-q, --quiet` | Suppress conversion report |
-| `-h, --help` | Show help |
-
-### Examples
-
-```bash
-# Basic conversion
-dotnet run --project src/InformationFlowToolkit.Converter -- dilger-export.json
-
-# With custom output and name
-dotnet run --project src/InformationFlowToolkit.Converter -- dilger-export.json -o my-model.informationflow.json -n "My System"
-```
-
-### Conversion Report
-
-The converter outputs a detailed report showing:
-- Number of converted elements (Events, Commands, StateViews, Actors)
-- Skipped elements (Screens, Processors)
-- Warnings about elements that couldn't be fully converted
-
----
