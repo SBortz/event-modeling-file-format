@@ -1,17 +1,17 @@
-# Information Flow Tooling CLI
+# Giraflow CLI
 
 CLI tool for visualizing and analyzing Information Flow models (`.informationflow.json`).
 
 ## Installation
 
 ```bash
-npm install -g information-flow-tooling
+npm install -g giraflow-cli
 ```
 
 ## Usage
 
 ```bash
-ift <file> [options]
+giraflow-cli <file> [options]
 ```
 
 ### Options
@@ -27,16 +27,16 @@ ift <file> [options]
 
 ```bash
 # Interactive mode
-ift model.informationflow.json
+giraflow-cli model.informationflow.json
 
 # Slice view with scenarios
-ift model.informationflow.json -v slice
+giraflow-cli model.informationflow.json -v slice
 
 # Timeline with example data
-ift model.informationflow.json -v timeline -e
+giraflow-cli model.informationflow.json -v timeline -e
 
 # Table view for documentation
-ift model.informationflow.json -v table
+giraflow-cli model.informationflow.json -v table
 ```
 
 ## Views
@@ -47,6 +47,6 @@ ift model.informationflow.json -v table
 
 ## Links
 
-- [GitHub](https://github.com/SBortz/information-flow-tooling)
-- [JSON Schema](https://github.com/SBortz/information-flow-tooling/blob/main/information-flow.schema.json)
-- [Examples](https://github.com/SBortz/information-flow-tooling/tree/main/examples)
+- [GitHub](https://github.com/SBortz/giraflow)
+- [JSON Schema](https://github.com/SBortz/giraflow/blob/main/information-flow.schema.json)
+- [Examples](https://github.com/SBortz/giraflow/tree/main/examples)

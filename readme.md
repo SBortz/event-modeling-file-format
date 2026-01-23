@@ -142,9 +142,9 @@ There are still some challenges to be solved. I will write more about them soon.
 
 ---
 
-## 4. Information Flow Tooling CLI
+## 4. Giraflow CLI
 
-The **Information Flow Tooling CLI** (`ift`) is a CLI tool to visualize `.informationflow.json` files.
+The **Giraflow CLI** (`giraflow-cli`) is a CLI tool to visualize `.informationflow.json` files.
 
 Two implementations are available:
 - **.NET** - Full-featured, requires .NET 10 SDK
@@ -173,7 +173,7 @@ node dist/index.js <file> [options]
 Or link globally:
 ```bash
 npm link
-ift <file> [options]
+giraflow-cli <file> [options]
 ```
 
 #### Examples
