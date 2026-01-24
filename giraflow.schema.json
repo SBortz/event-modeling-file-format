@@ -37,6 +37,16 @@
           { "$ref": "#/$defs/Command" }
         ]
       }
+    },
+    "specifications": {
+      "type": "array",
+      "description": "Specifications for commands and state views, grouping scenarios by element name",
+      "items": {
+        "oneOf": [
+          { "$ref": "#/$defs/CommandSpecification" },
+          { "$ref": "#/$defs/StateSpecification" }
+        ]
+      }
     }
   },
 
@@ -208,11 +218,6 @@
         "example": {
           "description": "Example state of the view"
         },
-        "scenarios": {
-          "type": "array",
-          "description": "Given-Then scenarios showing how events project to different states",
-          "items": { "$ref": "#/$defs/StateViewScenario" }
-        },
         "attachments": {
           "type": "array",
           "description": "Additional information (images, links, notes, files) attached to this state view",
@@ -269,15 +274,50 @@
         "example": {
           "description": "Example payload of the command"
         },
-        "scenarios": {
-          "type": "array",
-          "description": "Given-When-Then scenarios describing different command behaviors and outcomes",
-          "items": { "$ref": "#/$defs/CommandScenario" }
-        },
         "attachments": {
           "type": "array",
           "description": "Additional information (images, links, notes, files) attached to this command",
           "items": { "$ref": "#/$defs/Attachment" }
+        }
+      }
+    },
+
+    "CommandSpecification": {
+      "type": "object",
+      "description": "A specification grouping scenarios for a command",
+      "required": ["name", "type", "scenarios"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Name of the command this specification describes"
+        },
+        "type": {
+          "const": "command"
+        },
+        "scenarios": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/CommandScenario" }
+        }
+      }
+    },
+
+    "StateSpecification": {
+      "type": "object",
+      "description": "A specification grouping scenarios for a state view",
+      "required": ["name", "type", "scenarios"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Name of the state view this specification describes"
+        },
+        "type": {
+          "const": "state"
+        },
+        "scenarios": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/StateViewScenario" }
         }
       }
     }

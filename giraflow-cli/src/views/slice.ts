@@ -12,6 +12,7 @@ import {
   isActor,
   CommandScenario,
   StateViewScenario,
+  Specification,
 } from '../models/types.js';
 import { colors, getElementStyle, box } from './colors.js';
 import { renderHeader } from './timeline.js';
@@ -66,7 +67,7 @@ export function renderSlice(model: InformationFlowModel): void {
     const slice = slices[i];
     const isLast = i === slices.length - 1;
     
-    renderSlicePanel(slice, events, actors, eventsByCommandTick, isLast, slices, i);
+    renderSlicePanel(slice, events, actors, eventsByCommandTick, isLast, slices, i, model.specifications);
   }
   
   // External events section
@@ -168,7 +169,8 @@ function renderSlicePanel(
   eventsByCommandTick: Map<string, Event[]>,
   isLast: boolean,
   slices: (StateView | Command)[],
-  index: number
+  index: number,
+  specifications?: Specification[]
 ): void {
   const { symbol, color } = getElementStyle(slice.type);
   const content: string[] = [];
@@ -204,8 +206,9 @@ function renderSlicePanel(
     }
     
     // Scenarios (Given-Then)
-    if (sv.scenarios && sv.scenarios.length > 0) {
-      scenarioLines = renderStateViewScenarios(sv.scenarios);
+    const stateSpec = specifications?.find(s => s.name === sv.name && s.type === 'state');
+    if (stateSpec && stateSpec.scenarios.length > 0) {
+      scenarioLines = renderStateViewScenarios(stateSpec.scenarios as StateViewScenario[]);
     }
   } else if (isCommand(slice)) {
     const cmd = slice as Command;
@@ -233,8 +236,9 @@ function renderSlicePanel(
     }
     
     // Scenarios (Given-When-Then)
-    if (cmd.scenarios && cmd.scenarios.length > 0) {
-      scenarioLines = renderCommandScenarios(cmd.scenarios, cmd.name);
+    const cmdSpec = specifications?.find(s => s.name === cmd.name && s.type === 'command');
+    if (cmdSpec && cmdSpec.scenarios.length > 0) {
+      scenarioLines = renderCommandScenarios(cmdSpec.scenarios as CommandScenario[], cmd.name);
     }
   }
   

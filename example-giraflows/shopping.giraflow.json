@@ -22,21 +22,7 @@
       "sourcedFrom": ["InventoryChanged"],
       "example": {
         "550e8400-e29b-41d4-a716-446655440001": 50
-      },
-      "scenarios": [
-        {
-          "name": "Track inventory for multiple products",
-          "given": [
-            { "event": "InventoryChanged", "data": { "ProductId": "product-1", "Inventory": 50 } },
-            { "event": "InventoryChanged", "data": { "ProductId": "product-2", "Inventory": 25 } },
-            { "event": "InventoryChanged", "data": { "ProductId": "product-1", "Inventory": 45 } }
-          ],
-          "then": {
-            "product-1": 45,
-            "product-2": 25
-          }
-        }
-      ]
+      }
     },
     {
       "type": "actor",
@@ -57,6 +43,255 @@
         "ItemId": "550e8400-e29b-41d4-a716-446655440020",
         "ProductId": "550e8400-e29b-41d4-a716-446655440001"
       },
+      "attachments": [
+        { "type": "note", "label": "Business Rule", "content": "A cart can hold a maximum of 3 items. This limit is enforced at the command level." },
+        { "type": "link", "label": "Cart API Documentation", "url": "https://example.com/api/cart" }
+      ]
+    },
+    {
+      "type": "event",
+      "name": "CartCreated",
+      "tick": 5,
+      "producedBy": "AddItemCommand-4",
+      "example": {
+        "CartId": "550e8400-e29b-41d4-a716-446655440010"
+      }
+    },
+    {
+      "type": "event",
+      "name": "ItemAdded",
+      "tick": 6,
+      "producedBy": "AddItemCommand-4",
+      "example": {
+        "CartId": "550e8400-e29b-41d4-a716-446655440010",
+        "Description": "Wireless Mouse",
+        "Image": "mouse.jpg",
+        "Price": 29.99,
+        "ItemId": "550e8400-e29b-41d4-a716-446655440020",
+        "ProductId": "550e8400-e29b-41d4-a716-446655440001"
+      }
+    },
+    {
+      "type": "state",
+      "name": "CartItemsStateView",
+      "tick": 7,
+      "sourcedFrom": ["CartCreated", "ItemAdded", "ItemRemoved", "ItemArchived", "CartCleared"],
+      "example": {
+        "CartId": "550e8400-e29b-41d4-a716-446655440010",
+        "TotalPrice": 29.99,
+        "CartItems": [
+          {
+            "CartId": "550e8400-e29b-41d4-a716-446655440010",
+            "Description": "Wireless Mouse",
+            "Image": "mouse.jpg",
+            "Price": 29.99,
+            "ItemId": "550e8400-e29b-41d4-a716-446655440020",
+            "ProductId": "550e8400-e29b-41d4-a716-446655440001"
+          }
+        ]
+      }
+    },
+    {
+      "type": "actor",
+      "name": "Customer",
+      "tick": 8,
+      "readsView": "CartItemsStateView",
+      "sendsCommand": "SubmitCartCommand"
+    },
+    {
+      "type": "command",
+      "name": "SubmitCartCommand",
+      "tick": 9,
+      "example": {
+        "CartId": "550e8400-e29b-41d4-a716-446655440010",
+        "OrderedProducts": [
+          { "ProductId": "550e8400-e29b-41d4-a716-446655440001", "TotalPrice": 29.99 }
+        ]
+      }
+    },
+    {
+      "type": "event",
+      "name": "CartSubmitted",
+      "tick": 10,
+      "producedBy": "SubmitCartCommand-9",
+      "example": {
+        "CartId": "550e8400-e29b-41d4-a716-446655440010",
+        "OrderedProducts": [
+          { "ProductId": "550e8400-e29b-41d4-a716-446655440001", "Price": 29.99 }
+        ],
+        "TotalPrice": 29.99
+      }
+    },
+    {
+      "type": "state",
+      "name": "SubmittedCartDataSV",
+      "tick": 11,
+      "sourcedFrom": ["CartSubmitted", "CartPublished"],
+      "example": [
+        {
+          "CartId": "550e8400-e29b-41d4-a716-446655440010",
+          "OrderedProducts": [
+            { "ProductId": "550e8400-e29b-41d4-a716-446655440001", "Price": 29.99 }
+          ],
+          "TotalPrice": 29.99
+        }
+      ]
+    },
+    {
+      "type": "actor",
+      "name": "CartPublisherProcessor",
+      "tick": 12,
+      "readsView": "SubmittedCartDataSV",
+      "sendsCommand": "PublishCartCommand"
+    },
+    {
+      "type": "command",
+      "name": "PublishCartCommand",
+      "tick": 13,
+      "example": {
+        "CartId": "550e8400-e29b-41d4-a716-446655440010",
+        "OrderedProducts": [
+          { "ProductId": "550e8400-e29b-41d4-a716-446655440001", "Price": 29.99 }
+        ],
+        "TotalPrice": 29.99
+      }
+    },
+    {
+      "type": "event",
+      "name": "CartPublished",
+      "tick": 14,
+      "producedBy": "PublishCartCommand-13",
+      "example": {
+        "CartId": "550e8400-e29b-41d4-a716-446655440010"
+      }
+    },
+    {
+      "type": "event",
+      "name": "PriceChanged",
+      "tick": 15,
+      "externalSource": "Pricing System",
+      "example": {
+        "ProductId": "550e8400-e29b-41d4-a716-446655440001",
+        "OldPrice": 29.99,
+        "NewPrice": 24.99
+      }
+    },
+    {
+      "type": "state",
+      "name": "ChangedPricesSV",
+      "tick": 16,
+      "sourcedFrom": ["PriceChanged"],
+      "example": {
+        "550e8400-e29b-41d4-a716-446655440001": {
+          "OldPrice": 29.99,
+          "NewPrice": 24.99
+        }
+      }
+    },
+    {
+      "type": "state",
+      "name": "CartsWithProductsSV",
+      "tick": 17,
+      "sourcedFrom": ["ItemAdded", "ItemRemoved", "ItemArchived", "CartCleared"],
+      "example": [
+        { "CartId": "550e8400-e29b-41d4-a716-446655440010", "ProductId": "550e8400-e29b-41d4-a716-446655440001" }
+      ]
+    },
+    {
+      "type": "actor",
+      "name": "ArchiveItemSchedulerProcessor",
+      "tick": 18,
+      "readsView": "ChangedPricesSV",
+      "sendsCommand": "ArchiveItemCommand"
+    },
+    {
+      "type": "command",
+      "name": "ArchiveItemCommand",
+      "tick": 19,
+      "example": {
+        "CartId": "550e8400-e29b-41d4-a716-446655440010",
+        "ProductId": "550e8400-e29b-41d4-a716-446655440001"
+      }
+    },
+    {
+      "type": "event",
+      "name": "ItemArchived",
+      "tick": 20,
+      "producedBy": "ArchiveItemCommand-19",
+      "example": {
+        "CartId": "550e8400-e29b-41d4-a716-446655440010",
+        "ItemId": "550e8400-e29b-41d4-a716-446655440001"
+      }
+    },
+    {
+      "type": "command",
+      "name": "RemoveItemCommand",
+      "tick": 21,
+      "example": {
+        "ItemId": "550e8400-e29b-41d4-a716-446655440020",
+        "CartId": "550e8400-e29b-41d4-a716-446655440010"
+      }
+    },
+    {
+      "type": "event",
+      "name": "ItemRemoved",
+      "tick": 22,
+      "producedBy": "RemoveItemCommand-21",
+      "example": {
+        "ItemId": "550e8400-e29b-41d4-a716-446655440020",
+        "CartId": "550e8400-e29b-41d4-a716-446655440010"
+      }
+    },
+    {
+      "type": "command",
+      "name": "CartClearedCommand",
+      "tick": 23,
+      "example": {
+        "CartId": "550e8400-e29b-41d4-a716-446655440010"
+      }
+    },
+    {
+      "type": "event",
+      "name": "CartCleared",
+      "tick": 24,
+      "producedBy": "CartClearedCommand-23",
+      "example": {
+        "CartId": "550e8400-e29b-41d4-a716-446655440010"
+      }
+    },
+    {
+      "type": "event",
+      "name": "CartPublicationFailed",
+      "tick": 25,
+      "producedBy": "PublishCartCommand-13",
+      "example": {
+        "CommandCartId": "550e8400-e29b-41d4-a716-446655440010"
+      }
+    }
+  ],
+
+  "specifications": [
+    {
+      "name": "InventoriesSV",
+      "type": "state",
+      "scenarios": [
+        {
+          "name": "Track inventory for multiple products",
+          "given": [
+            { "event": "InventoryChanged", "data": { "ProductId": "product-1", "Inventory": 50 } },
+            { "event": "InventoryChanged", "data": { "ProductId": "product-2", "Inventory": 25 } },
+            { "event": "InventoryChanged", "data": { "ProductId": "product-1", "Inventory": 45 } }
+          ],
+          "then": {
+            "product-1": 45,
+            "product-2": 25
+          }
+        }
+      ]
+    },
+    {
+      "name": "AddItemCommand",
+      "type": "command",
       "scenarios": [
         {
           "name": "Create cart and add first item",
@@ -115,54 +350,11 @@
             "fails": "TooManyItemsInCartException: Can only add 3 items to cart"
           }
         }
-      ],
-      "attachments": [
-        { "type": "note", "label": "Business Rule", "content": "A cart can hold a maximum of 3 items. This limit is enforced at the command level." },
-        { "type": "link", "label": "Cart API Documentation", "url": "https://example.com/api/cart" }
       ]
     },
     {
-      "type": "event",
-      "name": "CartCreated",
-      "tick": 5,
-      "producedBy": "AddItemCommand-4",
-      "example": {
-        "CartId": "550e8400-e29b-41d4-a716-446655440010"
-      }
-    },
-    {
-      "type": "event",
-      "name": "ItemAdded",
-      "tick": 6,
-      "producedBy": "AddItemCommand-4",
-      "example": {
-        "CartId": "550e8400-e29b-41d4-a716-446655440010",
-        "Description": "Wireless Mouse",
-        "Image": "mouse.jpg",
-        "Price": 29.99,
-        "ItemId": "550e8400-e29b-41d4-a716-446655440020",
-        "ProductId": "550e8400-e29b-41d4-a716-446655440001"
-      }
-    },
-    {
-      "type": "state",
       "name": "CartItemsStateView",
-      "tick": 7,
-      "sourcedFrom": ["CartCreated", "ItemAdded", "ItemRemoved", "ItemArchived", "CartCleared"],
-      "example": {
-        "CartId": "550e8400-e29b-41d4-a716-446655440010",
-        "TotalPrice": 29.99,
-        "CartItems": [
-          {
-            "CartId": "550e8400-e29b-41d4-a716-446655440010",
-            "Description": "Wireless Mouse",
-            "Image": "mouse.jpg",
-            "Price": 29.99,
-            "ItemId": "550e8400-e29b-41d4-a716-446655440020",
-            "ProductId": "550e8400-e29b-41d4-a716-446655440001"
-          }
-        ]
-      },
+      "type": "state",
       "scenarios": [
         {
           "name": "Show cart with multiple items",
@@ -199,22 +391,8 @@
       ]
     },
     {
-      "type": "actor",
-      "name": "Customer",
-      "tick": 8,
-      "readsView": "CartItemsStateView",
-      "sendsCommand": "SubmitCartCommand"
-    },
-    {
-      "type": "command",
       "name": "SubmitCartCommand",
-      "tick": 9,
-      "example": {
-        "CartId": "550e8400-e29b-41d4-a716-446655440010",
-        "OrderedProducts": [
-          { "ProductId": "550e8400-e29b-41d4-a716-446655440001", "TotalPrice": 29.99 }
-        ]
-      },
+      "type": "command",
       "scenarios": [
         {
           "name": "Successfully submit cart with items in stock",
@@ -276,32 +454,8 @@
       ]
     },
     {
-      "type": "event",
-      "name": "CartSubmitted",
-      "tick": 10,
-      "producedBy": "SubmitCartCommand-9",
-      "example": {
-        "CartId": "550e8400-e29b-41d4-a716-446655440010",
-        "OrderedProducts": [
-          { "ProductId": "550e8400-e29b-41d4-a716-446655440001", "Price": 29.99 }
-        ],
-        "TotalPrice": 29.99
-      }
-    },
-    {
-      "type": "state",
       "name": "SubmittedCartDataSV",
-      "tick": 11,
-      "sourcedFrom": ["CartSubmitted", "CartPublished"],
-      "example": [
-        {
-          "CartId": "550e8400-e29b-41d4-a716-446655440010",
-          "OrderedProducts": [
-            { "ProductId": "550e8400-e29b-41d4-a716-446655440001", "Price": 29.99 }
-          ],
-          "TotalPrice": 29.99
-        }
-      ],
+      "type": "state",
       "scenarios": [
         {
           "name": "Track submitted cart awaiting publication",
@@ -323,23 +477,8 @@
       ]
     },
     {
-      "type": "actor",
-      "name": "CartPublisherProcessor",
-      "tick": 12,
-      "readsView": "SubmittedCartDataSV",
-      "sendsCommand": "PublishCartCommand"
-    },
-    {
-      "type": "command",
       "name": "PublishCartCommand",
-      "tick": 13,
-      "example": {
-        "CartId": "550e8400-e29b-41d4-a716-446655440010",
-        "OrderedProducts": [
-          { "ProductId": "550e8400-e29b-41d4-a716-446655440001", "Price": 29.99 }
-        ],
-        "TotalPrice": 29.99
-      },
+      "type": "command",
       "scenarios": [
         {
           "name": "Successfully publish submitted cart",
@@ -377,36 +516,8 @@
       ]
     },
     {
-      "type": "event",
-      "name": "CartPublished",
-      "tick": 14,
-      "producedBy": "PublishCartCommand-13",
-      "example": {
-        "CartId": "550e8400-e29b-41d4-a716-446655440010"
-      }
-    },
-    {
-      "type": "event",
-      "name": "PriceChanged",
-      "tick": 15,
-      "externalSource": "Pricing System",
-      "example": {
-        "ProductId": "550e8400-e29b-41d4-a716-446655440001",
-        "OldPrice": 29.99,
-        "NewPrice": 24.99
-      }
-    },
-    {
-      "type": "state",
       "name": "ChangedPricesSV",
-      "tick": 16,
-      "sourcedFrom": ["PriceChanged"],
-      "example": {
-        "550e8400-e29b-41d4-a716-446655440001": {
-          "OldPrice": 29.99,
-          "NewPrice": 24.99
-        }
-      },
+      "type": "state",
       "scenarios": [
         {
           "name": "Track latest price change per product",
@@ -421,13 +532,8 @@
       ]
     },
     {
-      "type": "state",
       "name": "CartsWithProductsSV",
-      "tick": 17,
-      "sourcedFrom": ["ItemAdded", "ItemRemoved", "ItemArchived", "CartCleared"],
-      "example": [
-        { "CartId": "550e8400-e29b-41d4-a716-446655440010", "ProductId": "550e8400-e29b-41d4-a716-446655440001" }
-      ],
+      "type": "state",
       "scenarios": [
         {
           "name": "Track products across multiple carts",
@@ -453,20 +559,8 @@
       ]
     },
     {
-      "type": "actor",
-      "name": "ArchiveItemSchedulerProcessor",
-      "tick": 18,
-      "readsView": "ChangedPricesSV",
-      "sendsCommand": "ArchiveItemCommand"
-    },
-    {
-      "type": "command",
       "name": "ArchiveItemCommand",
-      "tick": 19,
-      "example": {
-        "CartId": "550e8400-e29b-41d4-a716-446655440010",
-        "ProductId": "550e8400-e29b-41d4-a716-446655440001"
-      },
+      "type": "command",
       "scenarios": [
         {
           "name": "Archive item from cart due to price change",
@@ -487,23 +581,8 @@
       ]
     },
     {
-      "type": "event",
-      "name": "ItemArchived",
-      "tick": 20,
-      "producedBy": "ArchiveItemCommand-19",
-      "example": {
-        "CartId": "550e8400-e29b-41d4-a716-446655440010",
-        "ItemId": "550e8400-e29b-41d4-a716-446655440001"
-      }
-    },
-    {
-      "type": "command",
       "name": "RemoveItemCommand",
-      "tick": 21,
-      "example": {
-        "ItemId": "550e8400-e29b-41d4-a716-446655440020",
-        "CartId": "550e8400-e29b-41d4-a716-446655440010"
-      },
+      "type": "command",
       "scenarios": [
         {
           "name": "Successfully remove item from cart",
@@ -537,22 +616,8 @@
       ]
     },
     {
-      "type": "event",
-      "name": "ItemRemoved",
-      "tick": 22,
-      "producedBy": "RemoveItemCommand-21",
-      "example": {
-        "ItemId": "550e8400-e29b-41d4-a716-446655440020",
-        "CartId": "550e8400-e29b-41d4-a716-446655440010"
-      }
-    },
-    {
-      "type": "command",
       "name": "CartClearedCommand",
-      "tick": 23,
-      "example": {
-        "CartId": "550e8400-e29b-41d4-a716-446655440010"
-      },
+      "type": "command",
       "scenarios": [
         {
           "name": "Clear all items from cart",
@@ -571,24 +636,6 @@
           }
         }
       ]
-    },
-    {
-      "type": "event",
-      "name": "CartCleared",
-      "tick": 24,
-      "producedBy": "CartClearedCommand-23",
-      "example": {
-        "CartId": "550e8400-e29b-41d4-a716-446655440010"
-      }
-    },
-    {
-      "type": "event",
-      "name": "CartPublicationFailed",
-      "tick": 25,
-      "producedBy": "PublishCartCommand-13",
-      "example": {
-        "CommandCartId": "550e8400-e29b-41d4-a716-446655440010"
-      }
     }
   ]
 }

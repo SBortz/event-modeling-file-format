@@ -61,7 +61,6 @@ export interface StateView extends ITimelineElement {
   type: 'state';
   sourcedFrom: string[];
   example?: unknown;
-  scenarios?: StateViewScenario[];
 }
 
 /**
@@ -81,13 +80,32 @@ export interface Actor extends ITimelineElement {
 export interface Command extends ITimelineElement {
   type: 'command';
   example?: unknown;
-  scenarios?: CommandScenario[];
 }
 
 /**
  * Union type for all timeline elements
  */
 export type TimelineElement = Event | StateView | Actor | Command;
+
+/**
+ * A specification grouping scenarios for a command
+ */
+export interface CommandSpecification {
+  name: string;
+  type: 'command';
+  scenarios: CommandScenario[];
+}
+
+/**
+ * A specification grouping scenarios for a state view
+ */
+export interface StateSpecification {
+  name: string;
+  type: 'state';
+  scenarios: StateViewScenario[];
+}
+
+export type Specification = CommandSpecification | StateSpecification;
 
 /**
  * The main information flow model
@@ -98,6 +116,7 @@ export interface InformationFlowModel {
   description?: string;
   version?: string;
   timeline: TimelineElement[];
+  specifications?: Specification[];
 }
 
 /**

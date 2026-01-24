@@ -48,7 +48,6 @@ export interface StateView {
   tick: number;
   sourcedFrom: string[];
   example?: unknown;
-  scenarios?: StateViewScenario[];
   attachments?: Attachment[];
 }
 
@@ -65,11 +64,24 @@ export interface Command {
   name: string;
   tick: number;
   example?: unknown;
-  scenarios?: CommandScenario[];
   attachments?: Attachment[];
 }
 
 export type TimelineElement = Event | StateView | Actor | Command;
+
+export interface CommandSpecification {
+  name: string;
+  type: 'command';
+  scenarios: CommandScenario[];
+}
+
+export interface StateSpecification {
+  name: string;
+  type: 'state';
+  scenarios: StateViewScenario[];
+}
+
+export type Specification = CommandSpecification | StateSpecification;
 
 export interface InformationFlowModel {
   $schema?: string;
@@ -77,6 +89,7 @@ export interface InformationFlowModel {
   description?: string;
   version?: string;
   timeline: TimelineElement[];
+  specifications?: Specification[];
 }
 
 export type ViewMode = 'slice' | 'timeline' | 'table';

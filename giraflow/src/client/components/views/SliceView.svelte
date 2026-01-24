@@ -5,6 +5,12 @@
   import JsonDisplay from '../shared/JsonDisplay.svelte';
   import Scenario from '../shared/Scenario.svelte';
 
+  function getScenarios(name: string, type: 'state' | 'command') {
+    return modelStore.model?.specifications
+      ?.find(s => s.name === name && s.type === type)
+      ?.scenarios ?? [];
+  }
+
   // Get slices (states and commands) sorted by tick
   let slices = $derived(
     modelStore.model
@@ -152,18 +158,12 @@
           </div>
         {/if}
 
-        {#if isState(slice) && slice.scenarios && slice.scenarios.length > 0}
+        {#if getScenarios(slice.name, type as 'state' | 'command').length > 0}
+          {@const scenarios = getScenarios(slice.name, type as 'state' | 'command')}
           <div class="scenarios">
-            <h3>Scenarios ({slice.scenarios.length})</h3>
-            {#each slice.scenarios as scenario}
-              <Scenario {scenario} type="state" />
-            {/each}
-          </div>
-        {:else if isCommand(slice) && slice.scenarios && slice.scenarios.length > 0}
-          <div class="scenarios">
-            <h3>Scenarios ({slice.scenarios.length})</h3>
-            {#each slice.scenarios as scenario}
-              <Scenario {scenario} type="command" />
+            <h3>Scenarios ({scenarios.length})</h3>
+            {#each scenarios as scenario}
+              <Scenario {scenario} {type} />
             {/each}
           </div>
         {/if}
