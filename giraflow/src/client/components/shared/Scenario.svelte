@@ -7,9 +7,10 @@
     scenario: CommandScenario | StateViewScenario;
     type: 'command' | 'state';
     timelineTick?: number;
+    sliceName?: string;
   }
 
-  let { scenario, type, timelineTick }: Props = $props();
+  let { scenario, type, timelineTick, sliceName }: Props = $props();
 
   function isCommandScenario(s: CommandScenario | StateViewScenario): s is CommandScenario {
     return 'then' in s && typeof s.then === 'object' && s.then !== null && ('produces' in s.then || 'fails' in s.then);
@@ -61,7 +62,7 @@
         <span class="label">When</span>
         <div class="step-items">
           <div class="step-item">
-            <span class="command">▶ Command received</span>
+            <span class="command">▶ {sliceName || 'Command'}</span>
             <JsonDisplay data={commandScenario.when} class="scenario-json" />
           </div>
         </div>
@@ -90,7 +91,7 @@
           {/if}
         {:else if stateScenario?.then !== undefined}
           <div class="step-item">
-            <span class="state">◆ View state</span>
+            <span class="state">◆ {sliceName || 'State'}</span>
             <JsonDisplay data={stateScenario.then} class="scenario-json" />
           </div>
         {/if}

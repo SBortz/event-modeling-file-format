@@ -191,7 +191,7 @@
           <div class="scenarios">
             <h3>Scenarios ({slice.scenarios.length})</h3>
             {#each slice.scenarios as scenario, i}
-              <Scenario {scenario} type={slice.type} timelineTick={i >= slice.specScenarioCount ? slice.ticks[i - slice.specScenarioCount] : undefined} />
+              <Scenario {scenario} type={slice.type} timelineTick={i >= slice.specScenarioCount ? slice.ticks[i - slice.specScenarioCount] : undefined} sliceName={slice.name} />
             {/each}
           </div>
         {/if}
