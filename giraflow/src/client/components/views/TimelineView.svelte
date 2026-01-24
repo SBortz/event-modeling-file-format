@@ -50,7 +50,7 @@
       {@const showDetails = hasDetails(el)}
 
       {#if showDetails}
-        <details class="tl-item tl-{position}" open={modelStore.expandAll}>
+        <details class="tl-item tl-{position}" id="tick-{el.tick}" open={modelStore.expandAll}>
           <summary class="tl-summary">
             <div class="tl-symbol {el.type}">{symbol}</div>
             <div class="tl-tick">@{el.tick}</div>
@@ -88,7 +88,7 @@
           </div>
         </details>
       {:else}
-        <div class="tl-item tl-{position}">
+        <div class="tl-item tl-{position}" id="tick-{el.tick}">
           <div class="tl-symbol {el.type}">{symbol}</div>
           <div class="tl-tick">@{el.tick}</div>
           <div class="tl-name {el.type}">{el.name}</div>
@@ -266,5 +266,14 @@
   :global(.tl-json) {
     margin-top: 0.5rem;
     font-size: 0.75rem !important;
+  }
+
+  :global(.highlight-flash) {
+    animation: flash 2s ease-out;
+  }
+
+  @keyframes flash {
+    0%, 20% { background: rgba(234, 179, 8, 0.25); }
+    100% { background: transparent; }
   }
 </style>

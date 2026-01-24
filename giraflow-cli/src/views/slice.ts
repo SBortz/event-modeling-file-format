@@ -79,7 +79,7 @@ function buildDeduplicatedSlices(model: InformationFlowModel): DeduplicatedSlice
     // Auto-scenario from each timeline occurrence
     if (isStateView(el)) {
       slice.scenarios.push({
-        name: `Example @${el.tick}`,
+        name: `Occurrence from Timeline @${el.tick}`,
         given: events
           .filter(e => e.tick < el.tick && el.sourcedFrom.includes(e.name))
           .map(e => ({ event: e.name, ...(e.example ? { data: e.example } : {}) })),
@@ -90,7 +90,7 @@ function buildDeduplicatedSlices(model: InformationFlowModel): DeduplicatedSlice
         .filter(e => e.producedBy === `${el.name}-${el.tick}`)
         .map(e => ({ event: e.name, ...(e.example ? { data: e.example } : {}) }));
       slice.scenarios.push({
-        name: `Example @${el.tick}`,
+        name: `Occurrence from Timeline @${el.tick}`,
         given: events
           .filter(e => e.tick < el.tick)
           .map(e => ({ event: e.name, ...(e.example ? { data: e.example } : {}) })),

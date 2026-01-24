@@ -6,9 +6,10 @@
   interface Props {
     scenario: CommandScenario | StateViewScenario;
     type: 'command' | 'state';
+    timelineTick?: number;
   }
 
-  let { scenario, type }: Props = $props();
+  let { scenario, type, timelineTick }: Props = $props();
 
   function isCommandScenario(s: CommandScenario | StateViewScenario): s is CommandScenario {
     return 'then' in s && typeof s.then === 'object' && s.then !== null && ('produces' in s.then || 'fails' in s.then);
@@ -29,6 +30,11 @@
       {isSuccess ? '✓' : '✗'}
     </span>
     <span class="name">{scenario.name}</span>
+    {#if timelineTick !== undefined}
+      <button class="nav-to-timeline" onclick={(e) => { e.preventDefault(); e.stopPropagation(); modelStore.navigateToTick(timelineTick!); }}>
+        → Timeline
+      </button>
+    {/if}
   </summary>
 
   <div class="scenario-body">
@@ -146,6 +152,22 @@
   .scenario-header .name {
     font-weight: 500;
     color: var(--color-warning);
+  }
+
+  .scenario-header .nav-to-timeline {
+    margin-left: auto;
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 0.25rem;
+    color: var(--text-secondary);
+    font-size: 0.7rem;
+    padding: 0.15rem 0.5rem;
+    cursor: pointer;
+  }
+
+  .scenario-header .nav-to-timeline:hover {
+    color: var(--color-warning);
+    border-color: var(--color-warning);
   }
 
   .scenario-body {

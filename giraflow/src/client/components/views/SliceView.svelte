@@ -12,6 +12,7 @@
     sourcedFrom: string[];
     attachments: Attachment[];
     scenarios: (CommandScenario | StateViewScenario)[];
+    specScenarioCount: number;
   }
 
   let deduplicatedSlices = $derived(buildDeduplicatedSlices());
@@ -34,7 +35,8 @@
           ticks: [],
           sourcedFrom: [],
           attachments: [],
-          scenarios: []
+          scenarios: [],
+          specScenarioCount: 0
         });
       }
       const slice = seen.get(key)!;
@@ -50,7 +52,7 @@
       // Auto-scenario from each timeline occurrence
       if (isState(el)) {
         slice.scenarios.push({
-          name: `Example @${el.tick}`,
+          name: `Occurrence from Timeline @${el.tick}`,
           given: events
             .filter(e => e.tick < el.tick && el.sourcedFrom.includes(e.name))
             .map(e => ({ event: e.name, ...(e.example ? { data: e.example } : {}) })),
@@ -61,7 +63,7 @@
           .filter(e => e.producedBy === `${el.name}-${el.tick}`)
           .map(e => ({ event: e.name, ...(e.example ? { data: e.example } : {}) }));
         slice.scenarios.push({
-          name: `Example @${el.tick}`,
+          name: `Occurrence from Timeline @${el.tick}`,
           given: events
             .filter(e => e.tick < el.tick)
             .map(e => ({ event: e.name, ...(e.example ? { data: e.example } : {}) })),
@@ -78,6 +80,7 @@
       const specScenarios = modelStore.model?.specifications
         ?.find(s => s.name === slice.name && s.type === slice.type)
         ?.scenarios ?? [];
+      slice.specScenarioCount = specScenarios.length;
       slice.scenarios = [...specScenarios, ...slice.scenarios];
     }
 
@@ -187,8 +190,8 @@
         {#if slice.scenarios.length > 0}
           <div class="scenarios">
             <h3>Scenarios ({slice.scenarios.length})</h3>
-            {#each slice.scenarios as scenario}
-              <Scenario {scenario} type={slice.type} />
+            {#each slice.scenarios as scenario, i}
+              <Scenario {scenario} type={slice.type} timelineTick={i >= slice.specScenarioCount ? slice.ticks[i - slice.specScenarioCount] : undefined} />
             {/each}
           </div>
         {/if}

@@ -6,6 +6,7 @@ class ModelStore {
   watchedFile = $state<string>('');
   view = $state<ViewMode>('table');
   expandAll = $state(false);
+  highlightTick = $state<number | null>(null);
 
   get events(): Event[] {
     if (!this.model) return [];
@@ -29,6 +30,20 @@ class ModelStore {
 
   setView(newView: ViewMode) {
     this.view = newView;
+  }
+
+  navigateToTick(tick: number) {
+    this.highlightTick = tick;
+    this.view = 'timeline';
+    requestAnimationFrame(() => {
+      const el = document.getElementById(`tick-${tick}`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        el.classList.add('highlight-flash');
+        setTimeout(() => el.classList.remove('highlight-flash'), 2000);
+      }
+      this.highlightTick = null;
+    });
   }
 
   setExpandAll(value: boolean) {
