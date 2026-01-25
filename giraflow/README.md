@@ -85,5 +85,6 @@ See more in the [examples directory](https://github.com/SBortz/giraflow/tree/mai
 ## Links
 
 - [GitHub](https://github.com/SBortz/giraflow)
+- [Changelog](https://github.com/SBortz/giraflow/blob/main/CHANGELOG.md)
 - [JSON Schema](https://github.com/SBortz/giraflow/blob/main/giraflow.schema.json)
 - [Examples](https://github.com/SBortz/giraflow/tree/main/example-giraflows)
