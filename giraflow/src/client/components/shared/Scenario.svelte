@@ -59,14 +59,19 @@
           {#each stateScenario.steps as step}
             <div class="step-row">
               <div class="event-column">
-                <span class="event">● {step.given.event}</span>
-                {#if step.given.data}
-                  <JsonDisplay data={step.given.data} class="scenario-json" />
-                {/if}
+                <div class="scenario-box scenario-box-event">
+                  <span class="box-title event">● {step.given.event}</span>
+                  {#if step.given.data}
+                    <JsonDisplay data={step.given.data} class="scenario-json" />
+                  {/if}
+                </div>
               </div>
               <div class="arrow">→</div>
               <div class="state-column">
-                <JsonDisplay data={step.then} class="scenario-json" />
+                <div class="scenario-box scenario-box-state">
+                  <span class="box-title state">◆ State</span>
+                  <JsonDisplay data={step.then} class="scenario-json" />
+                </div>
               </div>
             </div>
           {/each}
@@ -84,10 +89,12 @@
               <!-- Left column: Command (or empty) -->
               <div class="command-column">
                 {#if row.type === 'command' && row.command}
-                  <span class="command">▶ {row.command.name}</span>
-                  {#if row.command.data}
-                    <JsonDisplay data={row.command.data} class="scenario-json" />
-                  {/if}
+                  <div class="scenario-box scenario-box-command">
+                    <span class="box-title command">▶ {row.command.name}</span>
+                    {#if row.command.data}
+                      <JsonDisplay data={row.command.data} class="scenario-json" />
+                    {/if}
+                  </div>
                 {/if}
               </div>
 
@@ -96,8 +103,8 @@
                 {#if row.type === 'events-only' && row.events}
                   <!-- Context events (no border) -->
                   {#each row.events as eventRef}
-                    <div class="event-item">
-                      <span class="event">● {eventRef.event}</span>
+                    <div class="scenario-box scenario-box-event">
+                      <span class="box-title event">● {eventRef.event}</span>
                       {#if eventRef.data}
                         <JsonDisplay data={eventRef.data} class="scenario-json" />
                       {/if}
@@ -112,8 +119,8 @@
                     <!-- Produced events (with border) -->
                     <div class="produced-box">
                       {#each row.producedEvents as eventRef}
-                        <div class="event-item">
-                          <span class="event">● {eventRef.event}</span>
+                        <div class="scenario-box scenario-box-event">
+                          <span class="box-title event">● {eventRef.event}</span>
                           {#if eventRef.data}
                             <JsonDisplay data={eventRef.data} class="scenario-json" />
                           {/if}
@@ -141,10 +148,12 @@
               <!-- Left column: Command with sliceName (or empty for events-only) -->
               <div class="command-column">
                 {#if step.type === 'command'}
-                  <span class="command">▶ {sliceName || 'Command'}</span>
-                  {#if step.when !== undefined}
-                    <JsonDisplay data={step.when} class="scenario-json" />
-                  {/if}
+                  <div class="scenario-box scenario-box-command">
+                    <span class="box-title command">▶ {sliceName || 'Command'}</span>
+                    {#if step.when !== undefined}
+                      <JsonDisplay data={step.when} class="scenario-json" />
+                    {/if}
+                  </div>
                 {/if}
               </div>
 
@@ -153,8 +162,8 @@
                 {#if step.type === 'events-only' && step.events}
                   <!-- Context events (no border) -->
                   {#each step.events as eventRef}
-                    <div class="event-item">
-                      <span class="event">● {eventRef.event}</span>
+                    <div class="scenario-box scenario-box-event">
+                      <span class="box-title event">● {eventRef.event}</span>
                       {#if eventRef.data}
                         <JsonDisplay data={eventRef.data} class="scenario-json" />
                       {/if}
@@ -169,8 +178,8 @@
                     <!-- Produced events (with border) -->
                     <div class="produced-box">
                       {#each step.produces as eventRef}
-                        <div class="event-item">
-                          <span class="event">● {eventRef.event}</span>
+                        <div class="scenario-box scenario-box-event">
+                          <span class="box-title event">● {eventRef.event}</span>
                           {#if eventRef.data}
                             <JsonDisplay data={eventRef.data} class="scenario-json" />
                           {/if}
@@ -328,17 +337,49 @@
     font-weight: 500;
   }
 
-  .event-item {
-    display: flex;
-    flex-direction: column;
-    gap: 0.15rem;
+  /* Scenario boxes with title and JSON */
+  .scenario-box {
+    background: var(--bg-secondary);
+    border-radius: 0.375rem;
+    padding: 0.5rem 0.75rem;
+    border-left: 3px solid var(--border);
+  }
+
+  .scenario-box-event {
+    border-left-color: var(--color-event);
+  }
+
+  .scenario-box-command {
+    border-left-color: var(--color-command);
+  }
+
+  .scenario-box-state {
+    border-left-color: var(--color-state);
+  }
+
+  .box-title {
+    font-weight: 500;
+    display: block;
+    margin-bottom: 0.25rem;
+  }
+
+  .box-title.event {
+    color: var(--color-event);
+  }
+
+  .box-title.command {
+    color: var(--color-command);
+  }
+
+  .box-title.state {
+    color: var(--color-state);
   }
 
   .step-row {
     display: grid;
     grid-template-columns: 1fr auto 1fr;
     gap: 1rem;
-    align-items: start;
+    align-items: stretch;
   }
 
   .event-column,
@@ -359,15 +400,11 @@
     padding-top: 0.1rem;
   }
 
-  .event-column .event {
-    color: var(--color-event);
-    font-weight: 500;
-  }
-
-  :global(.scenario-json) {
-    background: var(--bg-secondary) !important;
-    padding: 0.75rem !important;
+  :global(.scenario-box .scenario-json) {
+    background: transparent !important;
+    padding: 0 !important;
     font-size: 0.75rem !important;
-    margin-top: 0.25rem;
+    margin-top: 0;
+    border-left: none !important;
   }
 </style>
