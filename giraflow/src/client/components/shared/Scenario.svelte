@@ -39,12 +39,36 @@
   </summary>
 
   <div class="scenario-body">
-    <!-- GIVEN -->
-    {#if scenario.given && scenario.given.length > 0}
+    <!-- STEPS (for state scenarios) -->
+    {#if stateScenario}
+      <div class="scenario-step">
+        <span class="label">Steps</span>
+        <div class="steps-grid">
+          {#each stateScenario.steps as step}
+            <div class="step-row">
+              <div class="event-column">
+                <span class="event">● {step.given.event}</span>
+                {#if step.given.data}
+                  <JsonDisplay data={step.given.data} class="scenario-json" />
+                {/if}
+              </div>
+              <div class="arrow">→</div>
+              <div class="state-column">
+                <span class="state">◆ State</span>
+                <JsonDisplay data={step.then} class="scenario-json" />
+              </div>
+            </div>
+          {/each}
+        </div>
+      </div>
+    {/if}
+
+    <!-- GIVEN (for commands) -->
+    {#if commandScenario && commandScenario.given.length > 0}
       <div class="scenario-step">
         <span class="label">Given</span>
         <div class="step-items">
-          {#each scenario.given as ref}
+          {#each commandScenario.given as ref}
             <div class="step-item">
               <span class="event">● {ref.event}</span>
               {#if ref.data}
@@ -69,11 +93,11 @@
       </div>
     {/if}
 
-    <!-- THEN -->
-    <div class="scenario-step">
-      <span class="label">Then</span>
-      <div class="step-items">
-        {#if commandScenario}
+    <!-- THEN (for commands) -->
+    {#if commandScenario}
+      <div class="scenario-step">
+        <span class="label">Then</span>
+        <div class="step-items">
           {#if commandScenario.then.produces && commandScenario.then.produces.length > 0}
             {#each commandScenario.then.produces as ref}
               <div class="step-item">
@@ -89,14 +113,9 @@
               <span class="error">✗ Fails: {commandScenario.then.fails}</span>
             </div>
           {/if}
-        {:else if stateScenario?.then !== undefined}
-          <div class="step-item">
-            <span class="state">◆ {sliceName || 'State'}</span>
-            <JsonDisplay data={stateScenario.then} class="scenario-json" />
-          </div>
-        {/if}
+        </div>
       </div>
-    </div>
+    {/if}
   </div>
 </details>
 
@@ -203,6 +222,42 @@
     gap: 0.25rem;
   }
 
+  .steps-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .step-row {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 1rem;
+    align-items: start;
+  }
+
+  .event-column,
+  .state-column {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .arrow {
+    color: var(--text-secondary);
+    font-size: 1.25rem;
+    padding-top: 0.1rem;
+  }
+
+  .event-column .event {
+    color: var(--color-event);
+    font-weight: 500;
+  }
+
+  .state-column .state {
+    color: var(--color-state);
+    font-weight: 500;
+  }
+
   .step-item .event {
     color: var(--color-event);
     font-weight: 500;
@@ -210,11 +265,6 @@
 
   .step-item .command {
     color: var(--color-command);
-    font-weight: 500;
-  }
-
-  .step-item .state {
-    color: var(--color-state);
     font-weight: 500;
   }
 

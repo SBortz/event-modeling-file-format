@@ -13,6 +13,7 @@
     attachments: Attachment[];
     scenarios: (CommandScenario | StateViewScenario)[];
     specScenarioCount: number;
+    stateOccurrences: { tick: number; state: StateView }[];
   }
 
   let deduplicatedSlices = $derived(buildDeduplicatedSlices());
@@ -36,7 +37,8 @@
           sourcedFrom: [],
           attachments: [],
           scenarios: [],
-          specScenarioCount: 0
+          specScenarioCount: 0,
+          stateOccurrences: []
         });
       }
       const slice = seen.get(key)!;
@@ -49,15 +51,9 @@
       }
       if (el.attachments) slice.attachments.push(...el.attachments);
 
-      // Auto-scenario from each timeline occurrence
+      // Collect state occurrences for later consolidation, create command scenarios immediately
       if (isState(el)) {
-        slice.scenarios.push({
-          name: `Occurrence from Timeline @${el.tick}`,
-          given: events
-            .filter(e => e.tick < el.tick && el.sourcedFrom.includes(e.name))
-            .map(e => ({ event: e.name, ...(e.example ? { data: e.example } : {}) })),
-          then: el.example
-        });
+        slice.stateOccurrences.push({ tick: el.tick, state: el });
       } else if (isCommand(el)) {
         const producedEvents = events
           .filter(e => e.producedBy === `${el.name}-${el.tick}`)
@@ -75,13 +71,44 @@
       }
     }
 
-    // Prepend spec scenarios
+    // Convert state occurrences to single timeline scenario
+    for (const [, slice] of seen) {
+      if (slice.type === 'state' && slice.stateOccurrences.length > 0) {
+        const steps = slice.stateOccurrences.map((occ, index) => {
+          const prevTick = index > 0 ? slice.stateOccurrences[index - 1].tick : 0;
+          const precedingEvent = events.find(e =>
+            e.tick > prevTick &&
+            e.tick < occ.tick &&
+            occ.state.sourcedFrom.includes(e.name)
+          );
+          return {
+            given: {
+              event: precedingEvent?.name ?? '(initial)',
+              ...(precedingEvent?.example ? { data: precedingEvent.example } : {})
+            },
+            then: occ.state.example
+          };
+        });
+        slice.scenarios.push({
+          name: 'Timeline Evolution',
+          steps
+        });
+      }
+    }
+
+    // Add spec scenarios (after Timeline Evolution for states, before occurrences for commands)
     for (const [, slice] of seen) {
       const specScenarios = modelStore.model?.specifications
         ?.find(s => s.name === slice.name && s.type === slice.type)
         ?.scenarios ?? [];
       slice.specScenarioCount = specScenarios.length;
-      slice.scenarios = [...specScenarios, ...slice.scenarios];
+      if (slice.type === 'state') {
+        // Timeline Evolution first, then spec scenarios
+        slice.scenarios = [...slice.scenarios, ...specScenarios];
+      } else {
+        // Spec scenarios first, then command occurrences
+        slice.scenarios = [...specScenarios, ...slice.scenarios];
+      }
     }
 
     return [...seen.values()];
@@ -191,7 +218,7 @@
           <div class="scenarios">
             <h3>Scenarios ({slice.scenarios.length})</h3>
             {#each slice.scenarios as scenario, i}
-              <Scenario {scenario} type={slice.type} timelineTick={i >= slice.specScenarioCount ? slice.ticks[i - slice.specScenarioCount] : undefined} sliceName={slice.name} />
+              <Scenario {scenario} type={slice.type} timelineTick={slice.type === 'command' && i >= slice.specScenarioCount ? slice.ticks[i - slice.specScenarioCount] : undefined} sliceName={slice.name} />
             {/each}
           </div>
         {/if}

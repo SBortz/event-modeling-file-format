@@ -183,35 +183,51 @@
       "scenarios": [
         {
           "name": "Empty state with no events",
-          "given": [],
-          "then": []
+          "steps": []
         },
         {
           "name": "Added items appear as open",
-          "given": [
+          "steps": [
             {
-              "event": "TodoAdded",
-              "data": { "todoId": "t-1", "title": "Buy milk" }
+              "given": { "event": "TodoAdded", "data": { "todoId": "t-1", "title": "Buy milk" } },
+              "then": [{ "id": "t-1", "title": "Buy milk", "done": false }]
             }
-          ],
-          "then": [
-            { "id": "t-1", "title": "Buy milk", "done": false }
           ]
         },
         {
           "name": "Done items are marked",
-          "given": [
+          "steps": [
             {
-              "event": "TodoAdded",
-              "data": { "todoId": "t-1", "title": "Buy milk" }
+              "given": { "event": "TodoAdded", "data": { "todoId": "t-1", "title": "Buy milk" } },
+              "then": [{ "id": "t-1", "title": "Buy milk", "done": false }]
             },
             {
-              "event": "TodoDone",
-              "data": { "todoId": "t-1" }
+              "given": { "event": "TodoDone", "data": { "todoId": "t-1" } },
+              "then": [{ "id": "t-1", "title": "Buy milk", "done": true }]
             }
-          ],
-          "then": [
-            { "id": "t-1", "title": "Buy milk", "done": true }
+          ]
+        },
+        {
+          "name": "State evolution (step-by-step)",
+          "steps": [
+            {
+              "given": { "event": "TodoAdded", "data": { "todoId": "t-1", "title": "Buy milk" } },
+              "then": [{ "id": "t-1", "title": "Buy milk", "done": false }]
+            },
+            {
+              "given": { "event": "TodoAdded", "data": { "todoId": "t-2", "title": "Walk dog" } },
+              "then": [
+                { "id": "t-1", "title": "Buy milk", "done": false },
+                { "id": "t-2", "title": "Walk dog", "done": false }
+              ]
+            },
+            {
+              "given": { "event": "TodoDone", "data": { "todoId": "t-1" } },
+              "then": [
+                { "id": "t-1", "title": "Buy milk", "done": true },
+                { "id": "t-2", "title": "Walk dog", "done": false }
+              ]
+            }
           ]
         }
       ]

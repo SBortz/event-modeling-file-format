@@ -19,10 +19,17 @@ export interface CommandScenario {
   then: CommandScenarioOutcome;
 }
 
+export interface ScenarioStep {
+  given: {
+    event: string;
+    data?: unknown;
+  };
+  then: unknown;
+}
+
 export interface StateViewScenario {
   name: string;
-  given: EventReference[];
-  then?: unknown;
+  steps: ScenarioStep[];
 }
 
 export interface Attachment {
