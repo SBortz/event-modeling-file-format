@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.0] - 2025-01-27
+
+### Breaking Changes
+
+- **Changed scenario data model completely**: The previous model didn't support scenarios like they are live with Event Modeling. Given-Then for States might show a state for every new event. Command-based scenarios might involve several executions of a command with different outcomes. That's now possible.
+- **Only one Timeline derived scenario**: Previously there was one scenario for every occurrence within the model. This is now merged into one bigger scenario that inherits every occurrence from the timeline with respect to its position on the timeline.
+
+### Changed
+
+- **Improved scenario visualization**: Labels (Event/Command/State names) are now displayed inside color-coded boxes with a colored left border matching their type (orange for events, blue for commands, green for state)
+- **Command execution grouping**: Commands and their produced events are now visually grouped with a dashed neutral border to show they belong together
+- **Removed success/failure icons from scenario headers**: Since scenarios can now contain multiple commands with mixed success/failure states, the checkmark/X icon has been removed from scenario titles
+- **Updated examples to respect new model**: The FinishTodo scenario now demonstrates multiple commands with events in between, including a failing command.
+
+
 ## [0.1.1] - 2025-01-25
 
 ### Breaking Changes
