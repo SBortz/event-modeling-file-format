@@ -283,16 +283,14 @@
                     <div class="detail-item">
                       <span class="event">● {source.name}</span>
                       <span class="ticks-group">
-                        (
                         {#each source.ticks as tick, i}
                           <button
                             class="tick-ref-link"
                             onclick={() => modelStore.navigateToTick(tick)}
                           >
                             @{tick}
-                          </button>{#if i < source.ticks.length - 1},{/if}
+                          </button>
                         {/each}
-                        )
                       </span>
                     </div>
                   {/each}
@@ -344,16 +342,14 @@
                     <div class="detail-item">
                       <span class="event">● {produced.name}</span>
                       <span class="ticks-group">
-                        (
                         {#each produced.ticks as tick, i}
                           <button
                             class="tick-ref-link"
                             onclick={() => modelStore.navigateToTick(tick)}
                           >
                             @{tick}
-                          </button>{#if i < produced.ticks.length - 1},{/if}
+                          </button>
                         {/each}
-                        )
                       </span>
                     </div>
                   {/each}
@@ -639,23 +635,37 @@
   }
 
   .tick-ref-link {
-    background: none;
-    border: none;
-    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 0.25rem;
+    padding: 0.125rem 0.375rem;
     color: var(--text-secondary);
     cursor: pointer;
     font-size: 0.75rem;
+    font-family: var(--font-mono);
+    transition: all 0.2s;
+    text-decoration: none; /* Reset underline */
+    margin-left: 0.25rem;
   }
 
   .tick-ref-link:hover {
-    color: var(--color-link, #5b9fd4);
-    text-decoration: underline;
+    background: var(--bg-card);
+    border-color: var(--color-link);
+    color: var(--color-link);
+    text-decoration: none;
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
   }
 
   .ticks-group {
-    color: var(--text-secondary);
-    font-size: 0.75rem;
-    margin-left: 0.25rem;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.25rem;
+    margin-left: 0.5rem;
   }
 
   .detail-body {
