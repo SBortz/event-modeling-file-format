@@ -1,41 +1,62 @@
 <script lang="ts">
-  import type { CommandScenario, StateViewScenario, TimelineScenario } from '../../lib/types';
-  import { modelStore } from '../../stores/model.svelte';
-  import JsonDisplay from './JsonDisplay.svelte';
+  import type {
+    CommandScenario,
+    StateViewScenario,
+    TimelineScenario,
+  } from "../../lib/types";
+  import { modelStore } from "../../stores/model.svelte";
+  import JsonDisplay from "./JsonDisplay.svelte";
 
   interface Props {
     scenario: CommandScenario | StateViewScenario | TimelineScenario;
-    type: 'command' | 'state';
+    type: "command" | "state";
     sliceName?: string;
+    alwaysOpen?: boolean;
   }
 
-  let { scenario, type, sliceName }: Props = $props();
+  let { scenario, type, sliceName, alwaysOpen = false }: Props = $props();
 
   // Timeline scenario uses 'rows' with command.name/data and producedEvents
-  function isTimelineScenario(s: CommandScenario | StateViewScenario | TimelineScenario): s is TimelineScenario {
-    return 'rows' in s && Array.isArray(s.rows);
+  function isTimelineScenario(
+    s: CommandScenario | StateViewScenario | TimelineScenario,
+  ): s is TimelineScenario {
+    return "rows" in s && Array.isArray(s.rows);
   }
 
   // Explicit command scenarios use 'steps' with type/when/produces
-  function isCommandStepsScenario(s: CommandScenario | StateViewScenario | TimelineScenario): s is CommandScenario {
-    return 'steps' in s && Array.isArray(s.steps) && s.steps.length > 0 && 'type' in s.steps[0];
+  function isCommandStepsScenario(
+    s: CommandScenario | StateViewScenario | TimelineScenario,
+  ): s is CommandScenario {
+    return (
+      "steps" in s &&
+      Array.isArray(s.steps) &&
+      s.steps.length > 0 &&
+      "type" in s.steps[0]
+    );
   }
 
   // State view scenarios use 'steps' with given/then structure
-  function isStateViewScenario(s: CommandScenario | StateViewScenario | TimelineScenario): s is StateViewScenario {
-    return 'steps' in s && Array.isArray(s.steps) && s.steps.length > 0 && 'given' in s.steps[0];
+  function isStateViewScenario(
+    s: CommandScenario | StateViewScenario | TimelineScenario,
+  ): s is StateViewScenario {
+    return (
+      "steps" in s &&
+      Array.isArray(s.steps) &&
+      s.steps.length > 0 &&
+      "given" in s.steps[0]
+    );
   }
 
-  let timelineScenario = $derived(isTimelineScenario(scenario) ? scenario : null);
-  let commandStepsScenario = $derived(isCommandStepsScenario(scenario) ? scenario : null);
+  let timelineScenario = $derived(
+    isTimelineScenario(scenario) ? scenario : null,
+  );
+  let commandStepsScenario = $derived(
+    isCommandStepsScenario(scenario) ? scenario : null,
+  );
   let stateScenario = $derived(isStateViewScenario(scenario) ? scenario : null);
 </script>
 
-<details class="scenario" open={modelStore.expandAll}>
-  <summary class="scenario-header">
-    <span class="name">{scenario.name}</span>
-  </summary>
-
+{#snippet scenarioBody()}
   <div class="scenario-body">
     <!-- STEPS (for state scenarios) -->
     {#if stateScenario}
@@ -71,14 +92,21 @@
         <span class="label">Steps</span>
         <div class="timeline-scenario">
           {#each timelineScenario.rows as row}
-            <div class="timeline-row" class:command-execution={row.type === 'command'} class:command-failure={row.type === 'command' && row.fails}>
+            <div
+              class="timeline-row"
+              class:command-execution={row.type === "command"}
+              class:command-failure={row.type === "command" && row.fails}
+            >
               <!-- Left column: Command (or empty) -->
               <div class="command-column">
-                {#if row.type === 'command' && row.command}
+                {#if row.type === "command" && row.command}
                   <div class="scenario-box scenario-box-command">
                     <span class="box-title command">▶ {row.command.name}</span>
                     {#if row.command.data}
-                      <JsonDisplay data={row.command.data} class="scenario-json" />
+                      <JsonDisplay
+                        data={row.command.data}
+                        class="scenario-json"
+                      />
                     {/if}
                   </div>
                 {/if}
@@ -86,17 +114,20 @@
 
               <!-- Right column: Events -->
               <div class="events-column">
-                {#if row.type === 'events-only' && row.events}
+                {#if row.type === "events-only" && row.events}
                   <!-- Context events -->
                   {#each row.events as eventRef}
                     <div class="scenario-box scenario-box-event">
                       <span class="box-title event">● {eventRef.event}</span>
                       {#if eventRef.data}
-                        <JsonDisplay data={eventRef.data} class="scenario-json" />
+                        <JsonDisplay
+                          data={eventRef.data}
+                          class="scenario-json"
+                        />
                       {/if}
                     </div>
                   {/each}
-                {:else if row.type === 'command'}
+                {:else if row.type === "command"}
                   {#if row.fails}
                     <span class="error">✗ {row.fails}</span>
                   {:else if row.producedEvents && row.producedEvents.length > 0}
@@ -105,7 +136,10 @@
                       <div class="scenario-box scenario-box-event">
                         <span class="box-title event">● {eventRef.event}</span>
                         {#if eventRef.data}
-                          <JsonDisplay data={eventRef.data} class="scenario-json" />
+                          <JsonDisplay
+                            data={eventRef.data}
+                            class="scenario-json"
+                          />
                         {/if}
                       </div>
                     {/each}
@@ -126,12 +160,18 @@
         <span class="label">Steps</span>
         <div class="timeline-scenario">
           {#each commandStepsScenario.steps as step}
-            <div class="timeline-row" class:command-execution={step.type === 'command'} class:command-failure={step.type === 'command' && step.fails}>
+            <div
+              class="timeline-row"
+              class:command-execution={step.type === "command"}
+              class:command-failure={step.type === "command" && step.fails}
+            >
               <!-- Left column: Command with sliceName (or empty for events-only) -->
               <div class="command-column">
-                {#if step.type === 'command'}
+                {#if step.type === "command"}
                   <div class="scenario-box scenario-box-command">
-                    <span class="box-title command">▶ {sliceName || 'Command'}</span>
+                    <span class="box-title command"
+                      >▶ {sliceName || "Command"}</span
+                    >
                     {#if step.when !== undefined}
                       <JsonDisplay data={step.when} class="scenario-json" />
                     {/if}
@@ -141,17 +181,20 @@
 
               <!-- Right column: Events -->
               <div class="events-column">
-                {#if step.type === 'events-only' && step.events}
+                {#if step.type === "events-only" && step.events}
                   <!-- Context events -->
                   {#each step.events as eventRef}
                     <div class="scenario-box scenario-box-event">
                       <span class="box-title event">● {eventRef.event}</span>
                       {#if eventRef.data}
-                        <JsonDisplay data={eventRef.data} class="scenario-json" />
+                        <JsonDisplay
+                          data={eventRef.data}
+                          class="scenario-json"
+                        />
                       {/if}
                     </div>
                   {/each}
-                {:else if step.type === 'command'}
+                {:else if step.type === "command"}
                   {#if step.fails}
                     <span class="error">✗ {step.fails}</span>
                   {:else if step.produces && step.produces.length > 0}
@@ -160,7 +203,10 @@
                       <div class="scenario-box scenario-box-event">
                         <span class="box-title event">● {eventRef.event}</span>
                         {#if eventRef.data}
-                          <JsonDisplay data={eventRef.data} class="scenario-json" />
+                          <JsonDisplay
+                            data={eventRef.data}
+                            class="scenario-json"
+                          />
                         {/if}
                       </div>
                     {/each}
@@ -175,7 +221,23 @@
       </div>
     {/if}
   </div>
-</details>
+{/snippet}
+
+{#if alwaysOpen}
+  <div class="scenario scenario-open">
+    <div class="scenario-header-static">
+      <span class="name">{scenario.name}</span>
+    </div>
+    {@render scenarioBody()}
+  </div>
+{:else}
+  <details class="scenario" open={modelStore.expandAll}>
+    <summary class="scenario-header">
+      <span class="name">{scenario.name}</span>
+    </summary>
+    {@render scenarioBody()}
+  </details>
+{/if}
 
 <style>
   .scenario {
@@ -185,14 +247,18 @@
     border: 1px solid var(--border);
   }
 
-  .scenario-header {
+  .scenario-header,
+  .scenario-header-static {
     display: flex;
     align-items: center;
     gap: 0.5rem;
     padding: 0.75rem 1rem;
-    cursor: pointer;
     user-select: none;
     list-style: none;
+  }
+
+  .scenario-header {
+    cursor: pointer;
   }
 
   .scenario-header::-webkit-details-marker {
@@ -200,7 +266,7 @@
   }
 
   .scenario-header::before {
-    content: '▶';
+    content: "▶";
     font-size: 0.6rem;
     color: var(--text-secondary);
     transition: transform 0.2s;
@@ -215,7 +281,8 @@
     background: var(--bg-secondary);
   }
 
-  .scenario-header .name {
+  .scenario-header .name,
+  .scenario-header-static .name {
     font-weight: 500;
     color: var(--color-warning);
   }

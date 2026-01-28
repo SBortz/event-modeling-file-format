@@ -1,10 +1,31 @@
 <script lang="ts">
-  import { modelStore } from './stores/model.svelte';
-  import Header from './components/Header.svelte';
-  import Navigation from './components/Navigation.svelte';
-  import TimelineView from './components/views/TimelineView.svelte';
-  import SliceView from './components/views/SliceView.svelte';
-  import TableView from './components/views/TableView.svelte';
+  import { modelStore } from "./stores/model.svelte";
+  import Header from "./components/Header.svelte";
+  import Navigation from "./components/Navigation.svelte";
+  import TimelineView from "./components/views/TimelineView.svelte";
+  import SliceView from "./components/views/SliceView.svelte";
+  import TableView from "./components/views/TableView.svelte";
+
+  // Handle browser back/forward navigation and hash changes
+  $effect(() => {
+    const handleHashChange = () => {
+      modelStore.handleHashChange();
+    };
+
+    // Handle initial hash on load
+    if (window.location.hash) {
+      requestAnimationFrame(() => {
+        modelStore.handleHashChange();
+      });
+    }
+
+    window.addEventListener("popstate", handleHashChange);
+    window.addEventListener("hashchange", handleHashChange);
+    return () => {
+      window.removeEventListener("popstate", handleHashChange);
+      window.removeEventListener("hashchange", handleHashChange);
+    };
+  });
 </script>
 
 <div class="sticky-header">
@@ -19,11 +40,11 @@
       <pre>{modelStore.error}</pre>
     </div>
   {:else if modelStore.model}
-    {#if modelStore.view === 'timeline'}
+    {#if modelStore.view === "timeline"}
       <TimelineView />
-    {:else if modelStore.view === 'slice'}
+    {:else if modelStore.view === "slice"}
       <SliceView />
-    {:else if modelStore.view === 'table'}
+    {:else if modelStore.view === "table"}
       <TableView />
     {/if}
 

@@ -34,23 +34,159 @@
   }
 
   let deduplicatedSlices = $derived(buildDeduplicatedSlices());
-  let selectedSliceKey = $state<string | null>(null);
+  let activeSliceKey = $state<string | null>(null);
+  let activeScenarioId = $state<string | null>(null);
+  let scrollContainer: HTMLElement | null = $state(null);
+  let sliceElements = $state<Map<string, HTMLElement>>(new Map());
+  let scenarioElements = $state<Map<string, HTMLElement>>(new Map());
 
-  // Select first slice by default
+  // Set first slice as active by default
   $effect(() => {
-    if (!selectedSliceKey && deduplicatedSlices.length > 0) {
-      selectedSliceKey = getSliceKey(deduplicatedSlices[0]);
+    if (!activeSliceKey && deduplicatedSlices.length > 0) {
+      activeSliceKey = getSliceKey(deduplicatedSlices[0]);
     }
   });
 
-  let selectedSlice = $derived(
-    selectedSliceKey
-      ? deduplicatedSlices.find((s) => getSliceKey(s) === selectedSliceKey)
-      : null,
-  );
+  // IntersectionObserver for scroll-based slice highlighting
+  $effect(() => {
+    if (!scrollContainer || sliceElements.size === 0) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        // Find the topmost visible slice
+        const visibleEntries = entries
+          .filter((e) => e.isIntersecting)
+          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+
+        if (visibleEntries.length > 0) {
+          const id = visibleEntries[0].target.id;
+          if (id.startsWith("slice-")) {
+            activeSliceKey = id.replace("slice-", "");
+          }
+        }
+      },
+      {
+        root: scrollContainer,
+        rootMargin: "-10% 0px -70% 0px",
+        threshold: 0,
+      },
+    );
+
+    for (const el of sliceElements.values()) {
+      observer.observe(el);
+    }
+
+    return () => observer.disconnect();
+  });
+
+  // IntersectionObserver for scroll-based scenario highlighting
+  $effect(() => {
+    if (!scrollContainer || scenarioElements.size === 0) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        // Find the topmost visible scenario
+        const visibleEntries = entries
+          .filter((e) => e.isIntersecting)
+          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+
+        if (visibleEntries.length > 0) {
+          activeScenarioId = visibleEntries[0].target.id;
+        } else {
+          activeScenarioId = null;
+        }
+      },
+      {
+        root: scrollContainer,
+        rootMargin: "-10% 0px -70% 0px",
+        threshold: 0,
+      },
+    );
+
+    for (const el of scenarioElements.values()) {
+      observer.observe(el);
+    }
+
+    return () => observer.disconnect();
+  });
+
+  // URL hash handling for deep-links - only handle slice/* hashes
+  $effect(() => {
+    const hash = window.location.hash.slice(1);
+    if (hash && hash.startsWith("slice/") && deduplicatedSlices.length > 0) {
+      const parts = hash.split("/");
+      const sliceName = decodeURIComponent(parts[1]);
+      const scenarioName =
+        parts[2] === "scenario" ? decodeURIComponent(parts[3]) : null;
+
+      // Find the slice by name
+      const slice = deduplicatedSlices.find((s) => s.name === sliceName);
+      if (slice) {
+        const sliceKey = getSliceKey(slice);
+        activeSliceKey = sliceKey;
+
+        requestAnimationFrame(() => {
+          if (scenarioName) {
+            // Find scenario index by name
+            const scenarioIndex = slice.scenarios.findIndex(
+              (s) => s.name === scenarioName,
+            );
+            if (scenarioIndex >= 0) {
+              const el = document.getElementById(
+                `scenario-${sliceKey}-${scenarioIndex}`,
+              );
+              if (el) {
+                el.scrollIntoView({ behavior: "smooth", block: "start" });
+              }
+            }
+          } else {
+            const el = document.getElementById(`slice-${sliceKey}`);
+            if (el) {
+              el.scrollIntoView({ behavior: "smooth", block: "start" });
+            }
+          }
+        });
+      }
+    }
+  });
+
+  function registerSliceElement(el: HTMLElement, key: string) {
+    sliceElements.set(key, el);
+    sliceElements = new Map(sliceElements);
+
+    return {
+      destroy() {
+        sliceElements.delete(key);
+        sliceElements = new Map(sliceElements);
+      },
+    };
+  }
 
   function getSliceKey(slice: DeduplicatedSlice) {
     return `${slice.type}:${slice.name}`;
+  }
+
+  function scrollToSlice(slice: DeduplicatedSlice) {
+    const sliceKey = getSliceKey(slice);
+    const el = document.getElementById(`slice-${sliceKey}`);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+      window.location.hash = `slice/${encodeURIComponent(slice.name)}`;
+    }
+  }
+
+  function scrollToScenario(
+    slice: DeduplicatedSlice,
+    scenarioIndex: number,
+    scenarioName: string,
+  ) {
+    const sliceKey = getSliceKey(slice);
+    const id = `scenario-${sliceKey}-${scenarioIndex}`;
+    const el = document.getElementById(id);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+      window.location.hash = `slice/${encodeURIComponent(slice.name)}/scenario/${encodeURIComponent(scenarioName)}`;
+    }
   }
 
   function buildDeduplicatedSlices(): DeduplicatedSlice[] {
@@ -248,198 +384,243 @@
     </div>
     <div class="slice-list">
       {#each deduplicatedSlices as slice}
-        {@const isActive = selectedSliceKey === getSliceKey(slice)}
-        <button
-          class="slice-item {slice.type} {isActive ? 'active' : ''}"
-          onclick={() => (selectedSliceKey = getSliceKey(slice))}
-        >
-          <div class="slice-item-main">
+        {@const sliceKey = getSliceKey(slice)}
+        {@const isActive = activeSliceKey === sliceKey}
+        <div class="slice-nav-item {slice.type} {isActive ? 'active' : ''}">
+          <button
+            class="slice-item-button"
+            onclick={() => scrollToSlice(slice)}
+          >
             <span class="symbol {slice.type}"
               >{slice.type === "state" ? "◆" : "▶"}</span
             >
             <span class="name">{slice.name}</span>
-          </div>
-        </button>
+          </button>
+
+          {#if slice.scenarios.length > 0}
+            <div class="scenario-nav-list {isActive ? 'expanded' : ''}">
+              {#each slice.scenarios as scenario, scenarioIndex}
+                <button
+                  class="scenario-nav-item"
+                  onclick={() =>
+                    scrollToScenario(slice, scenarioIndex, scenario.name)}
+                >
+                  <span class="scenario-icon">⚡</span>
+                  <span class="scenario-name">{scenario.name}</span>
+                </button>
+              {/each}
+            </div>
+          {/if}
+        </div>
       {/each}
     </div>
   </aside>
 
-  <section class="main-content">
-    {#if selectedSlice}
-      <div class="slice-detail-view">
-        <div class="slice-card {selectedSlice.type}">
-          <header class="detail-header {selectedSlice.type}">
-            <div class="title-group">
-              <span class="symbol {selectedSlice.type}"
-                >{selectedSlice.type === "state" ? "◆" : "▶"}</span
-              >
-              <h1>{selectedSlice.name}</h1>
-              <span class="type-badge {selectedSlice.type}"
-                >{selectedSlice.type}</span
-              >
-            </div>
-
-            {#if selectedSlice.example}
-              <div class="slice-example">
-                <JsonDisplay data={selectedSlice.example} />
-              </div>
-            {/if}
-          </header>
-
-          <div class="detail-body">
-            <div class="slice-details">
-              {#if selectedSlice.type === "state"}
-                {#if selectedSlice.sourcedFrom.length > 0}
-                  <div class="detail-section">
-                    <h4>Sourced From</h4>
-                    {#each selectedSlice.sourcedFrom as source}
-                      <div class="detail-item">
-                        <span class="event">● {source.name}</span>
-                        <span class="ticks-group">
-                          {#each source.ticks as tick, i}
-                            <button
-                              class="tick-ref-link"
-                              onclick={() => modelStore.navigateToTick(tick)}
-                            >
-                              @{tick}
-                            </button>
-                          {/each}
-                        </span>
-                      </div>
-                    {/each}
-                  </div>
-                {/if}
-
-                {@const readingActors = getReadingActors(selectedSlice.name)}
-                {#if readingActors.length > 0}
-                  <div class="detail-section">
-                    <h4>Read By</h4>
-                    {#each readingActors as actor}
-                      <div class="detail-item">
-                        <span class="actor">○ {actor.name}</span>
-                        <button
-                          class="tick-ref-link"
-                          onclick={() => modelStore.navigateToTick(actor.tick)}
-                        >
-                          @{actor.tick}
-                        </button>
-                      </div>
-                    {/each}
-                  </div>
-                {/if}
-              {:else}
-                {@const triggeringActors = getTriggeringActors(
-                  selectedSlice.name,
-                )}
-                {#if triggeringActors.length > 0}
-                  <div class="detail-section">
-                    <h4>Triggered By</h4>
-                    {#each triggeringActors as actor}
-                      <div class="detail-item">
-                        <span class="actor">○ {actor.name}</span>
-                        <button
-                          class="tick-ref-link"
-                          onclick={() => modelStore.navigateToTick(actor.tick)}
-                        >
-                          @{actor.tick}
-                        </button>
-                      </div>
-                    {/each}
-                  </div>
-                {/if}
-
-                {#if selectedSlice.produces.length > 0}
-                  <div class="detail-section">
-                    <h4>Produces</h4>
-                    {#each selectedSlice.produces as produced}
-                      <div class="detail-item">
-                        <span class="event">● {produced.name}</span>
-                        <span class="ticks-group">
-                          {#each produced.ticks as tick, i}
-                            <button
-                              class="tick-ref-link"
-                              onclick={() => modelStore.navigateToTick(tick)}
-                            >
-                              @{tick}
-                            </button>
-                          {/each}
-                        </span>
-                      </div>
-                    {/each}
-                  </div>
-                {/if}
-              {/if}
-            </div>
-
-            {#if selectedSlice.attachments.length > 0}
-              <div class="attachments">
-                <h3>Attachments ({selectedSlice.attachments.length})</h3>
-                <div class="attachment-list">
-                  {#each selectedSlice.attachments as attachment}
-                    <div class="attachment-item {attachment.type}">
-                      {#if attachment.type === "image" && attachment.path}
-                        <figure>
-                          <img
-                            src="/attachments/{attachment.path}"
-                            alt={attachment.label}
-                          />
-                          <figcaption>{attachment.label}</figcaption>
-                        </figure>
-                      {:else if attachment.type === "link" && attachment.url}
-                        <a
-                          href={attachment.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          <span class="attachment-icon">🔗</span>
-                          {attachment.label}
-                        </a>
-                      {:else if attachment.type === "note" && attachment.content}
-                        <div class="attachment-note">
-                          <span class="attachment-label"
-                            >{attachment.label}</span
-                          >
-                          <p>{attachment.content}</p>
-                        </div>
-                      {:else if attachment.type === "file" && attachment.path}
-                        <a
-                          href="/attachments/{attachment.path}"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          class="attachment-file"
-                        >
-                          <span class="attachment-icon">📄</span>
-                          {attachment.label}
-                          <span class="attachment-path">{attachment.path}</span>
-                        </a>
-                      {/if}
-                    </div>
-                  {/each}
+  <section class="main-content" bind:this={scrollContainer}>
+    {#if deduplicatedSlices.length > 0}
+      <div class="slices-container">
+        {#each deduplicatedSlices as slice, sliceIndex}
+          {@const sliceKey = getSliceKey(slice)}
+          <article
+            id="slice-{sliceKey}"
+            class="slice-detail-view"
+            use:registerSliceElement={sliceKey}
+          >
+            <div class="slice-card {slice.type}">
+              <header class="detail-header {slice.type}">
+                <div class="title-group">
+                  <span class="symbol {slice.type}"
+                    >{slice.type === "state" ? "◆" : "▶"}</span
+                  >
+                  <h1>{slice.name}</h1>
+                  <span class="type-badge {slice.type}">{slice.type}</span>
                 </div>
+
+                {#if slice.example}
+                  <div class="slice-example">
+                    <JsonDisplay data={slice.example} />
+                  </div>
+                {/if}
+              </header>
+
+              <div class="detail-body">
+                <div class="slice-details">
+                  {#if slice.type === "state"}
+                    {#if slice.sourcedFrom.length > 0}
+                      <div class="detail-section">
+                        <h4>Sourced From</h4>
+                        {#each slice.sourcedFrom as source}
+                          <div class="detail-item">
+                            <span class="event">● {source.name}</span>
+                            <span class="ticks-group">
+                              {#each source.ticks as tick}
+                                <a
+                                  class="tick-ref-link"
+                                  href="#timeline/tick-{tick}"
+                                  onclick={(e) => {
+                                    e.preventDefault();
+                                    window.location.hash = `timeline/tick-${tick}`;
+                                    modelStore.navigateToTick(tick);
+                                  }}
+                                >
+                                  @{tick}
+                                </a>
+                              {/each}
+                            </span>
+                          </div>
+                        {/each}
+                      </div>
+                    {/if}
+
+                    {@const readingActors = getReadingActors(slice.name)}
+                    {#if readingActors.length > 0}
+                      <div class="detail-section">
+                        <h4>Read By</h4>
+                        {#each readingActors as actor}
+                          <div class="detail-item">
+                            <span class="actor">○ {actor.name}</span>
+                            <a
+                              class="tick-ref-link"
+                              href="#timeline/tick-{actor.tick}"
+                              onclick={(e) => {
+                                e.preventDefault();
+                                window.location.hash = `timeline/tick-${actor.tick}`;
+                                modelStore.navigateToTick(actor.tick);
+                              }}
+                            >
+                              @{actor.tick}
+                            </a>
+                          </div>
+                        {/each}
+                      </div>
+                    {/if}
+                  {:else}
+                    {@const triggeringActors = getTriggeringActors(slice.name)}
+                    {#if triggeringActors.length > 0}
+                      <div class="detail-section">
+                        <h4>Triggered By</h4>
+                        {#each triggeringActors as actor}
+                          <div class="detail-item">
+                            <span class="actor">○ {actor.name}</span>
+                            <a
+                              class="tick-ref-link"
+                              href="#timeline/tick-{actor.tick}"
+                              onclick={(e) => {
+                                e.preventDefault();
+                                window.location.hash = `timeline/tick-${actor.tick}`;
+                                modelStore.navigateToTick(actor.tick);
+                              }}
+                            >
+                              @{actor.tick}
+                            </a>
+                          </div>
+                        {/each}
+                      </div>
+                    {/if}
+
+                    {#if slice.produces.length > 0}
+                      <div class="detail-section">
+                        <h4>Produces</h4>
+                        {#each slice.produces as produced}
+                          <div class="detail-item">
+                            <span class="event">● {produced.name}</span>
+                            <span class="ticks-group">
+                              {#each produced.ticks as tick}
+                                <a
+                                  class="tick-ref-link"
+                                  href="#timeline/tick-{tick}"
+                                  onclick={(e) => {
+                                    e.preventDefault();
+                                    window.location.hash = `timeline/tick-${tick}`;
+                                    modelStore.navigateToTick(tick);
+                                  }}
+                                >
+                                  @{tick}
+                                </a>
+                              {/each}
+                            </span>
+                          </div>
+                        {/each}
+                      </div>
+                    {/if}
+                  {/if}
+                </div>
+
+                {#if slice.attachments.length > 0}
+                  <div class="attachments">
+                    <h3>Attachments ({slice.attachments.length})</h3>
+                    <div class="attachment-list">
+                      {#each slice.attachments as attachment}
+                        <div class="attachment-item {attachment.type}">
+                          {#if attachment.type === "image" && attachment.path}
+                            <figure>
+                              <img
+                                src="/attachments/{attachment.path}"
+                                alt={attachment.label}
+                              />
+                              <figcaption>{attachment.label}</figcaption>
+                            </figure>
+                          {:else if attachment.type === "link" && attachment.url}
+                            <a
+                              href={attachment.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              <span class="attachment-icon">🔗</span>
+                              {attachment.label}
+                            </a>
+                          {:else if attachment.type === "note" && attachment.content}
+                            <div class="attachment-note">
+                              <span class="attachment-label"
+                                >{attachment.label}</span
+                              >
+                              <p>{attachment.content}</p>
+                            </div>
+                          {:else if attachment.type === "file" && attachment.path}
+                            <a
+                              href="/attachments/{attachment.path}"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              class="attachment-file"
+                            >
+                              <span class="attachment-icon">📄</span>
+                              {attachment.label}
+                              <span class="attachment-path"
+                                >{attachment.path}</span
+                              >
+                            </a>
+                          {/if}
+                        </div>
+                      {/each}
+                    </div>
+                  </div>
+                {/if}
+              </div>
+              <!-- End detail-body -->
+            </div>
+            <!-- End slice-card -->
+
+            {#if slice.scenarios.length > 0}
+              <div class="scenarios">
+                <h3>Scenarios ({slice.scenarios.length})</h3>
+                {#each slice.scenarios as scenario, scenarioIndex}
+                  <div id="scenario-{sliceKey}-{scenarioIndex}">
+                    <Scenario
+                      {scenario}
+                      type={slice.type}
+                      sliceName={slice.name}
+                      alwaysOpen={true}
+                    />
+                  </div>
+                {/each}
               </div>
             {/if}
-          </div>
-          <!-- End detail-body -->
-        </div>
-        <!-- End slice-card -->
-
-        {#if selectedSlice.scenarios.length > 0}
-          <div class="scenarios">
-            <h3>Scenarios ({selectedSlice.scenarios.length})</h3>
-            {#each selectedSlice.scenarios as scenario}
-              <Scenario
-                {scenario}
-                type={selectedSlice.type}
-                sliceName={selectedSlice.name}
-              />
-            {/each}
-          </div>
-        {/if}
+          </article>
+        {/each}
       </div>
-      <!-- End slice-detail-view -->
     {:else}
       <div class="empty-state">
-        <p>Select a slice from the sidebar to view details</p>
+        <p>No slices found in this model</p>
       </div>
     {/if}
   </section>
@@ -499,10 +680,17 @@
     gap: 0.25rem;
   }
 
-  .slice-item {
+  .slice-nav-item {
     display: flex;
-    justify-content: space-between;
+    flex-direction: column;
+    border-radius: 0.5rem;
+    transition: all 0.2s;
+  }
+
+  .slice-item-button {
+    display: flex;
     align-items: center;
+    gap: 0.5rem;
     width: 100%;
     padding: 0.75rem;
     border: 1px solid transparent;
@@ -513,24 +701,24 @@
     transition: all 0.2s;
   }
 
-  .slice-item:hover {
+  .slice-item-button:hover {
     background: var(--bg-card);
   }
 
-  .slice-item.active {
+  .slice-nav-item.active .slice-item-button {
     background: var(--bg-card);
     border-color: var(--color-link);
     box-shadow: var(--shadow-sm);
   }
 
-  .slice-item-main {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    overflow: hidden;
+  .slice-nav-item.active.state .slice-item-button {
+    border-left: 3px solid var(--color-state);
+  }
+  .slice-nav-item.active.command .slice-item-button {
+    border-left: 3px solid var(--color-command);
   }
 
-  .slice-item .name {
+  .slice-item-button .name {
     font-size: 0.9rem;
     white-space: nowrap;
     overflow: hidden;
@@ -538,8 +726,52 @@
     color: var(--text-primary);
   }
 
-  .slice-item .symbol {
+  .slice-item-button .symbol {
     font-size: 1rem;
+  }
+
+  /* Scenario navigation in sidebar */
+  .scenario-nav-list {
+    display: none;
+    flex-direction: column;
+    padding-left: 1.5rem;
+    margin-top: 0.25rem;
+    margin-bottom: 0.5rem;
+    gap: 0.125rem;
+  }
+
+  .scenario-nav-list.expanded {
+    display: flex;
+  }
+
+  .scenario-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.375rem 0.5rem;
+    border: none;
+    border-radius: 0.25rem;
+    background: transparent;
+    cursor: pointer;
+    text-align: left;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    transition: all 0.15s;
+  }
+
+  .scenario-nav-item:hover {
+    background: var(--bg-card);
+    color: var(--color-warning);
+  }
+
+  .scenario-icon {
+    font-size: 0.7rem;
+  }
+
+  .scenario-name {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   /* Colors */
@@ -550,25 +782,26 @@
     color: var(--color-command);
   }
 
-  .slice-item.active.state {
-    border-left: 3px solid var(--color-state);
-  }
-  .slice-item.active.command {
-    border-left: 3px solid var(--color-command);
-  }
-
   /* Main Content */
   .main-content {
     flex: 1;
     overflow-y: auto;
     background: var(--bg-primary);
     padding: 2rem;
+    scroll-behavior: smooth;
+  }
+
+  .slices-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 3rem;
   }
 
   .slice-detail-view {
     padding: 0;
-    max-width: 1400px;
-    margin: 0 auto;
+    scroll-margin-top: 1rem;
   }
 
   .slice-card {
@@ -642,34 +875,6 @@
     color: var(--color-command);
   }
 
-  .detail-header .ticks {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 0.9rem;
-    color: var(--text-secondary);
-    margin-left: 2.5rem; /* align with text */
-  }
-
-  .detail-header .tick-values {
-    font-family: var(--font-mono);
-  }
-
-  .tick-link {
-    background: none;
-    border: none;
-    padding: 0;
-    color: var(--color-link, #5b9fd4);
-    text-decoration: underline;
-    cursor: pointer;
-    font-family: inherit;
-    font-size: inherit;
-  }
-
-  .tick-link:hover {
-    color: var(--color-link-hover, #3b82f6);
-  }
-
   .tick-ref-link {
     display: inline-flex;
     align-items: center;
@@ -683,7 +888,7 @@
     font-size: 0.75rem;
     font-family: var(--font-mono);
     transition: all 0.2s;
-    text-decoration: none; /* Reset underline */
+    text-decoration: none;
     margin-left: 0.25rem;
   }
 
@@ -745,12 +950,6 @@
   }
   .detail-item .actor {
     color: var(--color-actor);
-  }
-
-  .detail-item .muted-ref {
-    color: var(--text-secondary);
-    opacity: 0.6;
-    font-size: 0.8rem;
   }
 
   /* Attachments - Reused */

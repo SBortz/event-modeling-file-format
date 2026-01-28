@@ -46,6 +46,60 @@ class ModelStore {
     });
   }
 
+  navigateToSlice(sliceKey: string) {
+    // Use pushState for browser history support
+    const newHash = `slice/${sliceKey}`;
+    history.pushState({ view: 'slice', sliceKey }, '', `#${newHash}`);
+
+    this.view = 'slice';
+    requestAnimationFrame(() => {
+      const el = document.getElementById(`slice-${sliceKey}`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    });
+  }
+
+  handleHashChange() {
+    const hash = window.location.hash.slice(1);
+    if (!hash) return;
+
+    const parts = hash.split('/');
+    const viewPart = parts[0];
+    const targetPart = parts[1];
+
+    if (viewPart === 'timeline') {
+      this.view = 'timeline';
+      if (targetPart?.startsWith('tick-')) {
+        const tick = parseInt(targetPart.replace('tick-', ''), 10);
+        if (!isNaN(tick)) {
+          this.highlightTick = tick;
+          requestAnimationFrame(() => {
+            const el = document.getElementById(`tick-${tick}`);
+            if (el) {
+              el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              el.classList.add('highlight-flash');
+              setTimeout(() => el.classList.remove('highlight-flash'), 2000);
+            }
+            this.highlightTick = null;
+          });
+        }
+      }
+    } else if (viewPart === 'slice') {
+      this.view = 'slice';
+      if (targetPart) {
+        requestAnimationFrame(() => {
+          const el = document.getElementById(`slice-${targetPart}`);
+          if (el) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        });
+      }
+    } else if (viewPart === 'table') {
+      this.view = 'table';
+    }
+  }
+
   setExpandAll(value: boolean) {
     this.expandAll = value;
     localStorage.setItem('expandAll', String(value));
