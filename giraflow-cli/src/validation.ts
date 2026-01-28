@@ -12,8 +12,19 @@ import { colors } from './views/colors.js';
 export function getBundledSchemaPath(): string | null {
   const __filename = fileURLToPath(import.meta.url);
   const __dirname = dirname(__filename);
-  const schemaPath = join(__dirname, 'giraflow.schema.json');
-  return existsSync(schemaPath) ? schemaPath : null;
+
+  // Check multiple locations: dist/ (production) and monorepo root (development with tsx)
+  const candidates = [
+    join(__dirname, 'giraflow.schema.json'),              // dist/giraflow.schema.json
+    join(__dirname, '..', '..', 'giraflow.schema.json'),  // ../../giraflow.schema.json (dev mode from src/)
+  ];
+
+  for (const candidate of candidates) {
+    if (existsSync(candidate)) {
+      return candidate;
+    }
+  }
+  return null;
 }
 
 /**

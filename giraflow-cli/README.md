@@ -82,6 +82,14 @@ giraflow-cli create my-model.giraflow.json
 giraflow-cli create
 ```
 
+### Copy schema file
+
+```bash
+giraflow-cli copy-schema
+```
+
+Copies `giraflow.schema.json` to the current directory. This enables IDE autocompletion and validation when editing `.giraflow.json` files.
+
 ## Views
 
 ### Timeline

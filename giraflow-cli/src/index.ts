@@ -11,6 +11,7 @@ import { renderTable } from './views/table.js';
 import { validateAgainstSchema, getBundledSchemaPath, printValidationResult } from './validation.js';
 import { colors, rule } from './views/colors.js';
 import { createCommand } from './commands/create.js';
+import { copySchemaCommand } from './commands/copy-schema.js';
 
 // CLI setup
 program
@@ -32,6 +33,7 @@ program
   });
 
 program.addCommand(createCommand());
+program.addCommand(copySchemaCommand());
 
 program.addHelpText('after', `
 ${colors.dim('View Modes:')}
