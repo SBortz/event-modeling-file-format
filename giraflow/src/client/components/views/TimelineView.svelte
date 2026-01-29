@@ -119,8 +119,9 @@
 <div class="timeline-master-detail">
   <!-- Master: Compact timeline on the left -->
   <aside class="timeline-master">
-    <div class="tl-master-line"></div>
-    {#each sortedTimeline as el}
+    <div class="tl-master-content">
+      <div class="tl-master-line"></div>
+      {#each sortedTimeline as el}
       {@const position = getPosition(el.type)}
       <button
         class="tl-master-item tl-{position}"
@@ -132,7 +133,8 @@
         <span class="tl-symbol {el.type}">{symbols[el.type]}</span>
         <span class="tl-name {el.type}">{el.name}</span>
       </button>
-    {/each}
+      {/each}
+    </div>
   </aside>
 
   <!-- Detail: Continuous stream on the right -->
@@ -213,6 +215,11 @@
     border-radius: 0.5rem;
     box-shadow: var(--shadow-card);
     margin: 1.5rem 0 1.5rem 2rem;
+  }
+
+  .tl-master-content {
+    position: relative;
+    min-height: 100%;
   }
 
   .tl-master-line {
