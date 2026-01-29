@@ -27,6 +27,8 @@
   let activeTick = $state<number | null>(null);
   let detailContainer: HTMLElement | null = $state(null);
   let detailElements = $state<Map<number, HTMLElement>>(new Map());
+  // Set flag immediately if there's a hash to navigate to
+  let isProgrammaticScroll = window.location.hash.includes("timeline/tick-");
 
   let sortedTimeline = $derived(
     modelStore.model
@@ -38,7 +40,10 @@
     const element = document.getElementById(`tick-${tick}`);
     if (element) {
       activeTick = tick;
+      isProgrammaticScroll = true;
       element.scrollIntoView({ behavior: "smooth", block: "start" });
+      // Re-enable scroll handler after animation completes
+      setTimeout(() => (isProgrammaticScroll = false), 1000);
       element.classList.add("highlight-flash");
       setTimeout(() => element.classList.remove("highlight-flash"), 2000);
       // Update URL
@@ -67,6 +72,9 @@
     if (!detailContainer || detailElements.size === 0) return;
 
     function updateActiveFromScroll() {
+      // Skip during programmatic scrolling to avoid race conditions
+      if (isProgrammaticScroll) return;
+
       const headerOffset = 120; // Sticky header height
       let closestTick: number | null = null;
       let closestDistance = Infinity;
@@ -93,21 +101,27 @@
           `#timeline/tick-${closestTick}`,
         );
 
-        // Scroll master item into view if needed
+        // Scroll master item into view if needed (use scrollTo to avoid affecting window scroll)
         const masterItem = document.querySelector(
           `.tl-master-item[data-tick="${closestTick}"]`,
-        );
-        if (masterItem) {
-          masterItem.scrollIntoView({
-            behavior: "smooth",
-            block: "nearest",
-          });
+        ) as HTMLElement | null;
+        const masterContainer = document.querySelector(".timeline-master");
+        if (masterItem && masterContainer) {
+          const containerRect = masterContainer.getBoundingClientRect();
+          const itemRect = masterItem.getBoundingClientRect();
+          // Only scroll if item is outside visible area of master
+          if (itemRect.top < containerRect.top || itemRect.bottom > containerRect.bottom) {
+            masterContainer.scrollTo({
+              top: masterItem.offsetTop - masterContainer.clientHeight / 2 + masterItem.clientHeight / 2,
+              behavior: "smooth",
+            });
+          }
         }
       }
     }
 
     window.addEventListener("scroll", updateActiveFromScroll, { passive: true });
-    updateActiveFromScroll(); // Initial call
+    // No initial call - hash effect handles initialization
 
     return () => window.removeEventListener("scroll", updateActiveFromScroll);
   });
@@ -119,11 +133,14 @@
       const tick = parseInt(hash.replace("timeline/tick-", ""), 10);
       if (!isNaN(tick) && sortedTimeline.length > 0) {
         activeTick = tick;
+        isProgrammaticScroll = true;
         requestAnimationFrame(() => {
           const el = document.getElementById(`tick-${tick}`);
           if (el) {
             el.scrollIntoView({ behavior: "smooth", block: "start" });
           }
+          // Re-enable scroll handler after animation completes
+          setTimeout(() => (isProgrammaticScroll = false), 1000);
         });
       }
     } else if (sortedTimeline.length > 0 && activeTick === null) {
