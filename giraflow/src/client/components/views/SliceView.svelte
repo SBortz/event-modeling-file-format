@@ -527,17 +527,17 @@
   .slice-list {
     flex: 1;
     overflow-y: auto;
-    padding: 0.5rem;
+    padding: 0.75rem;
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
+    gap: 0.5rem;
   }
 
   .slice-nav-item {
     display: flex;
     flex-direction: column;
     border-radius: 0.5rem;
-    transition: all 0.2s;
+    transition: all 0.2s ease-out;
   }
 
   .slice-item-button {
@@ -545,17 +545,28 @@
     align-items: center;
     gap: 0.5rem;
     width: 100%;
-    padding: 0.75rem;
+    padding: 0.875rem;
     border: 1px solid transparent;
+    border-left: 3px solid transparent;
     border-radius: 0.5rem;
     background: transparent;
     cursor: pointer;
     text-align: left;
-    transition: all 0.2s;
+    transition: all 0.2s ease-out;
   }
 
   .slice-item-button:hover {
     background: var(--bg-card);
+  }
+
+  /* State type hover hint */
+  .slice-nav-item.state .slice-item-button:hover {
+    background: rgba(156, 206, 106, 0.04);
+  }
+
+  /* Command type hover hint */
+  .slice-nav-item.command .slice-item-button:hover {
+    background: rgba(122, 162, 247, 0.04);
   }
 
   .slice-nav-item.active .slice-item-button {
@@ -564,12 +575,28 @@
     box-shadow: var(--shadow-sm);
   }
 
+  /* State active styling */
+  .slice-nav-item.state.active .slice-item-button {
+    background: rgba(156, 206, 106, 0.08);
+    border-left-color: var(--color-state);
+  }
+
+  /* Command active styling */
+  .slice-nav-item.command.active .slice-item-button {
+    background: rgba(122, 162, 247, 0.08);
+    border-left-color: var(--color-command);
+  }
+
   .slice-item-button .name {
-    font-size: 0.9rem;
+    font-size: 0.925rem;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     color: var(--text-primary);
+  }
+
+  .slice-nav-item.active .slice-item-button .name {
+    font-weight: 500;
   }
 
   .slice-item-button .symbol {
@@ -580,10 +607,13 @@
   .scenario-nav-list {
     display: none;
     flex-direction: column;
-    padding-left: 1.5rem;
+    position: relative;
+    margin-left: 1rem;
+    padding-left: 1rem;
     margin-top: 0.25rem;
     margin-bottom: 0.5rem;
-    gap: 0.125rem;
+    gap: 0.25rem;
+    border-left: 1px solid var(--border);
   }
 
   .scenario-nav-list.expanded {
@@ -594,15 +624,26 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    position: relative;
     padding: 0.375rem 0.5rem;
     border: 1px solid transparent;
     border-radius: 0.25rem;
     background: transparent;
     cursor: pointer;
     text-align: left;
-    font-size: 0.8rem;
+    font-size: 0.8125rem;
     color: var(--text-secondary);
-    transition: all 0.15s;
+    transition: all 0.2s ease-out;
+  }
+
+  .scenario-nav-item::before {
+    content: "";
+    position: absolute;
+    left: -1rem;
+    width: 0.75rem;
+    height: 1px;
+    background: var(--border);
+    top: 50%;
   }
 
   .scenario-nav-item:hover {
