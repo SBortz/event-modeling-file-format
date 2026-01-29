@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.6] - 2025-01-29
+
+### Added
+
+- **Wireframe support for Actors**: Actor entries can now include a `wireframes` array referencing HTML files in the `.giraflow` folder. Wireframes are displayed as interactive previews in the timeline view.
+- **Code/Preview toggle**: Wireframe viewer includes a toggle switch to view either the rendered preview or the HTML source code with syntax highlighting.
+- **Wireframe live reload**: Changes to wireframe files trigger an automatic iframe refresh without reloading the entire page.
+- **Local wired-elements bundle**: The wired-elements library is now bundled locally (`/lib/wired-elements.js`) for faster loading and offline support.
+
+### Changed
+
+- **Wireframe naming convention**: Wireframe files should follow the pattern `user-<tick>.html` for consistency.
+
 ## [0.2.5] - 2025-01-29
 
 - **Fixed navigation**: Back- and forth navigation was broken. It's fixed with this minor update.
