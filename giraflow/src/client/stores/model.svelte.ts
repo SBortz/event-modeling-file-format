@@ -4,7 +4,7 @@ class ModelStore {
   model = $state<InformationFlowModel | null>(null);
   error = $state<string | null>(null);
   watchedFile = $state<string>('');
-  view = $state<ViewMode>('table');
+  view = $state<ViewMode>('timeline');
   expandAll = $state(false);
   highlightTick = $state<number | null>(null);
 
