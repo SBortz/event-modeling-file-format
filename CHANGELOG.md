@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.1] - 2025-01-29
+
+- **Data Model**: Generate data model from giraflow files instead of directly building it inside the views.
+- **Stylings**: Little styling tweaks.
+
 ## [0.3.0] - 2025-01-29
 
 ### Changed
