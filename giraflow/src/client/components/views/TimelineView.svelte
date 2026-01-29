@@ -528,11 +528,12 @@
   .tl-lane-labels-wrapper {
     flex: 1;
     min-width: 0;
+    overflow: visible;
   }
 
   .tl-lane-labels {
     position: relative;
-    height: 7rem;
+    height: 5rem;
   }
 
   .tl-lane-label {
@@ -541,26 +542,21 @@
     height: 100%;
     display: flex;
     align-items: flex-end;
-    justify-content: center;
-    overflow: hidden;
-    padding-bottom: 0.25rem;
+    justify-content: flex-start;
+    overflow: visible;
   }
 
   .tl-lane-label-text {
-    writing-mode: vertical-rl;
-    text-orientation: mixed;
-    transform: rotate(180deg);
+    transform-origin: bottom left;
+    transform: rotate(-45deg) translateX(-0.5rem);
     font-size: 0.65rem;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.02em;
     color: var(--text-secondary);
     white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    padding: 0.25rem 0.15rem;
+    padding: 0.2rem 0.4rem;
     border-radius: 0.2rem;
-    max-height: calc(100% - 4px);
   }
 
   .tl-lane-label.event .tl-lane-label-text {
@@ -580,8 +576,8 @@
 
   .tl-master-line {
     position: absolute;
-    /* Top offset accounts for lane header: padding (0.5rem + 0.5rem) + labels height (7rem) + border (1px) */
-    top: calc(0.5rem + 0.5rem + 7rem + 1px);
+    /* Top offset accounts for lane header: padding (0.5rem + 0.5rem) + labels height (5rem) + border (1px) */
+    top: calc(0.5rem + 0.5rem + 5rem + 1px);
     bottom: 0;
     /* left padding (0.75rem) + tick width (2rem) + gap (0.5rem) + tick margin (0.25rem) = 3.5rem */
     left: calc(0.75rem + 2rem + 0.5rem + 0.25rem);
