@@ -28,6 +28,27 @@ export function getBundledSchemaPath(): string | null {
 }
 
 /**
+ * Get the path to the bundled AI instructions (copied during build)
+ */
+export function getBundledAiInstructionsPath(): string | null {
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = dirname(__filename);
+
+  // Check multiple locations: dist/server/ (production) and monorepo docs/ (development with tsx)
+  const candidates = [
+    join(__dirname, '..', 'design-methodology.md'),           // dist/server/design-methodology.md
+    join(__dirname, '..', '..', '..', '..', 'docs', 'design-methodology.md'),  // monorepo root/docs (dev mode from src/server/cli/)
+  ];
+
+  for (const candidate of candidates) {
+    if (existsSync(candidate)) {
+      return candidate;
+    }
+  }
+  return null;
+}
+
+/**
  * Validate a JSON document against a JSON Schema
  */
 export async function validateAgainstSchema(

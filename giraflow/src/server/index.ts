@@ -9,6 +9,7 @@ import { findGiraflowFiles, promptFileSelection } from './file-selector.js';
 import { viewCommand } from './cli/commands/view.js';
 import { createCommand } from './cli/commands/create.js';
 import { copySchemaCommand } from './cli/commands/copy-schema.js';
+import { copyAiInstructionsCommand } from './cli/commands/copy-ai-instructions.js';
 import { colors } from './cli/colors.js';
 
 program
@@ -29,13 +30,15 @@ program
 program.addCommand(viewCommand());
 program.addCommand(createCommand());
 program.addCommand(copySchemaCommand());
+program.addCommand(copyAiInstructionsCommand());
 
 program.addHelpText('after', `
 ${colors.dim('Commands:')}
-  ${colors.cyan('[file]')}        Start live preview server (default)
-  ${colors.cyan('view')}          Visualize model in terminal
-  ${colors.cyan('create')}        Create new model interactively
-  ${colors.cyan('copy-schema')}   Copy schema to current directory
+  ${colors.cyan('[file]')}                  Start live preview server (default)
+  ${colors.cyan('view')}                    Visualize model in terminal
+  ${colors.cyan('create')}                  Create new model interactively
+  ${colors.cyan('copy-schema')}             Copy schema to current directory
+  ${colors.cyan('copy-ai-instructions')}    Copy AI design guide to current directory
 
 ${colors.dim('Examples:')}
   ${colors.white('giraflow')} ${colors.cyan('model.giraflow.json')}           ${colors.dim('# Start live preview server')}
