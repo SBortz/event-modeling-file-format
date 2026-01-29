@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.2] - 2025-01-29
+
+- **Timeline view is default**: Made timeline view the central view.
+
+
 ## [0.3.1] - 2025-01-29
 
 - **Data Model**: Generate data model from giraflow files instead of directly building it inside the views.
