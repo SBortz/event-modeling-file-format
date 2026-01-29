@@ -100,6 +100,29 @@ export function createServer(options: ServerOptions): {
       return;
     }
 
+    // Asset endpoint for wireframes and other files
+    if (url.pathname.startsWith('/assets/')) {
+      const assetName = url.pathname.slice('/assets/'.length);
+      // Compute asset folder from giraflow file path (remove .json extension)
+      const giraflowDir = filePath.replace(/\.json$/, '');
+      const assetPath = path.join(giraflowDir, assetName);
+
+      // Security: prevent directory traversal
+      const resolvedAssetPath = path.resolve(assetPath);
+      const resolvedGiraflowDir = path.resolve(giraflowDir);
+      if (!resolvedAssetPath.startsWith(resolvedGiraflowDir + path.sep)) {
+        res.writeHead(403, { 'Content-Type': 'text/plain' });
+        res.end('Forbidden');
+        return;
+      }
+
+      if (serveStaticFile(res, resolvedAssetPath)) return;
+
+      res.writeHead(404, { 'Content-Type': 'text/plain' });
+      res.end('Asset Not Found');
+      return;
+    }
+
     // API endpoint for model data
     if (url.pathname === '/api/model') {
       res.writeHead(200, {

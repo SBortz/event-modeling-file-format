@@ -82,6 +82,7 @@ export interface Actor {
   tick: number;
   readsView: string;
   sendsCommand: string;
+  wireframes?: string[];
 }
 
 export interface Command {

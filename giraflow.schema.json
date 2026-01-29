@@ -264,6 +264,11 @@
         "sendsCommand": {
           "type": "string",
           "description": "Name of the command that the actor sends"
+        },
+        "wireframes": {
+          "type": "array",
+          "description": "Wireframe HTML files for this actor's UI (relative paths within the assets folder)",
+          "items": { "type": "string" }
         }
       }
     },

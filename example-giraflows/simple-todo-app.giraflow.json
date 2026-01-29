@@ -17,7 +17,8 @@
       "name": "User",
       "tick": 2,
       "readsView": "Todos",
-      "sendsCommand": "AddTodo"
+      "sendsCommand": "AddTodo",
+      "wireframes": ["add-todo.html"]
     },
     {
       "type": "command",

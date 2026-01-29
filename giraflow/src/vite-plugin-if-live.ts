@@ -5,6 +5,9 @@ import type { InformationFlowModel } from './server/types.js';
 import type { ServerResponse } from 'node:http';
 
 const MIME_TYPES: Record<string, string> = {
+  '.html': 'text/html',
+  '.css': 'text/css',
+  '.js': 'application/javascript',
   '.png': 'image/png',
   '.jpg': 'image/jpeg',
   '.jpeg': 'image/jpeg',
@@ -146,6 +149,33 @@ export function ifLivePlugin(): Plugin {
           } catch {
             res.writeHead(404);
             res.end('Not found');
+          }
+          return;
+        }
+
+        if (req.url?.startsWith('/assets/')) {
+          const assetName = decodeURIComponent(req.url.slice('/assets/'.length));
+          // Asset folder is the giraflow file path without .json extension
+          const giraflowDir = filePath!.replace(/\.json$/, '');
+          const absolutePath = path.resolve(giraflowDir, assetName);
+
+          // Prevent directory traversal
+          const resolvedGiraflowDir = path.resolve(giraflowDir);
+          if (!absolutePath.startsWith(resolvedGiraflowDir + path.sep)) {
+            res.writeHead(403);
+            res.end('Forbidden');
+            return;
+          }
+
+          try {
+            const content = fs.readFileSync(absolutePath);
+            const ext = path.extname(absolutePath).toLowerCase();
+            const mimeType = MIME_TYPES[ext] || 'application/octet-stream';
+            res.writeHead(200, { 'Content-Type': mimeType });
+            res.end(content);
+          } catch {
+            res.writeHead(404);
+            res.end('Asset not found');
           }
           return;
         }

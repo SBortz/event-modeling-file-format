@@ -3,6 +3,7 @@
   import type { TimelineElement, Event, StateView, Command, Actor } from '../../lib/types';
   import { isEvent, isState, isCommand, isActor } from '../../lib/types';
   import JsonDisplay from '../shared/JsonDisplay.svelte';
+  import WireframeViewer from '../shared/WireframeViewer.svelte';
 
   const symbols: Record<string, string> = {
     event: '●',
@@ -80,6 +81,13 @@
               <div class="tl-detail">
                 reads <span class="state">{el.readsView}</span> → triggers <span class="command">{el.sendsCommand}</span>
               </div>
+              {#if el.wireframes && el.wireframes.length > 0}
+                <div class="tl-wireframes">
+                  {#each el.wireframes as wireframe}
+                    <WireframeViewer src="/assets/{wireframe}" title="{el.name} - {wireframe}" />
+                  {/each}
+                </div>
+              {/if}
             {:else if isCommand(el)}
               {#if el.example}
                 <JsonDisplay data={el.example} class="tl-json" />
@@ -266,6 +274,13 @@
   :global(.tl-json) {
     margin-top: 0.5rem;
     font-size: 0.75rem !important;
+  }
+
+  .tl-wireframes {
+    margin-top: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
   }
 
   :global(.highlight-flash) {
