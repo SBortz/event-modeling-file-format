@@ -792,15 +792,8 @@
 
   .slice-nav-item.active .slice-item-button {
     background: var(--bg-card);
-    border-color: var(--color-link);
+    border-color: var(--border);
     box-shadow: var(--shadow-sm);
-  }
-
-  .slice-nav-item.active.state .slice-item-button {
-    border-left: 3px solid var(--color-state);
-  }
-  .slice-nav-item.active.command .slice-item-button {
-    border-left: 3px solid var(--color-command);
   }
 
   .slice-item-button .name {
@@ -846,14 +839,14 @@
 
   .scenario-nav-item:hover {
     background: var(--bg-card);
-    color: var(--color-warning);
+    color: var(--text-primary);
   }
 
   .scenario-nav-item.active {
     background: var(--bg-card);
-    color: var(--color-warning);
+    color: var(--text-primary);
     font-weight: 500;
-    border-left: 2px solid var(--color-warning);
+    border-left: 2px solid var(--text-secondary);
     padding-left: calc(0.5rem - 2px);
   }
 
@@ -1133,7 +1126,7 @@
 
   .scenarios h3 {
     font-size: 0.875rem;
-    color: var(--color-warning);
+    color: var(--text-secondary);
     margin-bottom: 1rem;
   }
 
