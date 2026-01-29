@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.4] - 2025-01-29
+
+### Changed
+
+- **Reworked Info Page**: Events, State Views, Commands, and Actors are now deduplicated with occurrence counts. Each item displays clickable tick chips (`@1`, `@5`, etc.) that navigate directly to that position in the timeline.
+- **Master-Detail Slices View**: The Slices & Scenarios view has been rebuilt as a master-detail layout for better navigation between slices.
+- **Scenario Timeline**: Scenarios now display a visual timeline showing the sequence of events, commands, and state changes.
+- **Example Data in Slices**: Slices now show example data for states and commands.
+- **URL-based Navigation**: Tabs now update the URL hash, enabling browser back/forward navigation and deep links to specific timeline positions.
+- **Timeline Styling**: Improved visual positioning of timeline points.
+
 ## [0.2.3] - 2025-01-27
 
 
