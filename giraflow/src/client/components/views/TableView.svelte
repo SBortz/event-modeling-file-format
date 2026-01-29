@@ -89,14 +89,14 @@
         <thead>
           <tr>
             <th class="col-name">Name</th>
-            <th class="col-occurrences">Occurrences</th>
+            <th>Occurrences</th>
           </tr>
         </thead>
         <tbody>
           {#each deduplicatedEvents as event}
             <tr>
               <td class="col-name"><span class="event">{event.name}</span></td>
-              <td class="col-occurrences">
+              <td>
                 <div class="tick-chips">
                   {#each event.ticks as tick}
                     <button
@@ -168,7 +168,7 @@
         <thead>
           <tr>
             <th class="col-name">Name</th>
-            <th class="col-occurrences">Occurrences</th>
+            <th>Occurrences</th>
           </tr>
         </thead>
         <tbody>
@@ -177,7 +177,7 @@
               <td class="col-name"
                 ><span class="command">{command.name}</span></td
               >
-              <td class="col-occurrences">
+              <td>
                 <div class="tick-chips">
                   {#each command.ticks as tick}
                     <button
@@ -205,14 +205,14 @@
         <thead>
           <tr>
             <th class="col-name">Name</th>
-            <th class="col-occurrences">Occurrences</th>
+            <th>Occurrences</th>
           </tr>
         </thead>
         <tbody>
           {#each deduplicatedActors as actor}
             <tr>
               <td class="col-name"><span class="actor">{actor.name}</span></td>
-              <td class="col-occurrences">
+              <td>
                 <div class="tick-chips">
                   {#each actor.ticks as tick}
                     <button
@@ -334,7 +334,11 @@
   }
 
   .col-name {
-    width: 350px;
+    width: 30em;
+  }
+
+  .col-occurrences {
+    width: 50rem;
   }
 
   .event {
