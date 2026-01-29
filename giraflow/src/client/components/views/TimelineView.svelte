@@ -1,6 +1,7 @@
 <script lang="ts">
   import { modelStore } from "../../stores/model.svelte";
   import { isEvent, isState, isCommand, isActor } from "../../lib/types";
+  import type { Event, Actor } from "../../lib/types";
   import { buildTimelineViewModel } from "../../lib/models";
   import JsonDisplay from "../shared/JsonDisplay.svelte";
   import WireframeViewer from "../shared/WireframeViewer.svelte";
@@ -18,35 +19,110 @@
   // Set flag immediately if there's a hash to navigate to
   let isProgrammaticScroll = window.location.hash.includes("timeline/tick-");
 
+  // Filter state - sets contain systems/roles to HIDE
+  let hiddenSystems = $state(new Set<string>());
+  let hiddenRoles = $state(new Set<string>());
+
+  // Toggle functions
+  function toggleSystem(system: string) {
+    if (hiddenSystems.has(system)) {
+      hiddenSystems.delete(system);
+    } else {
+      hiddenSystems.add(system);
+    }
+    hiddenSystems = new Set(hiddenSystems); // Trigger reactivity
+  }
+
+  function toggleRole(role: string) {
+    if (hiddenRoles.has(role)) {
+      hiddenRoles.delete(role);
+    } else {
+      hiddenRoles.add(role);
+    }
+    hiddenRoles = new Set(hiddenRoles);
+  }
+
   // Build view model from raw data
   let viewModel = $derived(buildTimelineViewModel(modelStore.model));
   let timelineItems = $derived(viewModel.items);
   let laneConfig = $derived(viewModel.laneConfig);
 
-  // Calculate total width for the lane area
-  let totalLaneWidth = $derived(laneConfig.totalLanes * laneConfig.laneWidth);
+  // Filtered lane config - excludes hidden systems/roles
+  let filteredLaneConfig = $derived(() => {
+    const visibleSystems = laneConfig.eventSystems.filter(s => !hiddenSystems.has(s));
+    const visibleRoles = laneConfig.actorRoles.filter(r => !hiddenRoles.has(r));
+    const eventLaneCount = Math.max(1, visibleSystems.length);
+    const actorLaneCount = Math.max(1, visibleRoles.length);
+    return {
+      eventSystems: visibleSystems,
+      actorRoles: visibleRoles,
+      eventLaneCount,
+      actorLaneCount,
+      totalLanes: eventLaneCount + 1 + actorLaneCount, // +1 for center lane
+      laneWidth: laneConfig.laneWidth,
+    };
+  });
 
-  // Calculate symbol padding based on position and lane index
+  // Filtered items with recalculated lane indices
+  let filteredItems = $derived(
+    timelineItems
+      .filter(item => {
+        if (item.element.type === 'event') {
+          const event = item.element as Event;
+          return !hiddenSystems.has(event.system || '');
+        }
+        if (item.element.type === 'actor') {
+          const actor = item.element as Actor;
+          return !hiddenRoles.has(actor.role || '');
+        }
+        return true; // Always show commands and states
+      })
+      .map(item => {
+        // Recalculate laneIndex based on filtered lane config
+        if (item.element.type === 'event') {
+          const event = item.element as Event;
+          const system = event.system || '';
+          const newLaneIndex = filteredLaneConfig().eventSystems.indexOf(system);
+          return { ...item, laneIndex: newLaneIndex >= 0 ? newLaneIndex : 0 };
+        }
+        if (item.element.type === 'actor') {
+          const actor = item.element as Actor;
+          const role = actor.role || '';
+          const newLaneIndex = filteredLaneConfig().actorRoles.indexOf(role);
+          return { ...item, laneIndex: newLaneIndex >= 0 ? newLaneIndex : 0 };
+        }
+        return item;
+      })
+  );
+
+  let filteredCount = $derived(filteredItems.length);
+
+  // Calculate total width for the lane area (using filtered config)
+  let totalLaneWidth = $derived(filteredLaneConfig().totalLanes * filteredLaneConfig().laneWidth);
+
+  // Calculate symbol padding based on position and lane index (using filtered config)
   function getSymbolPadding(position: string, laneIndex: number): number {
-    const laneWidth = laneConfig.laneWidth;
+    const config = filteredLaneConfig();
+    const laneWidth = config.laneWidth;
     if (position === 'left') {
       // Events: lane 0 is outermost (leftmost), higher lanes are more to the right
       return laneIndex * laneWidth + 8;
     } else if (position === 'center') {
       // Commands/States: always in the center lane
-      return laneConfig.eventLaneCount * laneWidth + 8;
+      return config.eventLaneCount * laneWidth + 8;
     } else {
       // Actors: lane 0 is innermost (leftmost of actor lanes)
-      return (laneConfig.eventLaneCount + 1 + laneIndex) * laneWidth + 8;
+      return (config.eventLaneCount + 1 + laneIndex) * laneWidth + 8;
     }
   }
 
-  // Generate CSS for dynamic lane backgrounds
+  // Generate CSS for dynamic lane backgrounds (using filtered config)
   function generateLaneBackgroundCSS(): string {
-    const laneWidth = laneConfig.laneWidth;
-    const eventLanes = laneConfig.eventLaneCount;
-    const actorLanes = laneConfig.actorLaneCount;
-    const totalLanes = laneConfig.totalLanes;
+    const config = filteredLaneConfig();
+    const laneWidth = config.laneWidth;
+    const eventLanes = config.eventLaneCount;
+    const actorLanes = config.actorLaneCount;
+    const totalLanes = config.totalLanes;
     const centerLaneIndex = eventLanes;
 
     // Build background layers
@@ -204,12 +280,44 @@
 <div class="timeline-master-detail">
   <!-- Master: Compact timeline on the left -->
   <aside class="timeline-master">
+    {#if laneConfig.eventSystems.some(s => s !== '') || laneConfig.actorRoles.some(r => r !== '')}
+      <div class="tl-filters">
+        {#if laneConfig.eventSystems.some(s => s !== '')}
+          <div class="tl-filter-group">
+            <span class="tl-filter-label">Hide Systems:</span>
+            {#each laneConfig.eventSystems.filter(s => s !== '') as system}
+              <button
+                class="tl-filter-chip"
+                class:active={hiddenSystems.has(system)}
+                onclick={() => toggleSystem(system)}
+              >
+                {system}
+              </button>
+            {/each}
+          </div>
+        {/if}
+        {#if laneConfig.actorRoles.some(r => r !== '')}
+          <div class="tl-filter-group">
+            <span class="tl-filter-label">Hide Roles:</span>
+            {#each laneConfig.actorRoles.filter(r => r !== '') as role}
+              <button
+                class="tl-filter-chip"
+                class:active={hiddenRoles.has(role)}
+                onclick={() => toggleRole(role)}
+              >
+                {role}
+              </button>
+            {/each}
+          </div>
+        {/if}
+      </div>
+    {/if}
     <div class="tl-master-content">
       <div
         class="tl-master-line"
         style="width: {totalLaneWidth}px; {generateLaneBackgroundCSS()}"
       ></div>
-      {#each timelineItems as { element: el, position, laneIndex }}
+      {#each filteredItems as { element: el, position, laneIndex }}
         <button
           class="tl-master-item"
           class:active={activeTick === el.tick}
@@ -231,9 +339,11 @@
   <main class="timeline-detail" bind:this={detailContainer}>
     <header class="tl-detail-title">
       <h2>Timeline</h2>
-      <span class="tl-detail-count">{viewModel.count} items</span>
+      <span class="tl-detail-count">
+          {filteredCount}{filteredCount !== viewModel.count ? ` of ${viewModel.count}` : ''} items
+        </span>
     </header>
-    {#each timelineItems as { element: el, position }}
+    {#each filteredItems as { element: el, position }}
       <section
         class="tl-detail-item tl-{position}"
         id="tick-{el.tick}"
@@ -553,5 +663,49 @@
     100% {
       background: transparent;
     }
+  }
+
+  /* Filter styles */
+  .tl-filters {
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    background: var(--bg-secondary);
+  }
+
+  .tl-filter-group {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+  }
+
+  .tl-filter-label {
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    margin-right: 0.25rem;
+  }
+
+  .tl-filter-chip {
+    padding: 0.15rem 0.5rem;
+    border: 1px solid var(--border);
+    background: var(--bg-card);
+    border-radius: 0.25rem;
+    font-size: 0.7rem;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .tl-filter-chip:hover {
+    border-color: var(--text-secondary);
+  }
+
+  .tl-filter-chip.active {
+    background: var(--text-secondary);
+    color: var(--bg-card);
+    border-color: var(--text-secondary);
   }
 </style>
