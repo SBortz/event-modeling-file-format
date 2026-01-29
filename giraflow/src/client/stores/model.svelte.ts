@@ -66,7 +66,12 @@ class ModelStore {
 
   handleHashChange() {
     const hash = window.location.hash.slice(1);
-    if (!hash) return;
+
+    // Default to table view if no hash
+    if (!hash) {
+      this.view = 'table';
+      return;
+    }
 
     const parts = hash.split('/');
     const viewPart = parts[0];

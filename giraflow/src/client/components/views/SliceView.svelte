@@ -188,7 +188,8 @@
     const el = document.getElementById(`slice-${sliceKey}`);
     if (el) {
       el.scrollIntoView({ behavior: "smooth", block: "start" });
-      window.location.hash = `slice/${encodeURIComponent(slice.name)}`;
+      // Use replaceState to update URL without adding history entry
+      history.replaceState(null, "", `#slice/${encodeURIComponent(slice.name)}`);
     }
   }
 
@@ -204,7 +205,8 @@
       // Set active immediately on click
       activeScenarioId = id;
       el.scrollIntoView({ behavior: "smooth", block: "start" });
-      window.location.hash = `slice/${encodeURIComponent(slice.name)}/scenario/${encodeURIComponent(scenarioName)}`;
+      // Use replaceState to update URL without adding history entry
+      history.replaceState(null, "", `#slice/${encodeURIComponent(slice.name)}/scenario/${encodeURIComponent(scenarioName)}`);
     }
   }
 
@@ -526,7 +528,6 @@
                                       href="#timeline/tick-{tick}"
                                       onclick={(e) => {
                                         e.preventDefault();
-                                        window.location.hash = `timeline/tick-${tick}`;
                                         modelStore.navigateToTick(tick);
                                       }}
                                     >
@@ -554,7 +555,6 @@
                                       href="#timeline/tick-{tick}"
                                       onclick={(e) => {
                                         e.preventDefault();
-                                        window.location.hash = `timeline/tick-${tick}`;
                                         modelStore.navigateToTick(tick);
                                       }}
                                     >
@@ -586,7 +586,6 @@
                                       href="#timeline/tick-{tick}"
                                       onclick={(e) => {
                                         e.preventDefault();
-                                        window.location.hash = `timeline/tick-${tick}`;
                                         modelStore.navigateToTick(tick);
                                       }}
                                     >
@@ -613,7 +612,6 @@
                                       href="#timeline/tick-{tick}"
                                       onclick={(e) => {
                                         e.preventDefault();
-                                        window.location.hash = `timeline/tick-${tick}`;
                                         modelStore.navigateToTick(tick);
                                       }}
                                     >
