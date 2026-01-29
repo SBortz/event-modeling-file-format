@@ -22,15 +22,19 @@
   // Filter state - sets contain systems/roles to HIDE
   let hiddenSystems = $state(new Set<string>());
   let hiddenRoles = $state(new Set<string>());
+  let filterDropdownOpen = $state(false);
 
-  // Toggle functions
+  // Check if any filters are active
+  let hasActiveFilters = $derived(hiddenSystems.size > 0 || hiddenRoles.size > 0);
+
+  // Toggle functions - clicking toggles visibility (visible by default)
   function toggleSystem(system: string) {
     if (hiddenSystems.has(system)) {
       hiddenSystems.delete(system);
     } else {
       hiddenSystems.add(system);
     }
-    hiddenSystems = new Set(hiddenSystems); // Trigger reactivity
+    hiddenSystems = new Set(hiddenSystems);
   }
 
   function toggleRole(role: string) {
@@ -40,6 +44,19 @@
       hiddenRoles.add(role);
     }
     hiddenRoles = new Set(hiddenRoles);
+  }
+
+  function clearAllFilters() {
+    hiddenSystems = new Set();
+    hiddenRoles = new Set();
+  }
+
+  // Close dropdown when clicking outside
+  function handleClickOutside(event: MouseEvent) {
+    const target = event.target as HTMLElement;
+    if (!target.closest('.tl-filter-dropdown')) {
+      filterDropdownOpen = false;
+    }
   }
 
   // Build view model from raw data
@@ -277,37 +294,60 @@
   });
 </script>
 
-<div class="timeline-master-detail">
+<!-- svelte-ignore a11y_click_events_have_key_events -->
+<div class="timeline-master-detail" role="presentation" onclick={handleClickOutside}>
   <!-- Master: Compact timeline on the left -->
   <aside class="timeline-master">
     {#if laneConfig.eventSystems.some(s => s !== '') || laneConfig.actorRoles.some(r => r !== '')}
-      <div class="tl-filters">
-        {#if laneConfig.eventSystems.some(s => s !== '')}
-          <div class="tl-filter-group">
-            <span class="tl-filter-label">Hide Systems:</span>
-            {#each laneConfig.eventSystems.filter(s => s !== '') as system}
-              <button
-                class="tl-filter-chip"
-                class:active={hiddenSystems.has(system)}
-                onclick={() => toggleSystem(system)}
-              >
-                {system}
+      <div class="tl-filter-dropdown">
+        <button
+          class="tl-filter-trigger"
+          class:has-filters={hasActiveFilters}
+          onclick={() => filterDropdownOpen = !filterDropdownOpen}
+        >
+          <span>Filters</span>
+          {#if hasActiveFilters}
+            <span class="tl-filter-badge">{hiddenSystems.size + hiddenRoles.size}</span>
+          {/if}
+          <span class="tl-filter-arrow">{filterDropdownOpen ? '▲' : '▼'}</span>
+        </button>
+        {#if filterDropdownOpen}
+          <div class="tl-filter-panel">
+            {#if laneConfig.eventSystems.some(s => s !== '')}
+              <div class="tl-filter-group">
+                <span class="tl-filter-label">Systems</span>
+                {#each laneConfig.eventSystems.filter(s => s !== '') as system}
+                  <label class="tl-filter-item">
+                    <input
+                      type="checkbox"
+                      checked={!hiddenSystems.has(system)}
+                      onchange={() => toggleSystem(system)}
+                    />
+                    <span>{system}</span>
+                  </label>
+                {/each}
+              </div>
+            {/if}
+            {#if laneConfig.actorRoles.some(r => r !== '')}
+              <div class="tl-filter-group">
+                <span class="tl-filter-label">Roles</span>
+                {#each laneConfig.actorRoles.filter(r => r !== '') as role}
+                  <label class="tl-filter-item">
+                    <input
+                      type="checkbox"
+                      checked={!hiddenRoles.has(role)}
+                      onchange={() => toggleRole(role)}
+                    />
+                    <span>{role}</span>
+                  </label>
+                {/each}
+              </div>
+            {/if}
+            {#if hasActiveFilters}
+              <button class="tl-filter-clear" onclick={clearAllFilters}>
+                Clear all filters
               </button>
-            {/each}
-          </div>
-        {/if}
-        {#if laneConfig.actorRoles.some(r => r !== '')}
-          <div class="tl-filter-group">
-            <span class="tl-filter-label">Hide Roles:</span>
-            {#each laneConfig.actorRoles.filter(r => r !== '') as role}
-              <button
-                class="tl-filter-chip"
-                class:active={hiddenRoles.has(role)}
-                onclick={() => toggleRole(role)}
-              >
-                {role}
-              </button>
-            {/each}
+            {/if}
           </div>
         {/if}
       </div>
@@ -665,47 +705,119 @@
     }
   }
 
-  /* Filter styles */
-  .tl-filters {
+  /* Filter dropdown styles */
+  .tl-filter-dropdown {
+    position: relative;
     padding: 0.5rem 0.75rem;
     border-bottom: 1px solid var(--border);
-    display: flex;
-    flex-direction: column;
-    gap: 0.35rem;
     background: var(--bg-secondary);
   }
 
-  .tl-filter-group {
+  .tl-filter-trigger {
     display: flex;
     align-items: center;
-    flex-wrap: wrap;
-    gap: 0.35rem;
-  }
-
-  .tl-filter-label {
-    font-size: 0.7rem;
-    color: var(--text-secondary);
-    margin-right: 0.25rem;
-  }
-
-  .tl-filter-chip {
-    padding: 0.15rem 0.5rem;
+    gap: 0.5rem;
+    padding: 0.35rem 0.6rem;
     border: 1px solid var(--border);
     background: var(--bg-card);
     border-radius: 0.25rem;
-    font-size: 0.7rem;
+    font-size: 0.75rem;
     font-family: inherit;
     cursor: pointer;
     transition: all 0.15s;
   }
 
-  .tl-filter-chip:hover {
+  .tl-filter-trigger:hover {
     border-color: var(--text-secondary);
   }
 
-  .tl-filter-chip.active {
-    background: var(--text-secondary);
-    color: var(--bg-card);
-    border-color: var(--text-secondary);
+  .tl-filter-trigger.has-filters {
+    border-color: var(--color-command);
+  }
+
+  .tl-filter-badge {
+    background: var(--color-command);
+    color: white;
+    font-size: 0.65rem;
+    padding: 0.1rem 0.35rem;
+    border-radius: 0.75rem;
+    font-weight: 600;
+  }
+
+  .tl-filter-arrow {
+    font-size: 0.6rem;
+    color: var(--text-secondary);
+  }
+
+  .tl-filter-panel {
+    position: absolute;
+    top: 100%;
+    left: 0.75rem;
+    right: 0.75rem;
+    margin-top: 0.25rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 0.375rem;
+    box-shadow: var(--shadow-card);
+    z-index: 100;
+    padding: 0.5rem;
+  }
+
+  .tl-filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .tl-filter-group + .tl-filter-group {
+    margin-top: 0.5rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid var(--border);
+  }
+
+  .tl-filter-label {
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+    margin-bottom: 0.15rem;
+  }
+
+  .tl-filter-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.25rem 0.35rem;
+    border-radius: 0.25rem;
+    cursor: pointer;
+    font-size: 0.75rem;
+    transition: background 0.15s;
+  }
+
+  .tl-filter-item:hover {
+    background: var(--bg-secondary);
+  }
+
+  .tl-filter-item input[type="checkbox"] {
+    margin: 0;
+    cursor: pointer;
+  }
+
+  .tl-filter-clear {
+    width: 100%;
+    margin-top: 0.5rem;
+    padding: 0.35rem;
+    border: none;
+    background: transparent;
+    color: var(--color-command);
+    font-size: 0.7rem;
+    font-family: inherit;
+    cursor: pointer;
+    border-top: 1px solid var(--border);
+  }
+
+  .tl-filter-clear:hover {
+    text-decoration: underline;
   }
 </style>
