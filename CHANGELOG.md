@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.0] - 2025-01-29
+
+### Changed
+
+- **Timeline Master-Detail Layout**: The timeline view has been redesigned with a master-detail layout. A compact timeline on the left shows all ticks with visual lane positioning, while the right pane displays full details for each element.
+- **Scroll-synchronized highlighting**: Scrolling through the detail pane automatically highlights the corresponding item in the master timeline.
+- **Deep linking**: Each timeline tick has a unique URL, enabling direct navigation and browser history support.
+
+### Fixed
+
+- **Scroll highlighting reliability**: Replaced IntersectionObserver with scroll event listener to prevent ticks from being skipped during fast scrolling.
+
 ## [0.2.6] - 2025-01-29
 
 ### Added
