@@ -39,6 +39,7 @@
   let scrollContainer: HTMLElement | null = $state(null);
   let sliceElements = $state<Map<string, HTMLElement>>(new Map());
   let scenarioElements = $state<Map<string, HTMLElement>>(new Map());
+  let carouselIndices = $state<Map<string, number>>(new Map());
 
   // Set first slice as active by default
   $effect(() => {
@@ -110,7 +111,8 @@
     scrollContainer.addEventListener("scroll", updateActiveScenario);
     updateActiveScenario(); // Initial call
 
-    return () => scrollContainer!.removeEventListener("scroll", updateActiveScenario);
+    return () =>
+      scrollContainer!.removeEventListener("scroll", updateActiveScenario);
   });
 
   // URL hash handling for deep-links - only handle slice/* hashes
@@ -391,6 +393,30 @@
   function getTriggeringActors(commandName: string): Actor[] {
     return modelStore.actors.filter((a) => a.sendsCommand === commandName);
   }
+
+  function getStateExamples(slice: DeduplicatedSlice): { tick: number; data: any }[] {
+    return slice.stateOccurrences
+      .filter(occ => occ.state.example)
+      .map(occ => ({ tick: occ.tick, data: occ.state.example }));
+  }
+
+  function navigateCarousel(sliceKey: string, direction: number, total: number) {
+    const current = carouselIndices.get(sliceKey) ?? 0;
+    const next = (current + direction + total) % total;
+    carouselIndices.set(sliceKey, next);
+    carouselIndices = new Map(carouselIndices);
+  }
+
+  function groupActors(actors: Actor[]): { name: string; ticks: number[] }[] {
+    const grouped = new Map<string, number[]>();
+    for (const actor of actors) {
+      if (!grouped.has(actor.name)) {
+        grouped.set(actor.name, []);
+      }
+      grouped.get(actor.name)!.push(actor.tick);
+    }
+    return Array.from(grouped.entries()).map(([name, ticks]) => ({ name, ticks }));
+  }
 </script>
 
 <div class="slice-explorer">
@@ -419,7 +445,9 @@
               {#each slice.scenarios as scenario, scenarioIndex}
                 {@const scenarioId = `scenario-${sliceKey}-${scenarioIndex}`}
                 <button
-                  class="scenario-nav-item {activeScenarioId === scenarioId ? 'active' : ''}"
+                  class="scenario-nav-item {activeScenarioId === scenarioId
+                    ? 'active'
+                    : ''}"
                   onclick={() =>
                     scrollToScenario(slice, scenarioIndex, scenario.name)}
                 >
@@ -454,7 +482,25 @@
                   <span class="type-badge {slice.type}">{slice.type}</span>
                 </div>
 
-                {#if slice.example}
+                {#if slice.type === "state"}
+                  {@const examples = getStateExamples(slice)}
+                  {#if examples.length > 0}
+                    {@const currentIndex = carouselIndices.get(sliceKey) ?? 0}
+                    <div class="example-carousel">
+                      <div class="carousel-header">
+                        <span class="carousel-label">Example @{examples[currentIndex].tick}</span>
+                        {#if examples.length > 1}
+                          <div class="carousel-nav">
+                            <button onclick={() => navigateCarousel(sliceKey, -1, examples.length)}>‹</button>
+                            <span>{currentIndex + 1} / {examples.length}</span>
+                            <button onclick={() => navigateCarousel(sliceKey, 1, examples.length)}>›</button>
+                          </div>
+                        {/if}
+                      </div>
+                      <JsonDisplay data={examples[currentIndex].data} />
+                    </div>
+                  {/if}
+                {:else if slice.example}
                   <div class="slice-example">
                     <JsonDisplay data={slice.example} />
                   </div>
@@ -464,103 +510,123 @@
               <div class="detail-body">
                 <div class="slice-details">
                   {#if slice.type === "state"}
-                    {#if slice.sourcedFrom.length > 0}
-                      <div class="detail-section">
-                        <h4>Sourced From</h4>
-                        {#each slice.sourcedFrom as source}
-                          <div class="detail-item">
-                            <span class="event">● {source.name}</span>
-                            <span class="ticks-group">
-                              {#each source.ticks as tick}
-                                <a
-                                  class="tick-ref-link"
-                                  href="#timeline/tick-{tick}"
-                                  onclick={(e) => {
-                                    e.preventDefault();
-                                    window.location.hash = `timeline/tick-${tick}`;
-                                    modelStore.navigateToTick(tick);
-                                  }}
-                                >
-                                  @{tick}
-                                </a>
-                              {/each}
-                            </span>
-                          </div>
-                        {/each}
-                      </div>
-                    {/if}
-
                     {@const readingActors = getReadingActors(slice.name)}
-                    {#if readingActors.length > 0}
-                      <div class="detail-section">
-                        <h4>Read By</h4>
-                        {#each readingActors as actor}
-                          <div class="detail-item">
-                            <span class="actor">○ {actor.name}</span>
-                            <a
-                              class="tick-ref-link"
-                              href="#timeline/tick-{actor.tick}"
-                              onclick={(e) => {
-                                e.preventDefault();
-                                window.location.hash = `timeline/tick-${actor.tick}`;
-                                modelStore.navigateToTick(actor.tick);
-                              }}
-                            >
-                              @{actor.tick}
-                            </a>
+                    <div class="metadata-columns">
+                      <div class="metadata-column">
+                        {#if slice.sourcedFrom.length > 0}
+                          <div class="detail-section">
+                            <h4>Sourced From</h4>
+                            {#each slice.sourcedFrom as source}
+                              <div class="detail-item">
+                                <span class="event">● {source.name}</span>
+                                <span class="ticks-group">
+                                  {#each source.ticks as tick}
+                                    <a
+                                      class="tick-ref-link"
+                                      href="#timeline/tick-{tick}"
+                                      onclick={(e) => {
+                                        e.preventDefault();
+                                        window.location.hash = `timeline/tick-${tick}`;
+                                        modelStore.navigateToTick(tick);
+                                      }}
+                                    >
+                                      @{tick}
+                                    </a>
+                                  {/each}
+                                </span>
+                              </div>
+                            {/each}
                           </div>
-                        {/each}
+                        {/if}
                       </div>
-                    {/if}
+                      <div class="metadata-column">
+                        {#if readingActors.length > 0}
+                          {@const groupedActors = groupActors(readingActors)}
+                          <div class="detail-section">
+                            <h4>Read By</h4>
+                            {#each groupedActors as actor}
+                              <div class="detail-item">
+                                <span class="actor">○ {actor.name}</span>
+                                <span class="ticks-group">
+                                  {#each actor.ticks as tick}
+                                    <a
+                                      class="tick-ref-link"
+                                      href="#timeline/tick-{tick}"
+                                      onclick={(e) => {
+                                        e.preventDefault();
+                                        window.location.hash = `timeline/tick-${tick}`;
+                                        modelStore.navigateToTick(tick);
+                                      }}
+                                    >
+                                      @{tick}
+                                    </a>
+                                  {/each}
+                                </span>
+                              </div>
+                            {/each}
+                          </div>
+                        {/if}
+                      </div>
+                    </div>
                   {:else}
                     {@const triggeringActors = getTriggeringActors(slice.name)}
-                    {#if triggeringActors.length > 0}
-                      <div class="detail-section">
-                        <h4>Triggered By</h4>
-                        {#each triggeringActors as actor}
-                          <div class="detail-item">
-                            <span class="actor">○ {actor.name}</span>
-                            <a
-                              class="tick-ref-link"
-                              href="#timeline/tick-{actor.tick}"
-                              onclick={(e) => {
-                                e.preventDefault();
-                                window.location.hash = `timeline/tick-${actor.tick}`;
-                                modelStore.navigateToTick(actor.tick);
-                              }}
-                            >
-                              @{actor.tick}
-                            </a>
+                    <div class="metadata-columns">
+                      <div class="metadata-column">
+                        {#if triggeringActors.length > 0}
+                          {@const groupedTriggers = groupActors(triggeringActors)}
+                          <div class="detail-section">
+                            <h4>Triggered By</h4>
+                            {#each groupedTriggers as actor}
+                              <div class="detail-item">
+                                <span class="actor">○ {actor.name}</span>
+                                <span class="ticks-group">
+                                  {#each actor.ticks as tick}
+                                    <a
+                                      class="tick-ref-link"
+                                      href="#timeline/tick-{tick}"
+                                      onclick={(e) => {
+                                        e.preventDefault();
+                                        window.location.hash = `timeline/tick-${tick}`;
+                                        modelStore.navigateToTick(tick);
+                                      }}
+                                    >
+                                      @{tick}
+                                    </a>
+                                  {/each}
+                                </span>
+                              </div>
+                            {/each}
                           </div>
-                        {/each}
+                        {/if}
                       </div>
-                    {/if}
-
-                    {#if slice.produces.length > 0}
-                      <div class="detail-section">
-                        <h4>Produces</h4>
-                        {#each slice.produces as produced}
-                          <div class="detail-item">
-                            <span class="event">● {produced.name}</span>
-                            <span class="ticks-group">
-                              {#each produced.ticks as tick}
-                                <a
-                                  class="tick-ref-link"
-                                  href="#timeline/tick-{tick}"
-                                  onclick={(e) => {
-                                    e.preventDefault();
-                                    window.location.hash = `timeline/tick-${tick}`;
-                                    modelStore.navigateToTick(tick);
-                                  }}
-                                >
-                                  @{tick}
-                                </a>
-                              {/each}
-                            </span>
+                      <div class="metadata-column">
+                        {#if slice.produces.length > 0}
+                          <div class="detail-section">
+                            <h4>Produces</h4>
+                            {#each slice.produces as produced}
+                              <div class="detail-item">
+                                <span class="event">● {produced.name}</span>
+                                <span class="ticks-group">
+                                  {#each produced.ticks as tick}
+                                    <a
+                                      class="tick-ref-link"
+                                      href="#timeline/tick-{tick}"
+                                      onclick={(e) => {
+                                        e.preventDefault();
+                                        window.location.hash = `timeline/tick-${tick}`;
+                                        modelStore.navigateToTick(tick);
+                                      }}
+                                    >
+                                      @{tick}
+                                    </a>
+                                  {/each}
+                                </span>
+                              </div>
+                            {/each}
                           </div>
-                        {/each}
+                        {/if}
                       </div>
-                    {/if}
+                    </div>
                   {/if}
                 </div>
 
@@ -1079,6 +1145,66 @@
     color: var(--text-secondary);
   }
 
+  /* Example Carousel */
+  .example-carousel {
+    margin-top: 1rem;
+    padding: 0.75rem;
+    background: var(--bg-primary);
+    border-radius: 0.375rem;
+    border: 1px solid var(--border);
+  }
+
+  .carousel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+  }
+
+  .carousel-label {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    font-family: var(--font-mono);
+  }
+
+  .carousel-nav {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .carousel-nav button {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 0.25rem;
+    padding: 0.25rem 0.5rem;
+    cursor: pointer;
+    color: var(--text-primary);
+    font-size: 1rem;
+    line-height: 1;
+  }
+
+  .carousel-nav button:hover {
+    background: var(--bg-card);
+    border-color: var(--color-link);
+  }
+
+  .carousel-nav span {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+  }
+
+  /* Two-Column Metadata Layout */
+  .metadata-columns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+  }
+
+  .metadata-column {
+    min-width: 0;
+  }
+
   /* Mobile Responsive */
   @media (max-width: 768px) {
     .slice-explorer {
@@ -1094,6 +1220,10 @@
 
     .main-content {
       height: calc(100% - 200px);
+    }
+
+    .metadata-columns {
+      grid-template-columns: 1fr;
     }
   }
 </style>
