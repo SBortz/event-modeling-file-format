@@ -169,10 +169,12 @@
           {#each deduplicatedActors as actor}
             <tr>
               <td><span class="actor">{actor.name}</span></td>
-              <td class="occurrences">
-                {#each actor.ticks as tick}
-                  <button class="tick-chip" onclick={() => modelStore.navigateToTick(tick)}>@{tick}</button>
-                {/each}
+              <td>
+                <div class="tick-chips">
+                  {#each actor.ticks as tick}
+                    <button class="tick-chip" onclick={() => modelStore.navigateToTick(tick)}>@{tick}</button>
+                  {/each}
+                </div>
               </td>
             </tr>
           {/each}

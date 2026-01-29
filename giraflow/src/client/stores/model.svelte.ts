@@ -29,10 +29,14 @@ class ModelStore {
   }
 
   setView(newView: ViewMode) {
+    history.pushState({ view: newView }, '', `#${newView}`);
     this.view = newView;
   }
 
   navigateToTick(tick: number) {
+    const newHash = `timeline/tick-${tick}`;
+    history.pushState({ view: 'timeline', tick }, '', `#${newHash}`);
+
     this.highlightTick = tick;
     this.view = 'timeline';
     requestAnimationFrame(() => {
