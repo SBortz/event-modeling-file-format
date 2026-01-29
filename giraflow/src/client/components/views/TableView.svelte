@@ -1,16 +1,53 @@
 <script lang="ts">
   import { modelStore } from '../../stores/model.svelte';
-  import type { Event, StateView, Command, Actor } from '../../lib/types';
 
-  // Deduplicate by name
-  function uniqueByName<T extends { name: string }>(items: T[]): T[] {
-    return [...new Map(items.map(item => [item.name, item])).values()];
+  interface DeduplicatedItem {
+    name: string;
+    ticks: number[];
+    count: number;
   }
 
-  let events = $derived(modelStore.events.sort((a, b) => a.tick - b.tick));
-  let uniqueStates = $derived(uniqueByName(modelStore.states));
-  let uniqueCommands = $derived(uniqueByName(modelStore.commands));
-  let uniqueActors = $derived(uniqueByName(modelStore.actors));
+  interface DeduplicatedStateView extends DeduplicatedItem {
+    sourcedFrom: string[];
+  }
+
+  // Deduplicate with occurrence counts
+  function deduplicateWithCounts<T extends { name: string; tick: number }>(
+    items: T[]
+  ): DeduplicatedItem[] {
+    const map = new Map<string, number[]>();
+    for (const item of items) {
+      const ticks = map.get(item.name) || [];
+      ticks.push(item.tick);
+      map.set(item.name, ticks);
+    }
+    return [...map.entries()]
+      .map(([name, ticks]) => ({ name, ticks: ticks.sort((a, b) => a - b), count: ticks.length }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  // Deduplicate states with sourcedFrom info
+  function deduplicateStates(
+    items: { name: string; tick: number; sourcedFrom: string[] }[]
+  ): DeduplicatedStateView[] {
+    const map = new Map<string, { ticks: number[]; sourcedFrom: string[] }>();
+    for (const item of items) {
+      const existing = map.get(item.name);
+      if (existing) {
+        existing.ticks.push(item.tick);
+      } else {
+        map.set(item.name, { ticks: [item.tick], sourcedFrom: item.sourcedFrom });
+      }
+    }
+    return [...map.entries()]
+      .map(([name, { ticks, sourcedFrom }]) => ({ name, ticks: ticks.sort((a, b) => a - b), count: ticks.length, sourcedFrom }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  let deduplicatedEvents = $derived(deduplicateWithCounts(modelStore.events));
+  let deduplicatedStates = $derived(deduplicateStates(modelStore.states));
+  let deduplicatedCommands = $derived(deduplicateWithCounts(modelStore.commands));
+  let deduplicatedActors = $derived(deduplicateWithCounts(modelStore.actors));
 </script>
 
 <div class="table-view">
@@ -28,31 +65,27 @@
     </div>
   {/if}
 
-  {#if events.length > 0}
+  {#if deduplicatedEvents.length > 0}
     <div class="table-section">
-      <h2 class="events"><span class="symbol">●</span> Events ({events.length})</h2>
+      <h2 class="events"><span class="symbol">●</span> Events ({modelStore.events.length} total, {deduplicatedEvents.length} unique)</h2>
       <table>
         <thead>
           <tr>
-            <th>Tick</th>
             <th>Name</th>
-            <th>Produced By</th>
-            <th>External Source</th>
+            <th>Occurrences</th>
           </tr>
         </thead>
         <tbody>
-          {#each events as event}
+          {#each deduplicatedEvents as event}
             <tr>
-              <td>@{event.tick}</td>
               <td><span class="event">{event.name}</span></td>
               <td>
-                {#if event.producedBy}
-                  <span class="command">{event.producedBy}</span>
-                {:else}
-                  —
-                {/if}
+                <div class="tick-chips">
+                  {#each event.ticks as tick}
+                    <button class="tick-chip" onclick={() => modelStore.navigateToTick(tick)}>@{tick}</button>
+                  {/each}
+                </div>
               </td>
-              <td>{event.externalSource || '—'}</td>
             </tr>
           {/each}
         </tbody>
@@ -60,18 +93,19 @@
     </div>
   {/if}
 
-  {#if uniqueStates.length > 0}
+  {#if deduplicatedStates.length > 0}
     <div class="table-section">
-      <h2 class="states"><span class="symbol">◆</span> State Views ({uniqueStates.length})</h2>
+      <h2 class="states"><span class="symbol">◆</span> State Views ({modelStore.states.length} total, {deduplicatedStates.length} unique)</h2>
       <table>
         <thead>
           <tr>
             <th>Name</th>
             <th>Sourced From</th>
+            <th>Occurrences</th>
           </tr>
         </thead>
         <tbody>
-          {#each uniqueStates as state}
+          {#each deduplicatedStates as state}
             <tr>
               <td><span class="state">{state.name}</span></td>
               <td>
@@ -79,6 +113,13 @@
                   <span class="event">{eventName}</span>{i < state.sourcedFrom.length - 1 ? ', ' : ''}
                 {/each}
               </td>
+              <td>
+                <div class="tick-chips">
+                  {#each state.ticks as tick}
+                    <button class="tick-chip" onclick={() => modelStore.navigateToTick(tick)}>@{tick}</button>
+                  {/each}
+                </div>
+              </td>
             </tr>
           {/each}
         </tbody>
@@ -86,19 +127,27 @@
     </div>
   {/if}
 
-  {#if uniqueCommands.length > 0}
+  {#if deduplicatedCommands.length > 0}
     <div class="table-section">
-      <h2 class="commands"><span class="symbol">▶</span> Commands ({uniqueCommands.length})</h2>
+      <h2 class="commands"><span class="symbol">▶</span> Commands ({modelStore.commands.length} total, {deduplicatedCommands.length} unique)</h2>
       <table>
         <thead>
           <tr>
             <th>Name</th>
+            <th>Occurrences</th>
           </tr>
         </thead>
         <tbody>
-          {#each uniqueCommands as command}
+          {#each deduplicatedCommands as command}
             <tr>
               <td><span class="command">{command.name}</span></td>
+              <td>
+                <div class="tick-chips">
+                  {#each command.ticks as tick}
+                    <button class="tick-chip" onclick={() => modelStore.navigateToTick(tick)}>@{tick}</button>
+                  {/each}
+                </div>
+              </td>
             </tr>
           {/each}
         </tbody>
@@ -106,23 +155,25 @@
     </div>
   {/if}
 
-  {#if uniqueActors.length > 0}
+  {#if deduplicatedActors.length > 0}
     <div class="table-section">
-      <h2 class="actors"><span class="symbol">○</span> Actors ({uniqueActors.length})</h2>
+      <h2 class="actors"><span class="symbol">○</span> Actors ({modelStore.actors.length} total, {deduplicatedActors.length} unique)</h2>
       <table>
         <thead>
           <tr>
             <th>Name</th>
-            <th>Reads</th>
-            <th>Sends</th>
+            <th>Occurrences</th>
           </tr>
         </thead>
         <tbody>
-          {#each uniqueActors as actor}
+          {#each deduplicatedActors as actor}
             <tr>
               <td><span class="actor">{actor.name}</span></td>
-              <td><span class="state">{actor.readsView}</span></td>
-              <td><span class="command">{actor.sendsCommand}</span></td>
+              <td class="occurrences">
+                {#each actor.ticks as tick}
+                  <button class="tick-chip" onclick={() => modelStore.navigateToTick(tick)}>@{tick}</button>
+                {/each}
+              </td>
             </tr>
           {/each}
         </tbody>
@@ -204,6 +255,7 @@
     padding: 0.75rem 1rem;
     text-align: left;
     border-bottom: 1px solid var(--border);
+    vertical-align: middle;
   }
 
   th {
@@ -226,4 +278,30 @@
   .state { color: var(--color-state); }
   .command { color: var(--color-command); }
   .actor { color: var(--color-actor); }
+
+  .tick-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    align-items: center;
+  }
+
+  .tick-chip {
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    padding: 0.25rem 0.5rem;
+    border-radius: 1rem;
+    font-size: 0.75rem;
+    line-height: 1;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    font-family: var(--font-mono);
+    transition: all 0.15s;
+  }
+
+  .tick-chip:hover {
+    background: var(--color-command);
+    color: white;
+    border-color: var(--color-command);
+  }
 </style>
