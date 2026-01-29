@@ -454,13 +454,14 @@
 
   .step-timeline {
     position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
     min-width: 1.5rem;
   }
 
   .timeline-dot {
+    position: absolute;
+    top: 0.85rem;
+    left: 50%;
+    transform: translateX(-50%);
     width: 10px;
     height: 10px;
     border-radius: 50%;
@@ -471,7 +472,7 @@
   .timeline-line-top {
     position: absolute;
     top: -1.5rem;
-    bottom: 50%;
+    height: calc(0.85rem + 1.5rem + 5px);
     left: 50%;
     width: 2px;
     background: var(--border);
@@ -480,7 +481,7 @@
 
   .timeline-line-bottom {
     position: absolute;
-    top: 50%;
+    top: calc(0.85rem + 5px);
     bottom: -1.5rem;
     left: 50%;
     width: 2px;
