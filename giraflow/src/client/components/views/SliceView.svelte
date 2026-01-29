@@ -343,8 +343,8 @@
               ...(e.example ? { data: e.example } : {}),
             }));
 
-          if (eventsBetween.length > 0) {
-            rows.push({ type: "events-only", events: eventsBetween });
+          for (const eventRef of eventsBetween) {
+            rows.push({ type: "events-only", events: [eventRef] });
           }
 
           // Command mit produced Events

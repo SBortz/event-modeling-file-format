@@ -54,6 +54,15 @@
     isCommandStepsScenario(scenario) ? scenario : null,
   );
   let stateScenario = $derived(isStateViewScenario(scenario) ? scenario : null);
+
+  // Flatten command steps: split events-only rows into individual events
+  let flattenedCommandSteps = $derived(
+    commandStepsScenario?.steps.flatMap((step) =>
+      step.type === "events-only" && step.events
+        ? step.events.map((e) => ({ type: "events-only" as const, events: [e] }))
+        : [step]
+    ) ?? []
+  );
 </script>
 
 {#snippet scenarioBody()}
@@ -93,6 +102,7 @@
           {#each timelineScenario.rows as row, index}
             <div
               class="timeline-row"
+              class:events-only={row.type === "events-only"}
               class:command-execution={row.type === "command"}
               class:command-failure={row.type === "command" && row.fails}
             >
@@ -158,9 +168,10 @@
     {#if commandStepsScenario}
       <div class="scenario-step">
         <div class="timeline-scenario">
-          {#each commandStepsScenario.steps as step, index}
+          {#each flattenedCommandSteps as step, index}
             <div
               class="timeline-row"
+              class:events-only={step.type === "events-only"}
               class:command-execution={step.type === "command"}
               class:command-failure={step.type === "command" && step.fails}
             >
@@ -297,16 +308,6 @@
     padding: 0.75rem 0 0.25rem 0;
   }
 
-  .scenario-step .label {
-    color: var(--text-secondary);
-    font-weight: 500;
-    text-transform: uppercase;
-    font-size: 0.7rem;
-    letter-spacing: 0.05em;
-    display: block;
-    margin-bottom: 0.5rem;
-  }
-
   .steps-grid {
     display: flex;
     flex-direction: column;
@@ -328,6 +329,10 @@
   }
 
   .timeline-row:last-child {
+    border-bottom: none;
+  }
+
+  .timeline-row.events-only {
     border-bottom: none;
   }
 
