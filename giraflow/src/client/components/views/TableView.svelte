@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { modelStore } from '../../stores/model.svelte';
+  import { modelStore } from "../../stores/model.svelte";
 
   interface DeduplicatedItem {
     name: string;
@@ -13,7 +13,7 @@
 
   // Deduplicate with occurrence counts
   function deduplicateWithCounts<T extends { name: string; tick: number }>(
-    items: T[]
+    items: T[],
   ): DeduplicatedItem[] {
     const map = new Map<string, number[]>();
     for (const item of items) {
@@ -22,13 +22,17 @@
       map.set(item.name, ticks);
     }
     return [...map.entries()]
-      .map(([name, ticks]) => ({ name, ticks: ticks.sort((a, b) => a - b), count: ticks.length }))
+      .map(([name, ticks]) => ({
+        name,
+        ticks: ticks.sort((a, b) => a - b),
+        count: ticks.length,
+      }))
       .sort((a, b) => a.name.localeCompare(b.name));
   }
 
   // Deduplicate states with sourcedFrom info
   function deduplicateStates(
-    items: { name: string; tick: number; sourcedFrom: string[] }[]
+    items: { name: string; tick: number; sourcedFrom: string[] }[],
   ): DeduplicatedStateView[] {
     const map = new Map<string, { ticks: number[]; sourcedFrom: string[] }>();
     for (const item of items) {
@@ -36,17 +40,27 @@
       if (existing) {
         existing.ticks.push(item.tick);
       } else {
-        map.set(item.name, { ticks: [item.tick], sourcedFrom: item.sourcedFrom });
+        map.set(item.name, {
+          ticks: [item.tick],
+          sourcedFrom: item.sourcedFrom,
+        });
       }
     }
     return [...map.entries()]
-      .map(([name, { ticks, sourcedFrom }]) => ({ name, ticks: ticks.sort((a, b) => a - b), count: ticks.length, sourcedFrom }))
+      .map(([name, { ticks, sourcedFrom }]) => ({
+        name,
+        ticks: ticks.sort((a, b) => a - b),
+        count: ticks.length,
+        sourcedFrom,
+      }))
       .sort((a, b) => a.name.localeCompare(b.name));
   }
 
   let deduplicatedEvents = $derived(deduplicateWithCounts(modelStore.events));
   let deduplicatedStates = $derived(deduplicateStates(modelStore.states));
-  let deduplicatedCommands = $derived(deduplicateWithCounts(modelStore.commands));
+  let deduplicatedCommands = $derived(
+    deduplicateWithCounts(modelStore.commands),
+  );
   let deduplicatedActors = $derived(deduplicateWithCounts(modelStore.actors));
 </script>
 
@@ -67,22 +81,29 @@
 
   {#if deduplicatedEvents.length > 0}
     <div class="table-section">
-      <h2 class="events"><span class="symbol">●</span> Events ({modelStore.events.length} total, {deduplicatedEvents.length} unique)</h2>
+      <h2 class="events">
+        <span class="symbol">●</span> Events ({modelStore.events.length} total, {deduplicatedEvents.length}
+        unique)
+      </h2>
       <table>
         <thead>
           <tr>
-            <th>Name</th>
-            <th>Occurrences</th>
+            <th class="col-name">Name</th>
+            <th class="col-occurrences">Occurrences</th>
           </tr>
         </thead>
         <tbody>
           {#each deduplicatedEvents as event}
             <tr>
-              <td><span class="event">{event.name}</span></td>
-              <td>
+              <td class="col-name"><span class="event">{event.name}</span></td>
+              <td class="col-occurrences">
                 <div class="tick-chips">
                   {#each event.ticks as tick}
-                    <button class="tick-chip" onclick={() => modelStore.navigateToTick(tick)}>@{tick}</button>
+                    <button
+                      class="tick-chip"
+                      onclick={() => modelStore.navigateToTick(tick)}
+                      >@{tick}</button
+                    >
                   {/each}
                 </div>
               </td>
@@ -95,30 +116,40 @@
 
   {#if deduplicatedStates.length > 0}
     <div class="table-section">
-      <h2 class="states"><span class="symbol">◆</span> State Views ({modelStore.states.length} total, {deduplicatedStates.length} unique)</h2>
+      <h2 class="states">
+        <span class="symbol">◆</span> State Views ({modelStore.states.length} total,
+        {deduplicatedStates.length} unique)
+      </h2>
       <table>
         <thead>
           <tr>
-            <th>Name</th>
+            <th class="col-name">Name</th>
+            <th class="col-occurrences">Occurrences</th>
             <th>Sourced From</th>
-            <th>Occurrences</th>
           </tr>
         </thead>
         <tbody>
           {#each deduplicatedStates as state}
             <tr>
-              <td><span class="state">{state.name}</span></td>
-              <td>
-                {#each state.sourcedFrom as eventName, i}
-                  <span class="event">{eventName}</span>{i < state.sourcedFrom.length - 1 ? ', ' : ''}
-                {/each}
-              </td>
-              <td>
+              <td class="col-name"><span class="state">{state.name}</span></td>
+              <td class="col-occurrences">
                 <div class="tick-chips">
                   {#each state.ticks as tick}
-                    <button class="tick-chip" onclick={() => modelStore.navigateToTick(tick)}>@{tick}</button>
+                    <button
+                      class="tick-chip"
+                      onclick={() => modelStore.navigateToTick(tick)}
+                      >@{tick}</button
+                    >
                   {/each}
                 </div>
+              </td>
+              <td>
+                {#each state.sourcedFrom as eventName, i}
+                  <span class="event">{eventName}</span>{i <
+                  state.sourcedFrom.length - 1
+                    ? ", "
+                    : ""}
+                {/each}
               </td>
             </tr>
           {/each}
@@ -129,22 +160,31 @@
 
   {#if deduplicatedCommands.length > 0}
     <div class="table-section">
-      <h2 class="commands"><span class="symbol">▶</span> Commands ({modelStore.commands.length} total, {deduplicatedCommands.length} unique)</h2>
+      <h2 class="commands">
+        <span class="symbol">▶</span> Commands ({modelStore.commands.length} total,
+        {deduplicatedCommands.length} unique)
+      </h2>
       <table>
         <thead>
           <tr>
-            <th>Name</th>
-            <th>Occurrences</th>
+            <th class="col-name">Name</th>
+            <th class="col-occurrences">Occurrences</th>
           </tr>
         </thead>
         <tbody>
           {#each deduplicatedCommands as command}
             <tr>
-              <td><span class="command">{command.name}</span></td>
-              <td>
+              <td class="col-name"
+                ><span class="command">{command.name}</span></td
+              >
+              <td class="col-occurrences">
                 <div class="tick-chips">
                   {#each command.ticks as tick}
-                    <button class="tick-chip" onclick={() => modelStore.navigateToTick(tick)}>@{tick}</button>
+                    <button
+                      class="tick-chip"
+                      onclick={() => modelStore.navigateToTick(tick)}
+                      >@{tick}</button
+                    >
                   {/each}
                 </div>
               </td>
@@ -157,22 +197,29 @@
 
   {#if deduplicatedActors.length > 0}
     <div class="table-section">
-      <h2 class="actors"><span class="symbol">○</span> Actors ({modelStore.actors.length} total, {deduplicatedActors.length} unique)</h2>
+      <h2 class="actors">
+        <span class="symbol">○</span> Actors ({modelStore.actors.length} total, {deduplicatedActors.length}
+        unique)
+      </h2>
       <table>
         <thead>
           <tr>
-            <th>Name</th>
-            <th>Occurrences</th>
+            <th class="col-name">Name</th>
+            <th class="col-occurrences">Occurrences</th>
           </tr>
         </thead>
         <tbody>
           {#each deduplicatedActors as actor}
             <tr>
-              <td><span class="actor">{actor.name}</span></td>
-              <td>
+              <td class="col-name"><span class="actor">{actor.name}</span></td>
+              <td class="col-occurrences">
                 <div class="tick-chips">
                   {#each actor.ticks as tick}
-                    <button class="tick-chip" onclick={() => modelStore.navigateToTick(tick)}>@{tick}</button>
+                    <button
+                      class="tick-chip"
+                      onclick={() => modelStore.navigateToTick(tick)}
+                      >@{tick}</button
+                    >
                   {/each}
                 </div>
               </td>
@@ -239,10 +286,18 @@
     font-size: 1.25rem;
   }
 
-  .table-section h2.events .symbol { color: var(--color-event); }
-  .table-section h2.states .symbol { color: var(--color-state); }
-  .table-section h2.commands .symbol { color: var(--color-command); }
-  .table-section h2.actors .symbol { color: var(--color-actor); }
+  .table-section h2.events .symbol {
+    color: var(--color-event);
+  }
+  .table-section h2.states .symbol {
+    color: var(--color-state);
+  }
+  .table-section h2.commands .symbol {
+    color: var(--color-command);
+  }
+  .table-section h2.actors .symbol {
+    color: var(--color-actor);
+  }
 
   table {
     width: 100%;
@@ -251,9 +306,11 @@
     border-radius: 0.5rem;
     overflow: hidden;
     box-shadow: var(--shadow-card);
+    table-layout: fixed;
   }
 
-  th, td {
+  th,
+  td {
     padding: 0.75rem 1rem;
     text-align: left;
     border-bottom: 1px solid var(--border);
@@ -276,10 +333,22 @@
     background: var(--bg-secondary);
   }
 
-  .event { color: var(--color-event); }
-  .state { color: var(--color-state); }
-  .command { color: var(--color-command); }
-  .actor { color: var(--color-actor); }
+  .col-name {
+    width: 350px;
+  }
+
+  .event {
+    color: var(--color-event);
+  }
+  .state {
+    color: var(--color-state);
+  }
+  .command {
+    color: var(--color-command);
+  }
+  .actor {
+    color: var(--color-actor);
+  }
 
   .tick-chips {
     display: flex;
