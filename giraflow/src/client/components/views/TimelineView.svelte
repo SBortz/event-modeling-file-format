@@ -343,36 +343,38 @@
                 {#if laneConfig.eventSystems.length > 1}
                   <div class="tl-filter-group">
                     <span class="tl-filter-label">Systems</span>
-                    {#each laneConfig.eventSystems as system}
-                      <label class="tl-filter-item">
-                        <input
-                          type="checkbox"
-                          checked={!hiddenSystems.has(system)}
-                          onchange={() => toggleSystem(system)}
-                        />
-                        <span>{system || 'Default'}</span>
-                      </label>
-                    {/each}
+                    <div class="tl-filter-chips">
+                      {#each laneConfig.eventSystems as system}
+                        <button
+                          class="tl-filter-chip event"
+                          class:hidden={hiddenSystems.has(system)}
+                          onclick={() => toggleSystem(system)}
+                        >
+                          {system || 'Default'}
+                        </button>
+                      {/each}
+                    </div>
                   </div>
                 {/if}
                 {#if laneConfig.actorRoles.length > 1}
                   <div class="tl-filter-group">
                     <span class="tl-filter-label">Roles</span>
-                    {#each laneConfig.actorRoles as role}
-                      <label class="tl-filter-item">
-                        <input
-                          type="checkbox"
-                          checked={!hiddenRoles.has(role)}
-                          onchange={() => toggleRole(role)}
-                        />
-                        <span>{role || 'Default'}</span>
-                      </label>
-                    {/each}
+                    <div class="tl-filter-chips">
+                      {#each laneConfig.actorRoles as role}
+                        <button
+                          class="tl-filter-chip actor"
+                          class:hidden={hiddenRoles.has(role)}
+                          onclick={() => toggleRole(role)}
+                        >
+                          {role || 'Default'}
+                        </button>
+                      {/each}
+                    </div>
                   </div>
                 {/if}
                 {#if hasActiveFilters}
                   <button class="tl-filter-clear" onclick={clearAllFilters}>
-                    Clear all filters
+                    Reset
                   </button>
                 {/if}
               </div>
@@ -869,7 +871,7 @@
   .tl-filter-group {
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
+    gap: 0.35rem;
   }
 
   .tl-filter-group + .tl-filter-group {
@@ -879,48 +881,78 @@
   }
 
   .tl-filter-label {
-    font-size: 0.65rem;
+    font-size: 0.6rem;
     font-weight: 600;
     color: var(--text-secondary);
     text-transform: uppercase;
     letter-spacing: 0.025em;
-    margin-bottom: 0.15rem;
   }
 
-  .tl-filter-item {
+  .tl-filter-chips {
     display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.25rem 0.35rem;
-    border-radius: 0.25rem;
-    cursor: pointer;
-    font-size: 0.75rem;
-    transition: background 0.15s;
+    flex-wrap: wrap;
+    gap: 0.35rem;
   }
 
-  .tl-filter-item:hover {
+  .tl-filter-chip {
+    padding: 0.25rem 0.5rem;
+    border-radius: 1rem;
+    font-size: 0.7rem;
+    font-family: inherit;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+    border: 1px solid transparent;
+  }
+
+  .tl-filter-chip.event {
+    background: rgba(249, 115, 22, 0.15);
+    color: var(--color-event);
+    border-color: rgba(249, 115, 22, 0.3);
+  }
+
+  .tl-filter-chip.event:hover {
+    background: rgba(249, 115, 22, 0.25);
+  }
+
+  .tl-filter-chip.actor {
+    background: rgba(34, 197, 94, 0.15);
+    color: var(--color-actor);
+    border-color: rgba(34, 197, 94, 0.3);
+  }
+
+  .tl-filter-chip.actor:hover {
+    background: rgba(34, 197, 94, 0.25);
+  }
+
+  .tl-filter-chip.hidden {
     background: var(--bg-secondary);
+    color: var(--text-secondary);
+    border-color: var(--border);
+    opacity: 0.6;
+    text-decoration: line-through;
   }
 
-  .tl-filter-item input[type="checkbox"] {
-    margin: 0;
-    cursor: pointer;
+  .tl-filter-chip.hidden:hover {
+    opacity: 0.8;
   }
 
   .tl-filter-clear {
-    width: 100%;
     margin-top: 0.5rem;
-    padding: 0.35rem;
-    border: none;
+    padding: 0.3rem 0.5rem;
+    border: 1px solid var(--border);
+    border-radius: 0.25rem;
     background: transparent;
-    color: var(--color-command);
-    font-size: 0.7rem;
+    color: var(--text-secondary);
+    font-size: 0.65rem;
     font-family: inherit;
     cursor: pointer;
-    border-top: 1px solid var(--border);
+    transition: all 0.15s;
+    align-self: flex-start;
   }
 
   .tl-filter-clear:hover {
-    text-decoration: underline;
+    border-color: var(--text-secondary);
+    color: var(--text-primary);
   }
 </style>
