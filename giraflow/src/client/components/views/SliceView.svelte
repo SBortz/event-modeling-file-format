@@ -400,6 +400,12 @@
       .map(occ => ({ tick: occ.tick, data: occ.state.example }));
   }
 
+  function getCommandExamples(slice: DeduplicatedSlice): { tick: number; data: any }[] {
+    return slice.commandOccurrences
+      .filter(occ => occ.command.example)
+      .map(occ => ({ tick: occ.tick, data: occ.command.example }));
+  }
+
   function navigateCarousel(sliceKey: string, direction: number, total: number) {
     const current = carouselIndices.get(sliceKey) ?? 0;
     const next = (current + direction + total) % total;
@@ -467,6 +473,7 @@
       <div class="slices-container">
         {#each deduplicatedSlices as slice, sliceIndex}
           {@const sliceKey = getSliceKey(slice)}
+          {@const examples = slice.type === "state" ? getStateExamples(slice) : getCommandExamples(slice)}
           <article
             id="slice-{sliceKey}"
             class="slice-detail-view"
@@ -482,27 +489,20 @@
                   <span class="type-badge {slice.type}">{slice.type}</span>
                 </div>
 
-                {#if slice.type === "state"}
-                  {@const examples = getStateExamples(slice)}
-                  {#if examples.length > 0}
-                    {@const currentIndex = carouselIndices.get(sliceKey) ?? 0}
-                    <div class="example-carousel">
-                      <div class="carousel-header">
-                        <span class="carousel-label">Example @{examples[currentIndex].tick}</span>
-                        {#if examples.length > 1}
-                          <div class="carousel-nav">
-                            <button onclick={() => navigateCarousel(sliceKey, -1, examples.length)}>‹</button>
-                            <span>{currentIndex + 1} / {examples.length}</span>
-                            <button onclick={() => navigateCarousel(sliceKey, 1, examples.length)}>›</button>
-                          </div>
-                        {/if}
-                      </div>
-                      <JsonDisplay data={examples[currentIndex].data} />
+                {#if examples.length > 0}
+                  {@const currentIndex = carouselIndices.get(sliceKey) ?? 0}
+                  <div class="example-carousel">
+                    <div class="carousel-header">
+                      <span class="carousel-label">Example @{examples[currentIndex].tick}</span>
+                      {#if examples.length > 1}
+                        <div class="carousel-nav">
+                          <button onclick={() => navigateCarousel(sliceKey, -1, examples.length)}>‹</button>
+                          <span>{currentIndex + 1} / {examples.length}</span>
+                          <button onclick={() => navigateCarousel(sliceKey, 1, examples.length)}>›</button>
+                        </div>
+                      {/if}
                     </div>
-                  {/if}
-                {:else if slice.example}
-                  <div class="slice-example">
-                    <JsonDisplay data={slice.example} />
+                    <JsonDisplay data={examples[currentIndex].data} />
                   </div>
                 {/if}
               </header>
