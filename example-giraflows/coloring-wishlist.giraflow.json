@@ -1,7 +1,7 @@
 {
   "$schema": "giraflow.schema.json",
   "name": "Coloring Picture Wishlist",
-  "description": "An application for kids to wish for coloring pictures (Ausmalbilder), with admin moderation, AI generation, and a browsable categorized library",
+  "description": "A web application where children can submit text prompts describing coloring pictures they wish for. Optionally, they provide an email address for notifications. Submitted wishes go to an admin moderation queue where admins can approve or reject them. Rejected wishes trigger email notifications to the user (if email was provided). Approved wishes enter an AI image generation queue. The system generates coloring pictures using AI, tracks generation attempts, and stores images locally. Generated images appear in another admin review queue where admins can: approve the image, request regeneration with the same prompt, adjust the prompt and regenerate, or permanently reject the image. Permanently rejected images trigger email notifications. Approved images are automatically categorized by an AI system that assigns a title and tags. After categorization, users receive success notifications with a link to their image. All approved and categorized images appear in a public, browsable library organized by tags/categories. Children can browse the library, view image details (including related images), and download coloring pictures for printing. The system tracks view and download counts per image.",
   "version": "1.0.0",
   "timeline": [
     {
