@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 
 import { spawn } from 'node:child_process';
-import { findGiraflowFiles, promptFileSelection } from './server/file-selector.js';
 
 const CLI_COMMANDS = ['view', 'create', 'copy-schema', 'copy-ai-instructions', 'copy-example', 'generate-slices', '--help', '-h', '--version', '-V'];
 
@@ -33,24 +32,14 @@ async function main() {
     }
   }
 
-  // If no file specified, search and prompt
-  if (!filePath) {
-    const files = findGiraflowFiles();
-
-    if (files.length === 0) {
-      console.error('\n  No *.giraflow.json files found in current directory.\n');
-      process.exit(1);
-    } else if (files.length === 1) {
-      filePath = files[0];
-      console.log(`\n  Using: ${filePath}\n`);
-    } else {
-      filePath = await promptFileSelection(files);
-    }
+  // Start vite - file selection happens in browser if not specified
+  const env = { ...process.env };
+  if (filePath) {
+    env.IF_FILE = filePath;
   }
 
-  // Start vite with the selected file
   const vite = spawn('npx', ['vite', '--port', '4321'], {
-    env: { ...process.env, IF_FILE: filePath },
+    env,
     stdio: 'inherit',
     shell: true,
   });

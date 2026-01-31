@@ -25,6 +25,11 @@
       }
     }
   }
+
+  function handleFileSelect(e: Event) {
+    const select = e.currentTarget as HTMLSelectElement;
+    modelStore.selectFile(select.value);
+  }
 </script>
 
 <nav class="tabs">
@@ -50,6 +55,19 @@
       >
         {#each examples as example}
           <option value={example.id}>{example.name}</option>
+        {/each}
+      </select>
+    </div>
+  {:else if modelStore.availableFiles.length > 1}
+    <div class="file-selector">
+      <label for="file-select">File:</label>
+      <select
+        id="file-select"
+        value={modelStore.watchedFile}
+        onchange={handleFileSelect}
+      >
+        {#each modelStore.availableFiles as file}
+          <option value={file}>{file.replace('.giraflow.json', '')}</option>
         {/each}
       </select>
     </div>
@@ -122,6 +140,38 @@
   }
 
   .example-selector select:focus {
+    outline: none;
+    border-color: var(--color-command);
+  }
+
+  .file-selector {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0;
+  }
+
+  .file-selector label {
+    font-size: 0.8rem;
+    color: var(--text-tertiary);
+  }
+
+  .file-selector select {
+    padding: 0.35rem 0.5rem;
+    border: 1px solid var(--border);
+    border-radius: 0.25rem;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-size: 0.8rem;
+    font-family: inherit;
+    cursor: pointer;
+  }
+
+  .file-selector select:hover {
+    border-color: var(--text-tertiary);
+  }
+
+  .file-selector select:focus {
     outline: none;
     border-color: var(--color-command);
   }

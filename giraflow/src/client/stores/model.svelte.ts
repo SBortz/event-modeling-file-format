@@ -6,6 +6,7 @@ class ModelStore {
   slices = $state<SliceViewModel | null>(null);
   error = $state<string | null>(null);
   watchedFile = $state<string>('');
+  availableFiles = $state<string[]>([]);
   view = $state<ViewMode>('timeline');
   expandAll = $state(false);
   highlightTick = $state<number | null>(null);
@@ -130,10 +131,22 @@ class ModelStore {
     }
   }
 
-  updateModel(data: { model: InformationFlowModel | null; error: string | null; watchedFile: string }) {
+  updateModel(data: { model: InformationFlowModel | null; error: string | null; watchedFile: string; availableFiles?: string[] }) {
     this.model = data.model;
     this.error = data.error;
     this.watchedFile = data.watchedFile;
+    if (data.availableFiles) {
+      this.availableFiles = data.availableFiles;
+    }
+  }
+
+  async selectFile(fileName: string): Promise<boolean> {
+    const res = await fetch('/api/select-file', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ file: fileName }),
+    });
+    return res.ok;
   }
 
   updateSlices(slices: SliceViewModel | null) {

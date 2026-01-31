@@ -34,6 +34,8 @@ export function ifLivePlugin(): Plugin {
   let debounceTimeout: NodeJS.Timeout | null = null;
   let pendingChangeType: 'model' | 'wireframe' | null = null;
   let isPublicMode = false;
+  let availableFiles: string[] = [];
+  let server: ViteDevServer | null = null;
   const clients = new Set<ServerResponse>();
 
   function findGiraflowFiles(): string[] {
@@ -49,6 +51,10 @@ export function ifLivePlugin(): Plugin {
     // Search for giraflow files in current directory
     const giraflowFiles = findGiraflowFiles();
     if (giraflowFiles.length === 1) {
+      return path.resolve(giraflowFiles[0]);
+    }
+    // If multiple files, select the first one
+    if (giraflowFiles.length > 1) {
       return path.resolve(giraflowFiles[0]);
     }
     return null;
@@ -76,10 +82,60 @@ export function ifLivePlugin(): Plugin {
     }
   }
 
+  function closeWatchers(): void {
+    if (jsonWatcher) {
+      jsonWatcher.close();
+      jsonWatcher = null;
+    }
+    if (wireframeWatcher) {
+      wireframeWatcher.close();
+      wireframeWatcher = null;
+    }
+  }
+
+  function setupWatchers(scheduleNotify: (changeType: 'model' | 'wireframe') => void): void {
+    if (!filePath || !server) return;
+
+    // Watch JSON file
+    jsonWatcher = fs.watch(filePath, () => scheduleNotify('model'));
+    jsonWatcher.on('error', (err) => {
+      server?.config.logger.error(`  Watch error (JSON): ${err.message}`);
+    });
+
+    // Watch wireframe folder if it exists
+    const giraflowFolderPath = filePath.replace(/\.json$/, '');
+    if (fs.existsSync(giraflowFolderPath) && fs.statSync(giraflowFolderPath).isDirectory()) {
+      wireframeWatcher = fs.watch(giraflowFolderPath, { recursive: true }, () => scheduleNotify('wireframe'));
+      wireframeWatcher.on('error', (err) => {
+        server?.config.logger.error(`  Watch error (wireframes): ${err.message}`);
+      });
+      server.config.logger.info(`  👁 Watching wireframes in ${path.basename(giraflowFolderPath)}/\n`);
+    }
+  }
+
+  function switchToFile(fileName: string, scheduleNotify: (changeType: 'model' | 'wireframe') => void): boolean {
+    const newPath = path.resolve(process.cwd(), fileName);
+    if (!fs.existsSync(newPath)) {
+      return false;
+    }
+
+    closeWatchers();
+    filePath = newPath;
+    fileDir = path.dirname(filePath);
+    loadModel();
+    setupWatchers(scheduleNotify);
+
+    if (server) {
+      server.config.logger.info(`\n  Switched to: ${fileName}\n`);
+    }
+    return true;
+  }
+
   return {
     name: 'if-live',
 
-    configureServer(server: ViteDevServer) {
+    configureServer(viteServer: ViteDevServer) {
+      server = viteServer;
       // Check if we're in public mode
       isPublicMode = server.config.mode === 'public';
 
@@ -95,38 +151,33 @@ export function ifLivePlugin(): Plugin {
         return;
       }
 
+      // Scan for available giraflow files
+      availableFiles = findGiraflowFiles();
       filePath = findFileArg();
 
-      if (!filePath) {
-        const giraflowFiles = findGiraflowFiles();
-        if (giraflowFiles.length === 0) {
-          server.config.logger.warn(
-            '\n  No *.giraflow.json files found. Usage: npm run dev -- <file.giraflow.json>\n'
-          );
-        } else {
-          server.config.logger.warn(
-            '\n  Multiple giraflow files found. Please specify one:\n' +
-            giraflowFiles.map(f => `    - npm run dev -- ${f}`).join('\n') + '\n'
-          );
-        }
+      if (!filePath && availableFiles.length === 0) {
+        server.config.logger.warn(
+          '\n  No *.giraflow.json files found. Usage: giraflow <file.giraflow.json>\n'
+        );
         return;
       }
 
-      if (!fs.existsSync(filePath)) {
+      if (filePath && !fs.existsSync(filePath)) {
         server.config.logger.error(`\n  File not found: ${filePath}\n`);
         return;
       }
 
-      fileDir = path.dirname(filePath);
+      if (filePath) {
+        fileDir = path.dirname(filePath);
+      }
 
       // Initial load
       loadModel();
 
-      const fileName = path.basename(filePath);
-      server.config.logger.info(`\n  Watching: ${fileName}\n`);
-
-      // Derive the .giraflow folder path
-      const giraflowFolderPath = filePath.replace(/\.json$/, '');
+      const fileName = filePath ? path.basename(filePath) : null;
+      if (fileName) {
+        server.config.logger.info(`\n  Watching: ${fileName}\n`);
+      }
 
       function scheduleNotify(changeType: 'model' | 'wireframe'): void {
         // Model changes take precedence
@@ -137,31 +188,19 @@ export function ifLivePlugin(): Plugin {
         if (debounceTimeout) clearTimeout(debounceTimeout);
         debounceTimeout = setTimeout(() => {
           if (pendingChangeType === 'model') {
-            server.config.logger.info(`  ⟳ Model changed, reloading...`);
+            server!.config.logger.info(`  ⟳ Model changed, reloading...`);
             loadModel();
             notifyClients('reload');
           } else {
-            server.config.logger.info(`  ⟳ Wireframe changed, refreshing iframes...`);
+            server!.config.logger.info(`  ⟳ Wireframe changed, refreshing iframes...`);
             notifyClients('wireframe-reload');
           }
           pendingChangeType = null;
         }, 100);
       }
 
-      // Watch JSON file
-      jsonWatcher = fs.watch(filePath, () => scheduleNotify('model'));
-      jsonWatcher.on('error', (err) => {
-        server.config.logger.error(`  Watch error (JSON): ${err.message}`);
-      });
-
-      // Watch wireframe folder if it exists
-      if (fs.existsSync(giraflowFolderPath) && fs.statSync(giraflowFolderPath).isDirectory()) {
-        wireframeWatcher = fs.watch(giraflowFolderPath, { recursive: true }, () => scheduleNotify('wireframe'));
-        wireframeWatcher.on('error', (err) => {
-          server.config.logger.error(`  Watch error (wireframes): ${err.message}`);
-        });
-        server.config.logger.info(`  👁 Watching wireframes in ${path.basename(giraflowFolderPath)}/\n`);
-      }
+      // Setup initial watchers
+      setupWatchers(scheduleNotify);
 
       // Middleware for API and SSE
       server.middlewares.use((req, res, next) => {
@@ -174,7 +213,37 @@ export function ifLivePlugin(): Plugin {
             model: currentModel,
             error: currentError,
             watchedFile: filePath ? path.basename(filePath) : null,
+            availableFiles,
           }));
+          return;
+        }
+
+        if (req.url === '/api/select-file' && req.method === 'POST') {
+          let body = '';
+          req.on('data', chunk => { body += chunk; });
+          req.on('end', () => {
+            try {
+              const { file } = JSON.parse(body);
+              if (!file || !availableFiles.includes(file)) {
+                res.writeHead(400, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: 'Invalid file' }));
+                return;
+              }
+
+              const success = switchToFile(file, scheduleNotify);
+              if (success) {
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ success: true }));
+                notifyClients('reload');
+              } else {
+                res.writeHead(404, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: 'File not found' }));
+              }
+            } catch {
+              res.writeHead(400, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ error: 'Invalid request' }));
+            }
+          });
           return;
         }
 

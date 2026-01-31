@@ -27,6 +27,15 @@
   // Check if any filters are active
   let hasActiveFilters = $derived(hiddenSystems.size > 0 || hiddenRoles.size > 0);
 
+  // Check if lane header should be shown (multiple lanes or named lanes)
+  let shouldShowLaneHeader = $derived(() => {
+    const hasMultipleSystems = laneConfig.eventSystems.length > 1;
+    const hasMultipleRoles = laneConfig.actorRoles.length > 1;
+    const hasNamedSystem = laneConfig.eventSystems.some(s => s !== '');
+    const hasNamedRole = laneConfig.actorRoles.some(r => r !== '');
+    return hasMultipleSystems || hasMultipleRoles || hasNamedSystem || hasNamedRole;
+  });
+
   // Toggle functions - clicking toggles visibility (visible by default)
   function toggleSystem(system: string) {
     if (hiddenSystems.has(system)) {
@@ -299,89 +308,92 @@
   <!-- Master: Compact timeline on the left -->
   <aside class="timeline-master">
     <div class="tl-master-content">
-      <div class="tl-lane-header">
-        <div class="tl-lane-labels-wrapper" style="padding-left: calc(0.75rem + 2rem + 0.5rem + 0.25rem);">
-        <div class="tl-lane-labels" style="width: {totalLaneWidth}px;">
-          {#each filteredLaneConfig().eventSystems as system, i}
-            <div
-              class="tl-lane-label event"
-              style="left: {i * filteredLaneConfig().laneWidth}px; width: {filteredLaneConfig().laneWidth}px;"
-            >
-              {#if system}<span class="tl-lane-label-text">{system}</span>{/if}
-            </div>
-          {/each}
-          <div
-            class="tl-lane-label center"
-            style="left: {filteredLaneConfig().eventLaneCount * filteredLaneConfig().laneWidth}px; width: {filteredLaneConfig().laneWidth}px;"
-          ></div>
-          {#each filteredLaneConfig().actorRoles as role, i}
-            <div
-              class="tl-lane-label actor"
-              style="left: {(filteredLaneConfig().eventLaneCount + 1 + i) * filteredLaneConfig().laneWidth}px; width: {filteredLaneConfig().laneWidth}px;"
-            >
-              {#if role}<span class="tl-lane-label-text">{role}</span>{/if}
-            </div>
-          {/each}
-        </div>
-        </div>
-        {#if laneConfig.eventSystems.length > 1 || laneConfig.actorRoles.length > 1}
-          <div class="tl-filter-dropdown">
-            <button
-              class="tl-filter-trigger"
-              class:has-filters={hasActiveFilters}
-              onclick={() => filterDropdownOpen = !filterDropdownOpen}
-            >
-              <span>⚙</span>
-              {#if hasActiveFilters}
-                <span class="tl-filter-badge">{hiddenSystems.size + hiddenRoles.size}</span>
-              {/if}
-            </button>
-            {#if filterDropdownOpen}
-              <div class="tl-filter-panel">
-                {#if laneConfig.eventSystems.length > 1}
-                  <div class="tl-filter-group">
-                    <span class="tl-filter-label">Systems</span>
-                    <div class="tl-filter-chips">
-                      {#each laneConfig.eventSystems as system}
-                        <button
-                          class="tl-filter-chip event"
-                          class:hidden={hiddenSystems.has(system)}
-                          onclick={() => toggleSystem(system)}
-                        >
-                          {system || 'Default'}
-                        </button>
-                      {/each}
-                    </div>
-                  </div>
-                {/if}
-                {#if laneConfig.actorRoles.length > 1}
-                  <div class="tl-filter-group">
-                    <span class="tl-filter-label">Roles</span>
-                    <div class="tl-filter-chips">
-                      {#each laneConfig.actorRoles as role}
-                        <button
-                          class="tl-filter-chip actor"
-                          class:hidden={hiddenRoles.has(role)}
-                          onclick={() => toggleRole(role)}
-                        >
-                          {role || 'Default'}
-                        </button>
-                      {/each}
-                    </div>
-                  </div>
-                {/if}
-                {#if hasActiveFilters}
-                  <button class="tl-filter-clear" onclick={clearAllFilters}>
-                    Reset
-                  </button>
-                {/if}
+      {#if shouldShowLaneHeader()}
+        <div class="tl-lane-header">
+          <div class="tl-lane-labels-wrapper" style="padding-left: calc(0.75rem + 2rem + 0.5rem + 0.25rem);">
+          <div class="tl-lane-labels" style="width: {totalLaneWidth}px;">
+            {#each filteredLaneConfig().eventSystems as system, i}
+              <div
+                class="tl-lane-label event"
+                style="left: {i * filteredLaneConfig().laneWidth}px; width: {filteredLaneConfig().laneWidth}px;"
+              >
+                {#if system}<span class="tl-lane-label-text">{system}</span>{/if}
               </div>
-            {/if}
+            {/each}
+            <div
+              class="tl-lane-label center"
+              style="left: {filteredLaneConfig().eventLaneCount * filteredLaneConfig().laneWidth}px; width: {filteredLaneConfig().laneWidth}px;"
+            ></div>
+            {#each filteredLaneConfig().actorRoles as role, i}
+              <div
+                class="tl-lane-label actor"
+                style="left: {(filteredLaneConfig().eventLaneCount + 1 + i) * filteredLaneConfig().laneWidth}px; width: {filteredLaneConfig().laneWidth}px;"
+              >
+                {#if role}<span class="tl-lane-label-text">{role}</span>{/if}
+              </div>
+            {/each}
           </div>
-        {/if}
-      </div>
+          </div>
+          {#if laneConfig.eventSystems.length > 1 || laneConfig.actorRoles.length > 1}
+            <div class="tl-filter-dropdown">
+              <button
+                class="tl-filter-trigger"
+                class:has-filters={hasActiveFilters}
+                onclick={() => filterDropdownOpen = !filterDropdownOpen}
+              >
+                <span>⚙</span>
+                {#if hasActiveFilters}
+                  <span class="tl-filter-badge">{hiddenSystems.size + hiddenRoles.size}</span>
+                {/if}
+              </button>
+              {#if filterDropdownOpen}
+                <div class="tl-filter-panel">
+                  {#if laneConfig.eventSystems.length > 1}
+                    <div class="tl-filter-group">
+                      <span class="tl-filter-label">Systems</span>
+                      <div class="tl-filter-chips">
+                        {#each laneConfig.eventSystems as system}
+                          <button
+                            class="tl-filter-chip event"
+                            class:hidden={hiddenSystems.has(system)}
+                            onclick={() => toggleSystem(system)}
+                          >
+                            {system || 'Default'}
+                          </button>
+                        {/each}
+                      </div>
+                    </div>
+                  {/if}
+                  {#if laneConfig.actorRoles.length > 1}
+                    <div class="tl-filter-group">
+                      <span class="tl-filter-label">Roles</span>
+                      <div class="tl-filter-chips">
+                        {#each laneConfig.actorRoles as role}
+                          <button
+                            class="tl-filter-chip actor"
+                            class:hidden={hiddenRoles.has(role)}
+                            onclick={() => toggleRole(role)}
+                          >
+                            {role || 'Default'}
+                          </button>
+                        {/each}
+                      </div>
+                    </div>
+                  {/if}
+                  {#if hasActiveFilters}
+                    <button class="tl-filter-clear" onclick={clearAllFilters}>
+                      Reset
+                    </button>
+                  {/if}
+                </div>
+              {/if}
+            </div>
+          {/if}
+        </div>
+      {/if}
       <div
         class="tl-master-line"
+        class:no-header={!shouldShowLaneHeader()}
         style="width: {totalLaneWidth}px; {generateLaneBackgroundCSS()}"
       ></div>
       {#each filteredItems as { element: el, position, laneIndex }}
@@ -587,6 +599,10 @@
     left: calc(0.75rem + 2rem + 0.5rem + 0.25rem);
     pointer-events: none;
     z-index: 2;
+  }
+
+  .tl-master-line.no-header {
+    top: 0;
   }
 
   .tl-master-item {
