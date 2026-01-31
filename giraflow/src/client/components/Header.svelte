@@ -7,9 +7,15 @@
     <img src="/logo.svg" alt="Giraflow" class="logo" />
   </div>
   <div class="header-right">
-    <span class="status">
-      Watching {modelStore.watchedFile}
-    </span>
+    {#if modelStore.isPublicMode}
+      <span class="model-name">
+        {modelStore.model?.name ?? 'Giraflow Editor'}
+      </span>
+    {:else}
+      <span class="status">
+        Watching {modelStore.watchedFile}
+      </span>
+    {/if}
   </div>
 </header>
 
@@ -48,5 +54,11 @@
     background: var(--color-success);
     border-radius: 50%;
     animation: pulse 2s infinite;
+  }
+
+  .model-name {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-secondary);
   }
 </style>

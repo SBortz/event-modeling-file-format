@@ -33,6 +33,7 @@ export function ifLivePlugin(): Plugin {
   let wireframeWatcher: fs.FSWatcher | null = null;
   let debounceTimeout: NodeJS.Timeout | null = null;
   let pendingChangeType: 'model' | 'wireframe' | null = null;
+  let isPublicMode = false;
   const clients = new Set<ServerResponse>();
 
   function findGiraflowFiles(): string[] {
@@ -79,6 +80,21 @@ export function ifLivePlugin(): Plugin {
     name: 'if-live',
 
     configureServer(server: ViteDevServer) {
+      // Check if we're in public mode
+      isPublicMode = server.config.mode === 'public';
+
+      // In public mode, serve index-public.html instead of index.html
+      if (isPublicMode) {
+        server.middlewares.use((req, res, next) => {
+          // Rewrite root request to index-public.html
+          if (req.url === '/' || req.url === '/index.html') {
+            req.url = '/index-public.html';
+          }
+          next();
+        });
+        return;
+      }
+
       filePath = findFileArg();
 
       if (!filePath) {

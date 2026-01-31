@@ -12,10 +12,13 @@
   ],
   "scripts": {
     "build": "npm run bundle:wired && vite build && tsc -p tsconfig.server.json && cp ../giraflow.schema.json dist/server/server/ && cp ../docs/design-methodology.md dist/server/server/ && cp -r ../example-giraflows dist/server/server/examples",
+    "build:public": "npm run bundle:wired && vite build --mode public",
     "bundle:wired": "esbuild node_modules/wired-elements/lib/wired-elements.js --bundle --format=esm --outfile=public/lib/wired-elements.js",
     "dev": "tsx src/dev-cli.ts",
+    "dev:public": "vite --mode public --port 4321",
     "dev:server": "tsx watch src/server/index.ts",
     "start": "node dist/server/server/index.js",
+    "preview:public": "vite preview --mode public --port 4321",
     "check": "svelte-check --tsconfig ./tsconfig.json",
     "prepublishOnly": "npm run build"
   },
@@ -33,11 +36,13 @@
   "author": "Sebastian Bortz <sebastianbortz@gmail.com>",
   "license": "MIT",
   "dependencies": {
+    "@codemirror/lang-json": "^6.0.2",
     "@inquirer/prompts": "^7.2.0",
     "ajv": "^8.17.1",
     "ajv-formats": "^3.0.1",
     "chalk": "^5.3.0",
     "cli-table3": "^0.6.5",
+    "codemirror": "^6.0.2",
     "commander": "^12.1.0",
     "highlight.js": "^11.11.1",
     "open": "^10.1.0",

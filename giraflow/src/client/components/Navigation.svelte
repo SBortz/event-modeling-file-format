@@ -1,33 +1,74 @@
 <script lang="ts">
   import { modelStore } from '../stores/model.svelte';
   import type { ViewMode } from '../lib/types';
+  import { examples, getDefaultExample, type Example } from '../lib/examples';
+  import { buildSliceViewModel } from '../lib/models/slice-model';
 
   const tabs: { id: ViewMode; label: string }[] = [
     { id: 'timeline', label: 'Timeline' },
     { id: 'slice', label: 'Slices & Scenarios' },
     { id: 'table', label: 'Info' },
+    { id: 'editor', label: 'Editor' },
   ];
+
+  let selectedExampleId = $state(getDefaultExample().id);
+
+  function handleExampleSelect(e: Event) {
+    const select = e.currentTarget as HTMLSelectElement;
+    const example = examples.find(ex => ex.id === select.value);
+    if (example) {
+      selectedExampleId = example.id;
+      const json = JSON.stringify(example.model, null, 2);
+      modelStore.loadFromJson(json);
+      if (modelStore.model) {
+        modelStore.updateSlices(buildSliceViewModel(modelStore.model));
+      }
+    }
+  }
 </script>
 
 <nav class="tabs">
-  {#each tabs as tab}
-    <button
-      class="tab"
-      class:active={modelStore.view === tab.id}
-      onclick={() => modelStore.setView(tab.id)}
-    >
-      {tab.label}
-    </button>
-  {/each}
+  <div class="tabs-left">
+    {#each tabs as tab}
+      <button
+        class="tab"
+        class:active={modelStore.view === tab.id}
+        onclick={() => modelStore.setView(tab.id)}
+      >
+        {tab.label}
+      </button>
+    {/each}
+  </div>
+
+  {#if modelStore.isPublicMode}
+    <div class="example-selector">
+      <label for="example-select">Example:</label>
+      <select
+        id="example-select"
+        value={selectedExampleId}
+        onchange={handleExampleSelect}
+      >
+        {#each examples as example}
+          <option value={example.id}>{example.name}</option>
+        {/each}
+      </select>
+    </div>
+  {/if}
 </nav>
 
 <style>
   .tabs {
     display: flex;
     align-items: stretch;
+    justify-content: space-between;
     padding: 0 2rem;
     background: var(--bg-card);
     border-bottom: 1px solid var(--border);
+  }
+
+  .tabs-left {
+    display: flex;
+    align-items: stretch;
   }
 
   .tab {
@@ -51,5 +92,37 @@
   .tab.active {
     color: var(--color-command);
     border-bottom-color: var(--color-command);
+  }
+
+  .example-selector {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0;
+  }
+
+  .example-selector label {
+    font-size: 0.8rem;
+    color: var(--text-tertiary);
+  }
+
+  .example-selector select {
+    padding: 0.35rem 0.5rem;
+    border: 1px solid var(--border);
+    border-radius: 0.25rem;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-size: 0.8rem;
+    font-family: inherit;
+    cursor: pointer;
+  }
+
+  .example-selector select:hover {
+    border-color: var(--text-tertiary);
+  }
+
+  .example-selector select:focus {
+    outline: none;
+    border-color: var(--color-command);
   }
 </style>

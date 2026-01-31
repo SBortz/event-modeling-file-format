@@ -9,6 +9,8 @@ async function fetchModel() {
     const res = await fetch('/api/model');
     const data = await res.json();
     modelStore.updateModel(data);
+    // Sync raw JSON for editor view
+    modelStore.syncRawJsonFromModel();
   } catch (e) {
     modelStore.updateModel({
       model: null,

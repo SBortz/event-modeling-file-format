@@ -5,6 +5,7 @@
   import TimelineView from "./components/views/TimelineView.svelte";
   import SliceView from "./components/views/SliceView.svelte";
   import TableView from "./components/views/TableView.svelte";
+  import EditorView from "./components/views/EditorView.svelte";
 
   // Handle browser back/forward navigation and hash changes
   $effect(() => {
@@ -34,7 +35,10 @@
 </div>
 
 <main>
-  {#if modelStore.error && !modelStore.model}
+  {#if modelStore.view === "editor"}
+    <!-- Editor view works without a model (loads example in public mode) -->
+    <EditorView />
+  {:else if modelStore.error && !modelStore.model}
     <div class="error">
       <h2>Failed to load model</h2>
       <pre>{modelStore.error}</pre>
@@ -53,6 +57,9 @@
         <span>Error: {modelStore.error}</span>
       </div>
     {/if}
+  {:else if modelStore.isPublicMode}
+    <!-- In public mode, start with editor view -->
+    <EditorView />
   {:else}
     <div class="loading">Loading...</div>
   {/if}

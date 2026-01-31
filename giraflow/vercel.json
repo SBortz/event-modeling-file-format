@@ -1,0 +1,5 @@
+{
+  "buildCommand": "npm run build:public",
+  "outputDirectory": "dist/client",
+  "rewrites": [{ "source": "/(.*)", "destination": "/index-public.html" }]
+}

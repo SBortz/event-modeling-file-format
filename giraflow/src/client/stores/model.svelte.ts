@@ -10,6 +10,11 @@ class ModelStore {
   expandAll = $state(false);
   highlightTick = $state<number | null>(null);
 
+  // Editor state
+  rawJson = $state<string>('');
+  isPublicMode = $state(false);
+  jsonError = $state<string | null>(null);
+
   get events(): Event[] {
     if (!this.model) return [];
     return this.model.timeline.filter((el): el is Event => el.type === 'event');
@@ -108,6 +113,8 @@ class ModelStore {
       }
     } else if (viewPart === 'table') {
       this.view = 'table';
+    } else if (viewPart === 'editor') {
+      this.view = 'editor';
     }
   }
 
@@ -131,6 +138,36 @@ class ModelStore {
 
   updateSlices(slices: SliceViewModel | null) {
     this.slices = slices;
+  }
+
+  // Load model from JSON string (for editor)
+  loadFromJson(json: string) {
+    this.rawJson = json;
+    this.jsonError = null;
+
+    if (!json.trim()) {
+      this.model = null;
+      return;
+    }
+
+    try {
+      const parsed = JSON.parse(json);
+      this.model = parsed as InformationFlowModel;
+      this.error = null;
+    } catch (e) {
+      this.jsonError = e instanceof Error ? e.message : 'Invalid JSON';
+    }
+  }
+
+  // Update raw JSON when model changes (from file watcher)
+  syncRawJsonFromModel() {
+    if (this.model) {
+      this.rawJson = JSON.stringify(this.model, null, 2);
+    }
+  }
+
+  setPublicMode(isPublic: boolean) {
+    this.isPublicMode = isPublic;
   }
 }
 
