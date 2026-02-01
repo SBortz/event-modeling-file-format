@@ -23,6 +23,9 @@
   let scenarioElements = $state<Map<string, HTMLElement>>(new Map());
   let carouselIndices = $state<Map<string, number>>(new Map());
 
+  // Mobile side panel state
+  let sidePanelOpen = $state(false);
+
   // Set first slice as active by default
   $effect(() => {
     if (!activeSliceKey && slices.length > 0) {
@@ -168,6 +171,10 @@
       el.scrollIntoView({ behavior: "smooth", block: "start" });
       // Use replaceState to update URL without adding history entry
       history.replaceState(null, "", `#slice/${encodeURIComponent(slice.name)}`);
+      // Close panel on mobile after selection
+      if (window.innerWidth <= 900) {
+        sidePanelOpen = false;
+      }
     }
   }
 
@@ -185,6 +192,10 @@
       el.scrollIntoView({ behavior: "smooth", block: "start" });
       // Use replaceState to update URL without adding history entry
       history.replaceState(null, "", `#slice/${encodeURIComponent(slice.name)}/scenario/${encodeURIComponent(scenarioName)}`);
+      // Close panel on mobile after selection
+      if (window.innerWidth <= 900) {
+        sidePanelOpen = false;
+      }
     }
   }
 
@@ -197,7 +208,25 @@
 </script>
 
 <div class="slice-explorer">
-  <aside class="sidebar">
+  <!-- Mobile toggle button -->
+  <button
+    class="panel-toggle"
+    onclick={() => sidePanelOpen = !sidePanelOpen}
+    aria-label={sidePanelOpen ? 'Close slices panel' : 'Open slices panel'}
+  >
+    {sidePanelOpen ? '✕' : '☰'}
+  </button>
+
+  <!-- Mobile overlay backdrop -->
+  {#if sidePanelOpen}
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
+    <div
+      class="panel-overlay"
+      onclick={() => sidePanelOpen = false}
+    ></div>
+  {/if}
+
+  <aside class="sidebar" class:open={sidePanelOpen}>
     <div class="sidebar-header">
       <h3>Slices</h3>
       <span class="count">{slices.length}</span>
@@ -1050,25 +1079,111 @@
     min-width: 0;
   }
 
+  /* Mobile panel toggle button - hidden by default on desktop */
+  .panel-toggle {
+    display: none;
+  }
+
+  /* Mobile overlay - hidden by default */
+  .panel-overlay {
+    display: none;
+  }
+
   /* Mobile Responsive */
-  @media (max-width: 768px) {
-    .slice-explorer {
-      flex-direction: column;
+  @media (max-width: 900px) {
+    .sidebar {
+      position: fixed;
+      left: 0;
+      top: 120px;
+      bottom: 0;
+      width: 320px;
+      max-width: 85vw;
+      border-radius: 0;
+      border-top: none;
+      border-bottom: none;
+      border-left: none;
+      transform: translateX(-100%);
+      transition: transform 0.3s ease;
+      z-index: 101;
     }
 
-    .sidebar {
-      width: 100%;
-      height: 200px;
-      border-right: none;
-      border-bottom: 1px solid var(--border);
+    .sidebar.open {
+      transform: translateX(0);
+    }
+
+    .panel-overlay {
+      display: block;
+      position: fixed;
+      inset: 0;
+      top: 120px;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 100;
+    }
+
+    .panel-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: fixed;
+      left: 1rem;
+      bottom: 1rem;
+      width: 3rem;
+      height: 3rem;
+      border-radius: 50%;
+      background: var(--color-command);
+      color: white;
+      border: none;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+      font-size: 1.25rem;
+      cursor: pointer;
+      z-index: 102;
+      transition: background 0.15s, transform 0.15s;
+    }
+
+    .panel-toggle:hover {
+      transform: scale(1.05);
+    }
+
+    .panel-toggle:active {
+      transform: scale(0.95);
     }
 
     .main-content {
-      height: calc(100% - 200px);
+      padding: 1rem;
+    }
+
+    .detail-header {
+      padding: 1rem;
+    }
+
+    .detail-body {
+      padding: 1rem;
     }
 
     .metadata-columns {
       grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+
+    .title-group {
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .detail-header h1 {
+      font-size: 1.25rem;
+    }
+  }
+
+  @media (max-width: 500px) {
+    .detail-item {
+      flex-wrap: wrap;
+    }
+
+    .ticks-group {
+      width: 100%;
+      margin-left: 0;
+      margin-top: 0.25rem;
     }
   }
 </style>
