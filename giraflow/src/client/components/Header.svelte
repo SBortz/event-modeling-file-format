@@ -121,8 +121,14 @@
             <option value={example.id}>{example.name}</option>
           {/each}
         </select>
-        <button class="icon-button" onclick={handleCreateNew} title="Create new Giraflow">+</button>
-        <button class="icon-button" onclick={handleDownload} title="Download as ZIP">⬇</button>
+        <button class="icon-button" onclick={handleCreateNew} title="Create new Giraflow">
+          <span class="icon">+</span>
+          <span class="label">New</span>
+        </button>
+        <button class="icon-button" onclick={handleDownload} title="Download as ZIP">
+          <span class="icon">↓</span>
+          <span class="label">Download</span>
+        </button>
       </div>
     {:else}
       <div class="file-selector">
@@ -141,7 +147,10 @@
             Watching {modelStore.watchedFile}
           </span>
         {/if}
-        <button class="icon-button" onclick={handleCreateNew} title="Create new Giraflow">+</button>
+        <button class="icon-button" onclick={handleCreateNew} title="Create new Giraflow">
+          <span class="icon">+</span>
+          <span class="label">New</span>
+        </button>
       </div>
     {/if}
   </div>
@@ -174,46 +183,67 @@
   }
 
   .file-selector select {
-    padding: 0.35rem 0.5rem;
+    padding: 0.5rem 2rem 0.5rem 0.75rem;
     border: 1px solid var(--border);
-    border-radius: 0.25rem;
+    border-radius: 0.375rem;
     background: var(--bg-primary);
     color: var(--text-primary);
-    font-size: 0.8rem;
+    font-size: 0.875rem;
     font-family: inherit;
     cursor: pointer;
+    box-shadow: var(--shadow-card);
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.5rem center;
+    transition: all 0.15s;
   }
 
   .file-selector select:hover {
     border-color: var(--text-tertiary);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   }
 
   .file-selector select:focus {
     outline: none;
     border-color: var(--color-command);
+    box-shadow: 0 0 0 2px rgba(122, 162, 247, 0.3);
   }
 
   .icon-button {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 1.5rem;
-    height: 1.5rem;
-    padding: 0;
+    gap: 0.375rem;
+    height: 2rem;
+    width: auto;
+    padding: 0 0.75rem;
     border: 1px solid var(--border);
-    border-radius: 0.25rem;
+    border-radius: 0.375rem;
     background: var(--bg-primary);
     color: var(--text-secondary);
-    font-size: 1rem;
+    font-size: 0.8rem;
     font-weight: 500;
     cursor: pointer;
+    box-shadow: var(--shadow-card);
     transition: all 0.15s;
+  }
+
+  .icon-button .icon {
+    font-size: 1rem;
+    line-height: 1;
+  }
+
+  .icon-button .label {
+    font-size: 0.8rem;
   }
 
   .icon-button:hover {
     border-color: var(--color-command);
     color: var(--color-command);
     background: var(--bg-card);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(122, 162, 247, 0.25);
   }
 
   .status {
@@ -249,6 +279,25 @@
 
     .file-selector select {
       max-width: 150px;
+      padding: 0.35rem 1.5rem 0.35rem 0.5rem;
+      font-size: 0.8rem;
+      box-shadow: none;
+    }
+
+    .icon-button {
+      width: 1.5rem;
+      height: 1.5rem;
+      padding: 0;
+      box-shadow: none;
+    }
+
+    .icon-button .label {
+      display: none;
+    }
+
+    .icon-button:hover {
+      transform: none;
+      box-shadow: none;
     }
   }
 
