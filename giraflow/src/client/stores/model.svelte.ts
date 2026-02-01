@@ -116,6 +116,8 @@ class ModelStore {
       this.view = 'table';
     } else if (viewPart === 'editor') {
       this.view = 'editor';
+    } else if (viewPart === 'howto') {
+      this.view = 'howto';
     }
   }
 

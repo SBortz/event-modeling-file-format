@@ -123,7 +123,7 @@ export interface InformationFlowModel {
   specifications?: Specification[];
 }
 
-export type ViewMode = 'slice' | 'timeline' | 'table' | 'editor';
+export type ViewMode = 'slice' | 'timeline' | 'table' | 'editor' | 'howto';
 
 // Type guards
 export function isEvent(el: TimelineElement): el is Event {

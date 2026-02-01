@@ -6,6 +6,7 @@
   import SliceView from "./components/views/SliceView.svelte";
   import TableView from "./components/views/TableView.svelte";
   import EditorView from "./components/views/EditorView.svelte";
+  import HowtoView from "./components/views/HowtoView.svelte";
 
   // Handle browser back/forward navigation and hash changes
   $effect(() => {
@@ -38,6 +39,8 @@
   {#if modelStore.view === "editor"}
     <!-- Editor view works without a model (loads example in public mode) -->
     <EditorView />
+  {:else if modelStore.view === "howto"}
+    <HowtoView />
   {:else if modelStore.error && !modelStore.model}
     <div class="error">
       <h2>Failed to load model</h2>

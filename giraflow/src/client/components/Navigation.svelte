@@ -9,6 +9,7 @@
     { id: 'slice', label: 'Slices & Scenarios' },
     { id: 'table', label: 'Info' },
     { id: 'editor', label: 'Editor' },
+    { id: 'howto', label: 'How-To' },
   ];
 
   let selectedExampleId = $state(getDefaultExample().id);

@@ -26,6 +26,12 @@
   // Extract filename for display
   let displayFilename = $derived(src.split("/").pop() || src);
 
+  // Check if the file is an image
+  const imageExtensions = ['.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp'];
+  let isImage = $derived(
+    imageExtensions.some(ext => src.toLowerCase().endsWith(ext))
+  );
+
   // Extract relative path within wireframes folder (for API calls)
   // src is like "/wireframes/subdir/file.html" - we need "subdir/file.html"
   let relativePath = $derived(
@@ -107,19 +113,27 @@
     <div class="wireframe-label">
       <span class="wireframe-filename">{displayFilename}</span>
     </div>
-    <label class="toggle-switch">
-      <span class="toggle-label">Preview</span>
-      <input
-        type="checkbox"
-        bind:checked={showCode}
-        onchange={() => showCode && !code && loadCode()}
-      />
-      <span class="toggle-slider"></span>
-      <span class="toggle-label">Code</span>
-    </label>
+    {#if !isImage}
+      <label class="toggle-switch">
+        <span class="toggle-label">Preview</span>
+        <input
+          type="checkbox"
+          bind:checked={showCode}
+          onchange={() => showCode && !code && loadCode()}
+        />
+        <span class="toggle-slider"></span>
+        <span class="toggle-label">Code</span>
+      </label>
+    {/if}
   </div>
 
-  {#if showCode}
+  {#if isImage}
+    <div class="wireframe-image">
+      {#key cacheBustedSrc}
+        <img src={cacheBustedSrc} alt={title} />
+      {/key}
+    </div>
+  {:else if showCode}
     <div class="code-view">
       {#if loading}
         <span class="loading">Loading...</span>
@@ -237,6 +251,24 @@
     height: 800px;
     border: none;
     display: block;
+  }
+
+  .wireframe-image {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 1rem;
+    background: var(--bg-secondary, #f9f9f9);
+    min-height: 200px;
+    max-height: 800px;
+    overflow: auto;
+  }
+
+  .wireframe-image img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 0.25rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   }
 
   .code-view {
