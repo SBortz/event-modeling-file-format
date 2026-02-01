@@ -3,6 +3,7 @@
   import type { ViewMode } from '../lib/types';
   import { examples, getEmptyTemplate, type Example } from '../lib/examples';
   import { buildSliceViewModel } from '../lib/models/slice-model';
+  import { downloadProjectZip } from '../lib/download-zip';
 
   const tabs: { id: ViewMode; label: string }[] = [
     { id: 'timeline', label: 'Timeline' },
@@ -101,6 +102,16 @@
       alert(`Error: ${result.error}`);
     }
   }
+
+  async function handleDownload() {
+    if (!modelStore.model) return;
+    await downloadProjectZip(
+      modelStore.model,
+      modelStore.rawJson,
+      modelStore.editedWireframes,
+      modelStore.currentExampleFolder
+    );
+  }
 </script>
 
 <nav class="tabs">
@@ -135,6 +146,7 @@
         {/each}
       </select>
       <button class="add-button" onclick={handleCreateNew} title="Create new Giraflow">+</button>
+      <button class="add-button" onclick={handleDownload} title="Download as ZIP">⬇</button>
     </div>
   {:else}
     <div class="file-selector">
