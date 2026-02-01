@@ -228,7 +228,7 @@
 
   <aside class="sidebar" class:open={sidePanelOpen}>
     <div class="sidebar-header">
-      <h3>Slices</h3>
+      <h3>Consolidated Slices</h3>
       <span class="count">{slices.length}</span>
       <button
         class="download-btn"

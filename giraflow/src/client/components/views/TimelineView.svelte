@@ -528,6 +528,11 @@
             style="width: {totalLaneWidth}px; padding-left: {getSymbolPadding(position, laneIndex)}px;"
           >{symbols[el.type]}</span>
           <span class="tl-name {el.type}">{el.name}</span>
+          {#if isActor(el) && el.wireframes && el.wireframes.length > 0}
+            <span class="tl-wireframe-indicator" title="Wireframe">
+              <svg viewBox="0 0 16 16" fill="currentColor"><rect x="1" y="3" width="14" height="10" rx="1" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="5" cy="7" r="1.5"/><path d="M3 11l3-3 2 2 4-4 3 3" stroke="currentColor" stroke-width="1" fill="none"/></svg>
+            </span>
+          {/if}
         </button>
       {/each}
     </div>
@@ -887,6 +892,18 @@
     text-overflow: ellipsis;
     flex: 1;
     margin-left: 0.25rem;
+  }
+
+  .tl-wireframe-indicator {
+    display: flex;
+    align-items: center;
+    color: var(--text-secondary);
+    flex-shrink: 0;
+  }
+
+  .tl-wireframe-indicator svg {
+    width: 14px;
+    height: 14px;
   }
 
   /* Detail area */
