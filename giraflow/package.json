@@ -47,6 +47,7 @@
     "codemirror": "^6.0.2",
     "commander": "^12.1.0",
     "highlight.js": "^11.11.1",
+    "jszip": "^3.10.1",
     "open": "^10.1.0",
     "wired-elements": "^3.0.0-rc.6"
   },
