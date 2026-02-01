@@ -92,6 +92,17 @@ export async function downloadProjectZip(
   const slicesJson = exportSlicesToJson(sliceViewModel.slices);
   assetFolder?.file('slices.json', slicesJson);
 
+  // Add the JSON schema file
+  try {
+    const schemaRes = await fetch('/giraflow.schema.json');
+    if (schemaRes.ok) {
+      const schemaJson = await schemaRes.text();
+      assetFolder?.file('giraflow.schema.json', schemaJson);
+    }
+  } catch {
+    // Ignore if schema can't be fetched
+  }
+
   // Extract all wireframe paths from the model
   const allWireframePaths = extractWireframePaths(model);
 
