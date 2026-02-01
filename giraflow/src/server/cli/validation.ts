@@ -36,8 +36,8 @@ export function getBundledAiInstructionsPath(): string | null {
 
   // Check multiple locations: dist/server/server/ (production) and monorepo docs/ (development with tsx)
   const candidates = [
-    join(__dirname, '..', 'design-methodology.md'),           // dist/server/server/design-methodology.md
-    join(__dirname, '..', '..', '..', '..', 'docs', 'design-methodology.md'),  // monorepo root/docs (dev mode from src/server/cli/)
+    join(__dirname, '..', 'giraflow-ai-instructions.md'),           // dist/server/server/giraflow-ai-instructions.md
+    join(__dirname, '..', '..', '..', '..', 'docs', 'giraflow-ai-instructions.md'),  // monorepo root/docs (dev mode from src/server/cli/)
   ];
 
   for (const candidate of candidates) {

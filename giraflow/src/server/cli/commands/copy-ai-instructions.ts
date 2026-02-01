@@ -5,7 +5,7 @@ import { getBundledAiInstructionsPath } from '../validation.js';
 
 export function copyAiInstructionsCommand(): Command {
   return new Command('copy-ai-instructions')
-    .description('Copy AI instructions (design-methodology.md) to the current directory')
+    .description('Copy AI instructions (giraflow-ai-instructions.md) to the current directory')
     .action(() => {
       const source = getBundledAiInstructionsPath();
       if (!source) {
