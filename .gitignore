@@ -105,3 +105,14 @@ yarn-error.log*
 # TypeScript
 dist/
 *.tsbuildinfo
+
+# Claude Code
+.claude/
+
+# Giraflow generated files
+giraflow/**/*.giraflow.json
+giraflow/public/giraflow.schema.json
+giraflow/public/giraflow-ai-instructions.md
+
+# Examples
+/examples
