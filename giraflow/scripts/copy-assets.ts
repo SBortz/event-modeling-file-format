@@ -55,7 +55,7 @@ if (fs.existsSync(schemaSource)) {
 }
 
 // 2. Copy AI instructions
-const aiSource = path.join(rootDir, 'giraflow-ai-instructions.md');
+const aiSource = path.join(repoRoot, 'docs', 'giraflow-ai-instructions.md');
 const aiDest = path.join(publicDir, 'giraflow-ai-instructions.md');
 if (fs.existsSync(aiSource)) {
   copyFileSync(aiSource, aiDest);

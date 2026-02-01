@@ -153,7 +153,7 @@ export function ifLivePlugin(): Plugin {
 
           // Serve AI instructions in public mode too
           if (req.url === '/api/ai-instructions') {
-            const aiInstructionsPath = path.join(__dirname, '..', 'giraflow-ai-instructions.md');
+            const aiInstructionsPath = path.join(__dirname, '..', 'docs', 'giraflow-ai-instructions.md');
             if (fs.existsSync(aiInstructionsPath)) {
               const content = fs.readFileSync(aiInstructionsPath, 'utf-8');
               res.writeHead(200, {
@@ -420,7 +420,7 @@ export function ifLivePlugin(): Plugin {
         }
 
         if (req.url === '/api/ai-instructions') {
-          const aiInstructionsPath = path.join(__dirname, '..', 'giraflow-ai-instructions.md');
+          const aiInstructionsPath = path.join(__dirname, '..', 'docs', 'giraflow-ai-instructions.md');
           if (fs.existsSync(aiInstructionsPath)) {
             const content = fs.readFileSync(aiInstructionsPath, 'utf-8');
             res.writeHead(200, {
