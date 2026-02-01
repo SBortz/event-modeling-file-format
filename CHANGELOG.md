@@ -2,7 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.4.0] - 2025-02-01
+## [0.4.1] - 2025-02-01
+
+- **Add Giraflow from web interface**: Added a button to the web interface to add a new giraflow model. This will create a new giraflow model in the current directory.
 
 ### Added
 
