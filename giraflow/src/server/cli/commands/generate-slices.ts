@@ -2,7 +2,7 @@ import { Command } from 'commander';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { buildSliceViewModel, exportSlicesToJson } from '../../../shared/slice-builder.js';
-import type { InformationFlowModel } from '../../../shared/types.js';
+import type { GiraflowModel } from '../../../shared/types.js';
 
 export function generateSlicesCommand(): Command {
   return new Command('generate-slices')
@@ -17,7 +17,7 @@ export function generateSlicesCommand(): Command {
       }
 
       const content = fs.readFileSync(filePath, 'utf-8');
-      const model = JSON.parse(content) as InformationFlowModel;
+      const model = JSON.parse(content) as GiraflowModel;
       const slices = buildSliceViewModel(model);
 
       // Write to asset folder: hotel.giraflow.json → hotel.giraflow/slices.json

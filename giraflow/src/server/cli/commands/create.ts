@@ -1,7 +1,7 @@
 import { Command } from 'commander';
 import { input, select, confirm } from '@inquirer/prompts';
 import { writeFile } from 'fs/promises';
-import { InformationFlowModel, TimelineElement } from '../../types.js';
+import { GiraflowModel, TimelineElement } from '../../types.js';
 import { colors } from '../colors.js';
 
 export function createCommand(): Command {
@@ -43,7 +43,7 @@ async function runCreateWizard(outputArg?: string): Promise<void> {
   }
 
   // 3. Build model
-  const model: InformationFlowModel = {
+  const model: GiraflowModel = {
     name: name.trim(),
     timeline,
   };

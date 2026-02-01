@@ -13,7 +13,7 @@
  * - Actors: Default (no role) is innermost. Named roles alphabetically sorted, outermost last.
  */
 
-import type { InformationFlowModel, TimelineElement, Event, Actor } from '../types';
+import type { GiraflowModel, TimelineElement, Event, Actor } from '../types';
 import { isEvent, isActor } from '../types';
 
 export type TimelinePosition = 'left' | 'center' | 'right';
@@ -43,7 +43,7 @@ export interface TimelineViewModel {
  * Build the lane configuration from the model.
  * Extracts unique systems from events and roles from actors.
  */
-export function buildLaneConfig(model: InformationFlowModel | null): LaneConfig {
+export function buildLaneConfig(model: GiraflowModel | null): LaneConfig {
   const laneWidth = 24;
 
   if (!model) {
@@ -159,7 +159,7 @@ export function getElementPosition(type: string): TimelinePosition {
  * Build the timeline view model from raw model data.
  * Sorts elements by tick and adds position and lane information.
  */
-export function buildTimelineViewModel(model: InformationFlowModel | null): TimelineViewModel {
+export function buildTimelineViewModel(model: GiraflowModel | null): TimelineViewModel {
   const laneConfig = buildLaneConfig(model);
 
   if (!model) {

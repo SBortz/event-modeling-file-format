@@ -2,7 +2,7 @@ import * as http from 'node:http';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { InformationFlowModel } from './types.js';
+import { GiraflowModel } from './types.js';
 import { buildSliceViewModel, exportSlicesToJson, type SliceViewModel } from '../shared/slice-builder.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -34,7 +34,7 @@ export function createServer(options: ServerOptions): {
   const { filePath, port } = options;
   const clients = new Set<http.ServerResponse>();
 
-  let currentModel: InformationFlowModel | null = null;
+  let currentModel: GiraflowModel | null = null;
   let currentSlices: SliceViewModel | null = null;
   let currentError: string | null = null;
 
@@ -57,7 +57,7 @@ export function createServer(options: ServerOptions): {
   function loadModel(): void {
     try {
       const content = fs.readFileSync(filePath, 'utf-8');
-      currentModel = JSON.parse(content) as InformationFlowModel;
+      currentModel = JSON.parse(content) as GiraflowModel;
       currentError = null;
 
       // Build slices and auto-export

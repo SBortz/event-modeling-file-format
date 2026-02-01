@@ -8,7 +8,7 @@
  */
 
 import type {
-  InformationFlowModel,
+  GiraflowModel,
   StateView,
   Command,
   Event,
@@ -81,7 +81,7 @@ export interface SliceViewModel {
  * 4. Synthesizes Timeline Scenarios from occurrences
  * 5. Attaches spec-defined scenarios
  */
-export function buildSliceViewModel(model: InformationFlowModel): SliceViewModel {
+export function buildSliceViewModel(model: GiraflowModel): SliceViewModel {
   const timeline = model.timeline;
   const events = timeline.filter(isEvent) as Event[];
   const actors = timeline.filter((el): el is Actor => el.type === 'actor');

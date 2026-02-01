@@ -2,7 +2,7 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { Plugin, ViteDevServer } from 'vite';
-import type { InformationFlowModel } from './server/types.js';
+import type { GiraflowModel } from './server/types.js';
 import type { ServerResponse } from 'node:http';
 import { buildSliceViewModel, type SliceViewModel } from './shared/slice-builder.js';
 
@@ -30,7 +30,7 @@ const MIME_TYPES: Record<string, string> = {
 export function ifLivePlugin(): Plugin {
   let filePath: string | null = null;
   let fileDir: string = process.cwd();
-  let currentModel: InformationFlowModel | null = null;
+  let currentModel: GiraflowModel | null = null;
   let currentSlices: SliceViewModel | null = null;
   let currentError: string | null = null;
   let jsonWatcher: fs.FSWatcher | null = null;
@@ -68,7 +68,7 @@ export function ifLivePlugin(): Plugin {
     if (!filePath) return;
     try {
       const content = fs.readFileSync(filePath, 'utf-8');
-      currentModel = JSON.parse(content) as InformationFlowModel;
+      currentModel = JSON.parse(content) as GiraflowModel;
       currentError = null;
 
       // Build slices

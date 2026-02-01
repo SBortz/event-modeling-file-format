@@ -6,7 +6,7 @@
  *
  * This module is used by both server (for auto-export) and client (for display).
  */
-import type { InformationFlowModel, StateView, Command, Event, Actor, Attachment, CommandScenario, StateViewScenario, TimelineScenario } from './types.js';
+import type { GiraflowModel, StateView, Command, Event, Actor, Attachment, CommandScenario, StateViewScenario, TimelineScenario } from './types.js';
 export interface EventRef {
     name: string;
     ticks: number[];
@@ -48,7 +48,7 @@ export interface SliceViewModel {
  * 4. Synthesizes Timeline Scenarios from occurrences
  * 5. Attaches spec-defined scenarios
  */
-export declare function buildSliceViewModel(model: InformationFlowModel): SliceViewModel;
+export declare function buildSliceViewModel(model: GiraflowModel): SliceViewModel;
 /**
  * Export slices to JSON string.
  */

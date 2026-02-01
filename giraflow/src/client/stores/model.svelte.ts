@@ -1,8 +1,8 @@
-import type { InformationFlowModel, ViewMode, Event, StateView, Command, Actor } from '../lib/types';
+import type { GiraflowModel, ViewMode, Event, StateView, Command, Actor } from '../lib/types';
 import type { SliceViewModel } from '../lib/models/slice-model';
 
 class ModelStore {
-  model = $state<InformationFlowModel | null>(null);
+  model = $state<GiraflowModel | null>(null);
   slices = $state<SliceViewModel | null>(null);
   error = $state<string | null>(null);
   watchedFile = $state<string>('');
@@ -153,7 +153,7 @@ class ModelStore {
     }
   }
 
-  updateModel(data: { model: InformationFlowModel | null; error: string | null; watchedFile: string; availableFiles?: string[] }) {
+  updateModel(data: { model: GiraflowModel | null; error: string | null; watchedFile: string; availableFiles?: string[] }) {
     this.model = data.model;
     this.error = data.error;
     this.watchedFile = data.watchedFile;
@@ -187,7 +187,7 @@ class ModelStore {
 
     try {
       const parsed = JSON.parse(json);
-      this.model = parsed as InformationFlowModel;
+      this.model = parsed as GiraflowModel;
       this.error = null;
     } catch (e) {
       this.jsonError = e instanceof Error ? e.message : 'Invalid JSON';

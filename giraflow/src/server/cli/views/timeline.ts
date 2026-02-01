@@ -1,5 +1,5 @@
 import {
-  InformationFlowModel,
+  GiraflowModel,
   TimelineElement,
   isEvent,
   isStateView,
@@ -14,7 +14,7 @@ import { colors, formatElement, getElementStyle, rule } from '../colors.js';
 /**
  * Render the timeline view
  */
-export function renderTimeline(model: InformationFlowModel, showExamples = false): void {
+export function renderTimeline(model: GiraflowModel, showExamples = false): void {
   renderHeader(model, 'Timeline View');
 
   // Sort timeline by tick
@@ -42,7 +42,7 @@ export function renderTimeline(model: InformationFlowModel, showExamples = false
 /**
  * Render the model header
  */
-export function renderHeader(model: InformationFlowModel, viewName?: string): void {
+export function renderHeader(model: GiraflowModel, viewName?: string): void {
   console.log();
 
   // Subtitle with model name, version and view mode
@@ -150,7 +150,7 @@ function renderTimelineElement(
 /**
  * Render summary panel
  */
-export function renderSummary(model: InformationFlowModel): void {
+export function renderSummary(model: GiraflowModel): void {
   const events = model.timeline.filter(isEvent).length;
   const states = model.timeline.filter(isStateView).length;
   const commands = model.timeline.filter(isCommand).length;

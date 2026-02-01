@@ -1,6 +1,6 @@
 import Table from 'cli-table3';
 import {
-  InformationFlowModel,
+  GiraflowModel,
   isEvent,
   isStateView,
   isCommand,
@@ -16,7 +16,7 @@ import { renderHeader, renderSummary } from './timeline.js';
 /**
  * Render the table view - tabular overview with data flow tree
  */
-export function renderTable(model: InformationFlowModel): void {
+export function renderTable(model: GiraflowModel): void {
   renderHeader(model, 'Table View');
 
   const events = model.timeline.filter(isEvent) as Event[];
@@ -177,7 +177,7 @@ export function renderTable(model: InformationFlowModel): void {
  * Render the data flow tree
  */
 function renderDataFlowTree(
-  model: InformationFlowModel,
+  model: GiraflowModel,
   events: Event[],
   stateViews: StateView[],
   commands: Command[],

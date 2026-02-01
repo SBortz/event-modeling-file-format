@@ -3,25 +3,25 @@
  * Uses Vite's import.meta.glob to automatically discover all examples.
  */
 
-import type { InformationFlowModel } from './types';
+import type { GiraflowModel } from './types';
 
 export interface Example {
   id: string;
   name: string;
   description: string;
-  model: InformationFlowModel;
+  model: GiraflowModel;
   /** Folder name in public/examples/ (without .giraflow suffix) */
   folderName: string | null;
 }
 
 // Dynamically import all .giraflow.json files from example-giraflows
-const exampleModules = import.meta.glob<{ default: InformationFlowModel }>(
+const exampleModules = import.meta.glob<{ default: GiraflowModel }>(
   '../../../../example-giraflows/*.giraflow.json',
   { eager: true }
 );
 
 // Empty template for creating new models
-const emptyTemplate: InformationFlowModel = {
+const emptyTemplate: GiraflowModel = {
   "$schema": "giraflow.schema.json",
   "name": "New Model",
   "description": "Start building your information flow model here",

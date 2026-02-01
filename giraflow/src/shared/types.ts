@@ -113,7 +113,7 @@ export interface StateSpecification {
 
 export type Specification = CommandSpecification | StateSpecification;
 
-export interface InformationFlowModel {
+export interface GiraflowModel {
   $schema?: string;
   name: string;
   description?: string;

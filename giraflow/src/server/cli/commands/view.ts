@@ -2,7 +2,7 @@ import { Command } from 'commander';
 import { readFile, writeFile } from 'fs/promises';
 import { existsSync } from 'fs';
 import { select, confirm } from '@inquirer/prompts';
-import { InformationFlowModel, ViewMode, CliOptions } from '../../types.js';
+import { GiraflowModel, ViewMode, CliOptions } from '../../types.js';
 import { renderTimeline } from '../views/timeline.js';
 import { renderSlice } from '../views/slice.js';
 import { renderTable } from '../views/table.js';
@@ -31,11 +31,11 @@ async function runView(filePath: string, options: CliOptions & { validate?: bool
   }
 
   // Read the file
-  let model: InformationFlowModel;
+  let model: GiraflowModel;
 
   try {
     const json = await readFile(filePath, 'utf-8');
-    model = JSON.parse(json) as InformationFlowModel;
+    model = JSON.parse(json) as GiraflowModel;
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.error(colors.red('Error parsing JSON:') + ` ${message}`);

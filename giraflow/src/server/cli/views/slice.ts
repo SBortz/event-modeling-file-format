@@ -1,6 +1,6 @@
 import chalk from 'chalk';
 import {
-  InformationFlowModel,
+  GiraflowModel,
   isEvent,
   isStateView,
   isCommand,
@@ -22,7 +22,7 @@ interface DeduplicatedSlice {
   scenarios: Array<{ name: string }>;
 }
 
-function buildDeduplicatedSlices(model: InformationFlowModel): DeduplicatedSlice[] {
+function buildDeduplicatedSlices(model: GiraflowModel): DeduplicatedSlice[] {
   const timeline = model.timeline;
   const elements = timeline
     .filter(e => isStateView(e) || isCommand(e))
@@ -66,7 +66,7 @@ function buildDeduplicatedSlices(model: InformationFlowModel): DeduplicatedSlice
 /**
  * Render the slice view - detailed panels for each slice
  */
-export function renderSlice(model: InformationFlowModel): void {
+export function renderSlice(model: GiraflowModel): void {
   renderHeader(model, 'Slice View');
   console.log();
 

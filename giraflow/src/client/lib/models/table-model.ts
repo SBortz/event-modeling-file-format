@@ -4,7 +4,7 @@
  * Deduplicated summary of timeline elements grouped by name with occurrence counts.
  */
 
-import type { InformationFlowModel, Event, StateView, Command, Actor } from '../types';
+import type { GiraflowModel, Event, StateView, Command, Actor } from '../types';
 
 export interface DeduplicatedItem {
   name: string;
@@ -84,7 +84,7 @@ function deduplicateStates(
  * Build the table view model from raw model data.
  * Deduplicates all element types and provides occurrence counts.
  */
-export function buildTableViewModel(model: InformationFlowModel | null): TableViewModel {
+export function buildTableViewModel(model: GiraflowModel | null): TableViewModel {
   if (!model) {
     return {
       events: [],
