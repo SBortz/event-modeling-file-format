@@ -16,6 +16,7 @@
 
   // Orientation toggle: vertical (default) or horizontal
   let orientation = $state<'vertical' | 'horizontal'>('vertical');
+  let prevOrientation = $state<'vertical' | 'horizontal'>('vertical');
 
   let activeTick = $state<number | null>(null);
   let detailContainer: HTMLElement | null = $state(null);
@@ -275,6 +276,24 @@
       }
     }
   }
+
+  // Scroll to activeTick when switching from horizontal to vertical
+  $effect(() => {
+    if (prevOrientation === 'horizontal' && orientation === 'vertical' && activeTick !== null) {
+      // Wait for DOM to render vertical view
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          const element = document.getElementById(`tick-${activeTick}`);
+          if (element) {
+            isProgrammaticScroll = true;
+            element.scrollIntoView({ behavior: "smooth", block: "start" });
+            setTimeout(() => (isProgrammaticScroll = false), 1000);
+          }
+        });
+      });
+    }
+    prevOrientation = orientation;
+  });
 
   // Register detail elements for intersection observer
   function registerDetailElement(el: HTMLElement, tick: number) {
