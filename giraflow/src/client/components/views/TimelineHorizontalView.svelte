@@ -411,6 +411,7 @@
     transition: transform 0.25s ease-out;
     max-height: 40vh;
     overflow-y: auto;
+    overflow-x: hidden;
     z-index: 100;
   }
 
@@ -473,14 +474,18 @@
 
   .ht-detail-content {
     padding: 1rem 1.5rem;
+    overflow-x: hidden;
+    word-break: break-word;
   }
 
   .ht-detail-row {
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
     gap: 0.5rem;
     margin-bottom: 0.5rem;
     font-size: 0.85rem;
+    word-break: break-word;
   }
 
   .ht-detail-label {
