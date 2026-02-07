@@ -83,6 +83,9 @@
   // Toggle for showing connections
   let showConnections = $state(true);
 
+  // Hovered tick for connection highlighting
+  let hoveredTick = $state<number | null>(null);
+
   // Filtered lane config - excludes hidden systems/roles
   let filteredLaneConfig = $derived(() => {
     const visibleSystems = laneConfig.eventSystems.filter(s => !hiddenSystems.has(s));
@@ -212,6 +215,30 @@
   // Check if connection should be dashed
   function isConnectionDashed(type: string): boolean {
     return type === 'reads';
+  }
+
+  // Check if connection is related to hovered tick
+  function isConnectionHighlighted(conn: TimelineConnection): boolean {
+    if (hoveredTick === null) return false;
+    return conn.fromTick === hoveredTick || conn.toTick === hoveredTick;
+  }
+
+  // Get connection opacity based on hover state
+  function getConnectionOpacity(conn: TimelineConnection): number {
+    if (hoveredTick === null) return 0.15; // Very faint when nothing hovered
+    return isConnectionHighlighted(conn) ? 0.8 : 0.05; // Highlighted vs dimmed
+  }
+
+  // Generate orthogonal path (right-angled) instead of bezier
+  function getOrthogonalPath(conn: TimelineConnection): string {
+    const x1 = getConnectionX(conn.fromPosition, conn.fromLaneIndex);
+    const y1 = getConnectionY(conn.fromTick);
+    const x2 = getConnectionX(conn.toPosition, conn.toLaneIndex);
+    const y2 = getConnectionY(conn.toTick);
+    
+    // Orthogonal: go horizontal first, then vertical
+    const midX = (x1 + x2) / 2;
+    return `M ${x1} ${y1} H ${midX} V ${y2} H ${x2}`;
   }
 
   // Berechne die optimale Höhe für Lane-Labels basierend auf der längsten Namenslänge
@@ -635,13 +662,15 @@
           </defs>
           {#each filteredConnections() as conn}
             <path
-              d={getConnectionPath(conn)}
+              d={getOrthogonalPath(conn)}
               fill="none"
               stroke={getConnectionColor(conn.type)}
-              stroke-width="1.5"
+              stroke-width={isConnectionHighlighted(conn) ? 2 : 1}
               stroke-dasharray={isConnectionDashed(conn.type) ? "4,3" : "none"}
-              marker-end="url(#arrowhead-{conn.type === 'produces' ? 'event' : conn.type === 'sends' ? 'command' : 'state'})"
-              opacity="0.6"
+              marker-end={isConnectionHighlighted(conn) ? `url(#arrowhead-${conn.type === 'produces' ? 'event' : conn.type === 'sends' ? 'command' : 'state'})` : "none"}
+              opacity={getConnectionOpacity(conn)}
+              class="tl-connection-path"
+              class:highlighted={isConnectionHighlighted(conn)}
             />
           {/each}
         </svg>
@@ -650,8 +679,11 @@
         <button
           class="tl-master-item"
           class:active={activeTick === el.tick}
+          class:hovered={hoveredTick === el.tick}
           data-tick={el.tick}
           onclick={() => scrollToDetail(el.tick)}
+          onmouseenter={() => hoveredTick = el.tick}
+          onmouseleave={() => hoveredTick = null}
         >
           <span class="tl-tick">@{el.tick}</span>
           <span
@@ -931,6 +963,19 @@
     pointer-events: none;
     z-index: 1;
     overflow: visible;
+  }
+
+  .tl-connection-path {
+    transition: opacity 0.15s, stroke-width 0.15s;
+  }
+
+  .tl-connection-path.highlighted {
+    filter: drop-shadow(0 0 2px currentColor);
+  }
+
+  .tl-master-item.hovered {
+    background: var(--bg-secondary);
+    box-shadow: inset 0 0 0 1px var(--color-command);
   }
 
   .tl-controls {
