@@ -3,13 +3,14 @@
  * 
  * Generates a deterministic Event Model diagram as SVG.
  * Respects swimlane structure:
- * - Left: Event lanes (grouped by system)
- * - Center: Commands & State Views
- * - Right: Actor lanes (grouped by role)
+ * - Horizontal (default): Time flows top→bottom, lanes left→right
+ * - Vertical: Time flows left→right, lanes top→bottom
  */
 
 import type { GiraflowModel, Actor, Command, Event, StateView, TimelineElement } from './types';
 import { isEvent, isActor, isCommand, isState } from './types';
+
+export type SvgOrientation = 'horizontal' | 'vertical';
 
 // Giraflow colors
 const COLORS = {
@@ -139,7 +140,7 @@ function getActorColors(role?: string): { fill: string; stroke: string } {
 /**
  * Generate the complete SVG
  */
-export function generateSvg(model: GiraflowModel): string {
+export function generateSvg(model: GiraflowModel, orientation: SvgOrientation = 'horizontal'): string {
   const laneConfig = buildLaneConfig(model);
   const tickColumns = groupByTick(model);
 
@@ -149,45 +150,65 @@ export function generateSvg(model: GiraflowModel): string {
     </svg>`;
   }
 
-  // Calculate dimensions
+  // Calculate dimensions based on orientation
   const numEventLanes = laneConfig.eventSystems.length;
   const numActorLanes = laneConfig.actorRoles.length;
-  const centerLaneWidth = LAYOUT.laneWidth * 1.2; // Slightly wider for commands/states
+  const centerLaneSize = LAYOUT.laneWidth * 1.2;
   
-  const totalLaneWidth = 
+  const totalLaneSize = 
     numEventLanes * LAYOUT.laneWidth + 
-    centerLaneWidth + 
+    centerLaneSize + 
     numActorLanes * LAYOUT.laneWidth +
     (numEventLanes + numActorLanes + 1) * LAYOUT.laneGap;
 
-  const contentHeight = tickColumns.length * LAYOUT.tickGap + LAYOUT.boxHeight;
-  const width = totalLaneWidth + LAYOUT.padding * 2;
-  const height = contentHeight + LAYOUT.headerHeight + LAYOUT.padding * 2;
+  const tickSpan = tickColumns.length * LAYOUT.tickGap + LAYOUT.boxHeight;
+  
+  let width: number;
+  let height: number;
+  
+  if (orientation === 'vertical') {
+    // Time flows left→right, lanes top→bottom
+    width = tickSpan + LAYOUT.headerHeight + LAYOUT.padding * 2;
+    height = totalLaneSize + LAYOUT.padding * 2;
+  } else {
+    // Time flows top→bottom, lanes left→right (default)
+    width = totalLaneSize + LAYOUT.padding * 2;
+    height = tickSpan + LAYOUT.headerHeight + LAYOUT.padding * 2;
+  }
 
-  // Lane X positions
+  // Lane positions (in the lane dimension - X for horizontal, Y for vertical)
   const lanePositions: { [key: string]: number } = {};
-  let currentX = LAYOUT.padding;
+  let currentLanePos = LAYOUT.padding;
 
-  // Event lanes (left side, systems reversed so outermost is leftmost)
+  // Event lanes
   for (const system of laneConfig.eventSystems) {
     const key = `event:${system}`;
-    lanePositions[key] = currentX + LAYOUT.laneWidth / 2;
-    currentX += LAYOUT.laneWidth + LAYOUT.laneGap;
+    lanePositions[key] = currentLanePos + LAYOUT.laneWidth / 2;
+    currentLanePos += LAYOUT.laneWidth + LAYOUT.laneGap;
   }
 
   // Center lane for commands/states
-  const centerX = currentX + centerLaneWidth / 2;
-  lanePositions['center'] = centerX;
-  currentX += centerLaneWidth + LAYOUT.laneGap;
+  const centerPos = currentLanePos + centerLaneSize / 2;
+  lanePositions['center'] = centerPos;
+  currentLanePos += centerLaneSize + LAYOUT.laneGap;
 
-  // Actor lanes (right side)
+  // Actor lanes
   for (const role of laneConfig.actorRoles) {
     const key = `actor:${role}`;
-    lanePositions[key] = currentX + LAYOUT.laneWidth / 2;
-    currentX += LAYOUT.laneWidth + LAYOUT.laneGap;
+    lanePositions[key] = currentLanePos + LAYOUT.laneWidth / 2;
+    currentLanePos += LAYOUT.laneWidth + LAYOUT.laneGap;
   }
 
+  // Helper to get final X,Y based on orientation
+  const getPos = (lanePos: number, tickPos: number) => {
+    if (orientation === 'vertical') {
+      return { x: tickPos, y: lanePos };
+    }
+    return { x: lanePos, y: tickPos };
+  };
+
   // Start building SVG
+  const orientationLabel = orientation === 'vertical' ? '(→ Time)' : '(↓ Time)';
   let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
   <defs>
     <marker id="arrowhead" markerWidth="6" markerHeight="5" refX="5" refY="2.5" orient="auto">
@@ -199,111 +220,147 @@ export function generateSvg(model: GiraflowModel): string {
   <rect width="100%" height="100%" fill="white"/>
   
   <!-- Title -->
-  <text x="${width / 2}" y="${LAYOUT.padding}" fill="${COLORS.text}" font-size="14" font-family="${LAYOUT.fontFamily}" text-anchor="middle" font-weight="600">${escapeXml(model.name)}</text>
+  <text x="${width / 2}" y="${LAYOUT.padding}" fill="${COLORS.text}" font-size="14" font-family="${LAYOUT.fontFamily}" text-anchor="middle" font-weight="600">${escapeXml(model.name)} <tspan fill="${COLORS.laneLabel}" font-size="10">${orientationLabel}</tspan></text>
 `;
 
-  // Lane backgrounds and headers
-  const headerY = LAYOUT.padding + 15;
-  const laneStartY = LAYOUT.headerHeight + LAYOUT.padding;
-  const laneEndY = height - LAYOUT.padding;
+  // Lane backgrounds and headers - positions depend on orientation
+  const headerOffset = LAYOUT.padding + 15;
+  const laneStart = LAYOUT.headerHeight + LAYOUT.padding;
+  const laneEnd = orientation === 'vertical' ? width - LAYOUT.padding : height - LAYOUT.padding;
 
   // Event system lanes
-  let laneX = LAYOUT.padding;
+  let lanePos = LAYOUT.padding;
   for (const system of laneConfig.eventSystems) {
     const label = system || 'Events';
-    svg += `
+    if (orientation === 'vertical') {
+      svg += `
   <!-- Event lane: ${label} -->
-  <rect x="${laneX}" y="${laneStartY}" width="${LAYOUT.laneWidth}" height="${laneEndY - laneStartY}" fill="${COLORS.laneBg}" rx="4"/>
-  <text x="${laneX + LAYOUT.laneWidth / 2}" y="${headerY}" fill="${COLORS.event}" font-size="9" font-family="${LAYOUT.fontFamily}" text-anchor="middle" font-weight="500">${escapeXml(label)}</text>
+  <rect x="${laneStart}" y="${lanePos}" width="${laneEnd - laneStart}" height="${LAYOUT.laneWidth}" fill="${COLORS.laneBg}" rx="4"/>
+  <text x="${headerOffset}" y="${lanePos + LAYOUT.laneWidth / 2}" fill="${COLORS.event}" font-size="9" font-family="${LAYOUT.fontFamily}" text-anchor="middle" dominant-baseline="middle" font-weight="500">${escapeXml(label)}</text>
 `;
-    laneX += LAYOUT.laneWidth + LAYOUT.laneGap;
+    } else {
+      svg += `
+  <!-- Event lane: ${label} -->
+  <rect x="${lanePos}" y="${laneStart}" width="${LAYOUT.laneWidth}" height="${laneEnd - laneStart}" fill="${COLORS.laneBg}" rx="4"/>
+  <text x="${lanePos + LAYOUT.laneWidth / 2}" y="${headerOffset}" fill="${COLORS.event}" font-size="9" font-family="${LAYOUT.fontFamily}" text-anchor="middle" font-weight="500">${escapeXml(label)}</text>
+`;
+    }
+    lanePos += LAYOUT.laneWidth + LAYOUT.laneGap;
   }
 
   // Center lane
-  svg += `
+  if (orientation === 'vertical') {
+    svg += `
   <!-- Center lane: Commands & States -->
-  <rect x="${laneX}" y="${laneStartY}" width="${centerLaneWidth}" height="${laneEndY - laneStartY}" fill="white" rx="4" stroke="${COLORS.line}" stroke-width="1"/>
-  <text x="${laneX + centerLaneWidth / 2}" y="${headerY}" fill="${COLORS.laneLabel}" font-size="9" font-family="${LAYOUT.fontFamily}" text-anchor="middle" font-weight="500">Commands / States</text>
+  <rect x="${laneStart}" y="${lanePos}" width="${laneEnd - laneStart}" height="${centerLaneSize}" fill="white" rx="4" stroke="${COLORS.line}" stroke-width="1"/>
+  <text x="${headerOffset}" y="${lanePos + centerLaneSize / 2}" fill="${COLORS.laneLabel}" font-size="9" font-family="${LAYOUT.fontFamily}" text-anchor="middle" dominant-baseline="middle" font-weight="500">Cmd/State</text>
 `;
-  laneX += centerLaneWidth + LAYOUT.laneGap;
+  } else {
+    svg += `
+  <!-- Center lane: Commands & States -->
+  <rect x="${lanePos}" y="${laneStart}" width="${centerLaneSize}" height="${laneEnd - laneStart}" fill="white" rx="4" stroke="${COLORS.line}" stroke-width="1"/>
+  <text x="${lanePos + centerLaneSize / 2}" y="${headerOffset}" fill="${COLORS.laneLabel}" font-size="9" font-family="${LAYOUT.fontFamily}" text-anchor="middle" font-weight="500">Commands / States</text>
+`;
+  }
+  lanePos += centerLaneSize + LAYOUT.laneGap;
 
   // Actor role lanes
   for (const role of laneConfig.actorRoles) {
     const label = role || 'Actors';
     const colors = getActorColors(role);
-    svg += `
+    if (orientation === 'vertical') {
+      svg += `
   <!-- Actor lane: ${label} -->
-  <rect x="${laneX}" y="${laneStartY}" width="${LAYOUT.laneWidth}" height="${laneEndY - laneStartY}" fill="${COLORS.laneBg}" rx="4"/>
-  <text x="${laneX + LAYOUT.laneWidth / 2}" y="${headerY}" fill="${colors.fill}" font-size="9" font-family="${LAYOUT.fontFamily}" text-anchor="middle" font-weight="500">${escapeXml(label)}</text>
+  <rect x="${laneStart}" y="${lanePos}" width="${laneEnd - laneStart}" height="${LAYOUT.laneWidth}" fill="${COLORS.laneBg}" rx="4"/>
+  <text x="${headerOffset}" y="${lanePos + LAYOUT.laneWidth / 2}" fill="${colors.fill}" font-size="9" font-family="${LAYOUT.fontFamily}" text-anchor="middle" dominant-baseline="middle" font-weight="500">${escapeXml(label)}</text>
 `;
-    laneX += LAYOUT.laneWidth + LAYOUT.laneGap;
+    } else {
+      svg += `
+  <!-- Actor lane: ${label} -->
+  <rect x="${lanePos}" y="${laneStart}" width="${LAYOUT.laneWidth}" height="${laneEnd - laneStart}" fill="${COLORS.laneBg}" rx="4"/>
+  <text x="${lanePos + LAYOUT.laneWidth / 2}" y="${headerOffset}" fill="${colors.fill}" font-size="9" font-family="${LAYOUT.fontFamily}" text-anchor="middle" font-weight="500">${escapeXml(label)}</text>
+`;
+    }
+    lanePos += LAYOUT.laneWidth + LAYOUT.laneGap;
   }
 
   // Render elements by tick
   tickColumns.forEach((column, tickIndex) => {
-    const y = laneStartY + 20 + tickIndex * LAYOUT.tickGap;
+    const tickPos = laneStart + 20 + tickIndex * LAYOUT.tickGap;
 
     for (const el of column.elements) {
-      let x: number;
+      let laneP: number;
       let fill: string;
       let stroke: string;
       let textColor = COLORS.text;
 
       if (isEvent(el)) {
         const system = el.system || '';
-        x = lanePositions[`event:${system}`];
+        laneP = lanePositions[`event:${system}`];
         fill = COLORS.event;
         stroke = COLORS.eventStroke;
         
+        const pos = getPos(laneP, tickPos);
         svg += `
   <!-- Event: ${el.name} @${el.tick} -->
-  <rect x="${x - LAYOUT.boxWidth / 2}" y="${y}" width="${LAYOUT.boxWidth}" height="${LAYOUT.boxHeight}" rx="${LAYOUT.boxRadius}" fill="${fill}" stroke="${stroke}" stroke-width="1.5"/>
-  <text x="${x}" y="${y + LAYOUT.boxHeight / 2}" fill="${textColor}" font-size="${LAYOUT.fontSize}" font-family="${LAYOUT.fontFamily}" text-anchor="middle" dominant-baseline="middle" font-weight="500">${escapeXml(truncateText(el.name))}</text>
+  <rect x="${pos.x - LAYOUT.boxWidth / 2}" y="${pos.y}" width="${LAYOUT.boxWidth}" height="${LAYOUT.boxHeight}" rx="${LAYOUT.boxRadius}" fill="${fill}" stroke="${stroke}" stroke-width="1.5"/>
+  <text x="${pos.x}" y="${pos.y + LAYOUT.boxHeight / 2}" fill="${textColor}" font-size="${LAYOUT.fontSize}" font-family="${LAYOUT.fontFamily}" text-anchor="middle" dominant-baseline="middle" font-weight="500">${escapeXml(truncateText(el.name))}</text>
 `;
       } else if (isCommand(el)) {
-        x = lanePositions['center'];
+        laneP = lanePositions['center'];
         fill = COLORS.command;
         stroke = COLORS.commandStroke;
 
+        const pos = getPos(laneP, tickPos);
         svg += `
   <!-- Command: ${el.name} @${el.tick} -->
-  <rect x="${x - LAYOUT.boxWidth / 2}" y="${y}" width="${LAYOUT.boxWidth}" height="${LAYOUT.boxHeight}" rx="${LAYOUT.boxRadius}" fill="${fill}" stroke="${stroke}" stroke-width="1.5"/>
-  <text x="${x}" y="${y + LAYOUT.boxHeight / 2}" fill="${textColor}" font-size="${LAYOUT.fontSize}" font-family="${LAYOUT.fontFamily}" text-anchor="middle" dominant-baseline="middle" font-weight="500">${escapeXml(truncateText(el.name))}</text>
+  <rect x="${pos.x - LAYOUT.boxWidth / 2}" y="${pos.y}" width="${LAYOUT.boxWidth}" height="${LAYOUT.boxHeight}" rx="${LAYOUT.boxRadius}" fill="${fill}" stroke="${stroke}" stroke-width="1.5"/>
+  <text x="${pos.x}" y="${pos.y + LAYOUT.boxHeight / 2}" fill="${textColor}" font-size="${LAYOUT.fontSize}" font-family="${LAYOUT.fontFamily}" text-anchor="middle" dominant-baseline="middle" font-weight="500">${escapeXml(truncateText(el.name))}</text>
 `;
       } else if (isState(el)) {
-        x = lanePositions['center'];
+        laneP = lanePositions['center'];
         fill = COLORS.state;
         stroke = COLORS.stateStroke;
 
+        const pos = getPos(laneP, tickPos);
         svg += `
   <!-- State: ${el.name} @${el.tick} -->
-  <rect x="${x - LAYOUT.boxWidth / 2}" y="${y}" width="${LAYOUT.boxWidth}" height="${LAYOUT.boxHeight}" rx="${LAYOUT.boxRadius}" fill="${fill}" stroke="${stroke}" stroke-width="1.5"/>
-  <text x="${x}" y="${y + LAYOUT.boxHeight / 2}" fill="${textColor}" font-size="${LAYOUT.fontSize}" font-family="${LAYOUT.fontFamily}" text-anchor="middle" dominant-baseline="middle" font-weight="500">${escapeXml(truncateText(el.name))}</text>
+  <rect x="${pos.x - LAYOUT.boxWidth / 2}" y="${pos.y}" width="${LAYOUT.boxWidth}" height="${LAYOUT.boxHeight}" rx="${LAYOUT.boxRadius}" fill="${fill}" stroke="${stroke}" stroke-width="1.5"/>
+  <text x="${pos.x}" y="${pos.y + LAYOUT.boxHeight / 2}" fill="${textColor}" font-size="${LAYOUT.fontSize}" font-family="${LAYOUT.fontFamily}" text-anchor="middle" dominant-baseline="middle" font-weight="500">${escapeXml(truncateText(el.name))}</text>
 `;
       } else if (isActor(el)) {
         const role = el.role || '';
-        x = lanePositions[`actor:${role}`];
+        laneP = lanePositions[`actor:${role}`];
         const colors = getActorColors(el.role);
         fill = colors.fill;
         stroke = colors.stroke;
         textColor = COLORS.textLight;
 
+        const pos = getPos(laneP, tickPos);
         svg += `
   <!-- Actor: ${el.name} @${el.tick} -->
-  <ellipse cx="${x}" cy="${y + LAYOUT.boxHeight / 2}" rx="${LAYOUT.boxWidth / 2 - 5}" ry="${LAYOUT.boxHeight / 2 - 2}" fill="${fill}" stroke="${stroke}" stroke-width="1.5"/>
-  <text x="${x}" y="${y + LAYOUT.boxHeight / 2}" fill="${textColor}" font-size="${LAYOUT.fontSize}" font-family="${LAYOUT.fontFamily}" text-anchor="middle" dominant-baseline="middle" font-weight="500">${escapeXml(truncateText(el.name))}</text>
+  <ellipse cx="${pos.x}" cy="${pos.y + LAYOUT.boxHeight / 2}" rx="${LAYOUT.boxWidth / 2 - 5}" ry="${LAYOUT.boxHeight / 2 - 2}" fill="${fill}" stroke="${stroke}" stroke-width="1.5"/>
+  <text x="${pos.x}" y="${pos.y + LAYOUT.boxHeight / 2}" fill="${textColor}" font-size="${LAYOUT.fontSize}" font-family="${LAYOUT.fontFamily}" text-anchor="middle" dominant-baseline="middle" font-weight="500">${escapeXml(truncateText(el.name))}</text>
 `;
       }
     }
   });
 
-  // Tick labels on the left
+  // Tick labels
   svg += `\n  <!-- Tick labels -->`;
   tickColumns.forEach((column, tickIndex) => {
-    const y = laneStartY + 20 + tickIndex * LAYOUT.tickGap + LAYOUT.boxHeight / 2;
-    svg += `
-  <text x="${LAYOUT.padding - 5}" y="${y}" fill="${COLORS.laneLabel}" font-size="8" font-family="${LAYOUT.fontFamily}" text-anchor="end" dominant-baseline="middle">@${column.tick}</text>
+    const tickPos = laneStart + 20 + tickIndex * LAYOUT.tickGap + LAYOUT.boxHeight / 2;
+    if (orientation === 'vertical') {
+      // Labels at top
+      svg += `
+  <text x="${tickPos}" y="${LAYOUT.padding - 5}" fill="${COLORS.laneLabel}" font-size="8" font-family="${LAYOUT.fontFamily}" text-anchor="middle">@${column.tick}</text>
 `;
+    } else {
+      // Labels on left
+      svg += `
+  <text x="${LAYOUT.padding - 5}" y="${tickPos}" fill="${COLORS.laneLabel}" font-size="8" font-family="${LAYOUT.fontFamily}" text-anchor="end" dominant-baseline="middle">@${column.tick}</text>
+`;
+    }
   });
 
   // Legend at bottom
@@ -334,19 +391,21 @@ export function generateSvg(model: GiraflowModel): string {
 /**
  * Download SVG file
  */
-export function downloadSvg(model: GiraflowModel): void {
-  const svg = generateSvg(model);
+export function downloadSvg(model: GiraflowModel, orientation: SvgOrientation = 'horizontal'): void {
+  const svg = generateSvg(model, orientation);
   
   const safeName = (model.name || 'giraflow')
     .toLowerCase()
     .replace(/[^a-z0-9\s-]/g, '')
     .replace(/\s+/g, '-');
 
+  const orientationSuffix = orientation === 'vertical' ? '-vertical' : '';
+  
   const blob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
-  link.download = `${safeName}-event-model.svg`;
+  link.download = `${safeName}-event-model${orientationSuffix}.svg`;
   link.click();
   URL.revokeObjectURL(url);
 }
