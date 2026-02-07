@@ -75,9 +75,17 @@
 
   // Layout constants
   const TICK_WIDTH = 200;
-  const LANE_HEIGHT = 110;
+  const LANE_HEIGHT = 200;
   const BOX_WIDTH = 180;
-  const BOX_HEIGHT = 90;
+  const BOX_HEIGHT = 180;
+  const MAX_FIELDS = 4; // Max fields to show before truncating
+  
+  // Get example fields from element
+  function getExampleFields(el: TimelineElement): string[] {
+    const example = (el as any).example;
+    if (!example || typeof example !== 'object') return [];
+    return Object.keys(example);
+  }
 
   // Calculate lane Y positions
   // Order: Actors (top) → Commands/States (middle) → Events (bottom)
@@ -153,6 +161,7 @@
 
           <!-- Elements in this tick -->
           {#each items as { element: el, position, laneIndex }}
+            {@const fields = getExampleFields(el)}
             <button
               class="ht-element {el.type}"
               class:selected={selectedElement?.tick === el.tick && selectedElement?.name === el.name}
@@ -165,8 +174,20 @@
               title="{el.name} @{el.tick}"
               onclick={() => selectElement(el)}
             >
-              <span class="ht-symbol">{symbols[el.type]}</span>
-              <span class="ht-name">{el.name}</span>
+              <div class="ht-element-header">
+                <span class="ht-symbol">{symbols[el.type]}</span>
+                <span class="ht-name">{el.name}</span>
+              </div>
+              {#if fields.length > 0}
+                <ul class="ht-fields">
+                  {#each fields.slice(0, MAX_FIELDS) as field}
+                    <li>{field}</li>
+                  {/each}
+                  {#if fields.length > MAX_FIELDS}
+                    <li class="ht-fields-more">+{fields.length - MAX_FIELDS} more...</li>
+                  {/if}
+                </ul>
+              {/if}
               {#if isActor(el) && el.wireframes && el.wireframes.length > 0}
                 <span class="ht-wireframe-indicator" title="Wireframe">
                   <svg viewBox="0 0 16 16" fill="currentColor"><rect x="1" y="3" width="14" height="10" rx="1" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="5" cy="7" r="1.5"/><path d="M3 11l3-3 2 2 4-4 3 3" stroke="currentColor" stroke-width="1" fill="none"/></svg>
@@ -421,21 +442,22 @@
     position: absolute;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: center;
+    align-items: stretch;
+    justify-content: flex-start;
     gap: 0.25rem;
     border-radius: 6px;
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     font-weight: 500;
     cursor: pointer;
     transition: transform 0.1s, box-shadow 0.1s;
     z-index: 1;
     padding: 0.5rem;
-    text-align: center;
+    text-align: left;
+    overflow: hidden;
   }
 
   .ht-element:hover {
-    transform: scale(1.05);
+    transform: scale(1.03);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
     z-index: 2;
   }
@@ -465,18 +487,59 @@
     border-radius: 16px;
   }
 
+  .ht-element-header {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding-bottom: 0.35rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    margin-bottom: 0.25rem;
+  }
+
   .ht-symbol {
-    font-size: 0.8rem;
+    font-size: 0.85rem;
+    flex-shrink: 0;
   }
 
   .ht-name {
     overflow: hidden;
     text-overflow: ellipsis;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
+    white-space: nowrap;
+    font-weight: 600;
+    font-size: 0.75rem;
     line-height: 1.3;
-    word-break: break-word;
+  }
+
+  .ht-fields {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    font-size: 0.65rem;
+    font-weight: 400;
+    opacity: 0.9;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  .ht-fields li {
+    padding: 0.1rem 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .ht-fields li::before {
+    content: "• ";
+    opacity: 0.7;
+  }
+
+  .ht-fields-more {
+    font-style: italic;
+    opacity: 0.7;
+  }
+
+  .ht-fields-more::before {
+    content: "" !important;
   }
 
   .ht-element.selected {
