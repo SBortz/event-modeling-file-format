@@ -30,13 +30,20 @@
   // Selected element for detail panel (separate from scroll sync)
   let selectedElement = $state<TimelineElement | null>(null);
   let lastSyncedTick = $state<number | null>(null);
+  let hasInitialized = $state(false);
   
-  // When activeTick changes from parent (e.g. switching views), only scroll - don't open panel
+  // Scroll to activeTick on mount and when it changes
   $effect(() => {
-    if (activeTick !== null && activeTick !== lastSyncedTick) {
-      lastSyncedTick = activeTick;
-      // Only scroll to the tick column, don't select/open panel
-      scrollToTick(activeTick);
+    if (activeTick !== null && timelineItems.length > 0) {
+      // On first render or when tick changes, scroll to it
+      if (!hasInitialized || activeTick !== lastSyncedTick) {
+        hasInitialized = true;
+        lastSyncedTick = activeTick;
+        // Delay scroll to ensure DOM is ready
+        requestAnimationFrame(() => {
+          scrollToTick(activeTick!);
+        });
+      }
     }
   });
   

@@ -377,26 +377,33 @@
     return () => window.removeEventListener("scroll", updateActiveFromScroll);
   });
 
-  // Handle initial hash on mount
+  // Handle initial hash on mount - parse tick from URL
   $effect(() => {
     const hash = window.location.hash.slice(1);
-    if (hash.startsWith("timeline/tick-")) {
+    if (hash.startsWith("timeline/tick-") && timelineItems.length > 0) {
       const tick = parseInt(hash.replace("timeline/tick-", ""), 10);
-      if (!isNaN(tick) && timelineItems.length > 0) {
+      if (!isNaN(tick) && activeTick !== tick) {
         activeTick = tick;
-        isProgrammaticScroll = true;
-        requestAnimationFrame(() => {
-          const el = document.getElementById(`tick-${tick}`);
-          if (el) {
-            el.scrollIntoView({ behavior: "smooth", block: "start" });
-          }
-          // Re-enable scroll handler after animation completes
-          setTimeout(() => (isProgrammaticScroll = false), 1000);
-        });
       }
     } else if (timelineItems.length > 0 && activeTick === null) {
       // Set first tick as active by default
       activeTick = timelineItems[0].element.tick;
+    }
+  });
+  
+  // Scroll to activeTick when in vertical view and tick changes
+  $effect(() => {
+    if (orientation === 'vertical' && activeTick !== null && timelineItems.length > 0) {
+      isProgrammaticScroll = true;
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          const el = document.getElementById(`tick-${activeTick}`);
+          if (el) {
+            el.scrollIntoView({ behavior: "smooth", block: "start" });
+          }
+          setTimeout(() => (isProgrammaticScroll = false), 1000);
+        });
+      });
     }
   });
 </script>
