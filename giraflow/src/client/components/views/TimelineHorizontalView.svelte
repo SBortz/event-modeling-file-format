@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import { modelStore } from "../../stores/model.svelte";
   import { isEvent, isState, isCommand, isActor } from "../../lib/types";
   import type { Event, Actor, Command, StateView, TimelineElement } from "../../lib/types";
@@ -30,33 +31,26 @@
   // Selected element for detail panel (separate from scroll sync)
   let selectedElement = $state<TimelineElement | null>(null);
   
-  // Track the tick we've scrolled to (to avoid re-scrolling)
-  let scrolledToTick = $state<number | null>(null);
-  
-  // Scroll to activeTick on mount only (not when user selects)
-  $effect(() => {
-    // Only read activeTick once at the start
-    const targetTick = activeTick;
-    const itemCount = timelineItems.length;
-    
-    // Skip if no tick, no items, or we already scrolled to this tick
-    if (targetTick === null || itemCount === 0) return;
-    if (scrolledToTick === targetTick) return;
-    
-    // Mark as scrolled BEFORE actually scrolling
-    scrolledToTick = targetTick;
-    
-    requestAnimationFrame(() => {
-      scrollToTick(targetTick);
-    });
+  // One-time scroll on mount
+  onMount(() => {
+    // Scroll to activeTick if set (from URL or vertical view)
+    if (activeTick !== null && timelineItems.length > 0) {
+      requestAnimationFrame(() => {
+        scrollToTick(activeTick!);
+      });
+    }
   });
 
-  // When selectedElement changes by user interaction, update activeTick
-  // Also update scrolledToTick to prevent the effect from scrolling
+  // When user selects element, update activeTick and URL
   function selectElement(el: TimelineElement) {
     selectedElement = el;
-    scrolledToTick = el.tick; // Prevent effect from scrolling
     activeTick = el.tick;
+    // Update URL hash
+    history.replaceState(
+      { view: "timeline", tick: el.tick },
+      "",
+      `#timeline/tick-${el.tick}`
+    );
   }
 
   function scrollToTick(tick: number) {
