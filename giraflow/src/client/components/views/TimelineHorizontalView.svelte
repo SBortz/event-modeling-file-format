@@ -130,6 +130,11 @@
             >
               <span class="ht-symbol">{symbols[el.type]}</span>
               <span class="ht-name">{el.name}</span>
+              {#if isActor(el) && el.wireframes && el.wireframes.length > 0}
+                <span class="ht-wireframe-indicator" title="Wireframe">
+                  <svg viewBox="0 0 16 16" fill="currentColor"><rect x="1" y="3" width="14" height="10" rx="1" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="5" cy="7" r="1.5"/><path d="M3 11l3-3 2 2 4-4 3 3" stroke="currentColor" stroke-width="1" fill="none"/></svg>
+                </span>
+              {/if}
             </button>
           {/each}
         {/each}
@@ -497,6 +502,20 @@
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
+  }
+
+  .ht-wireframe-indicator {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    display: flex;
+    align-items: center;
+    color: rgba(255, 255, 255, 0.7);
+  }
+
+  .ht-wireframe-indicator svg {
+    width: 14px;
+    height: 14px;
   }
 
   .horizontal-timeline {
