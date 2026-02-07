@@ -91,12 +91,35 @@
   const BOX_WIDTH = 180;
   const BOX_HEIGHT = isMobile ? 120 : 180;
   const MAX_FIELDS = 4; // Max fields to show before truncating
+  const MAX_VALUE_LENGTH = 15; // Max chars for value display
 
-  // Get example fields from element
+  // Format a value for display
+  function formatValue(value: any): string {
+    if (value === null) return 'null';
+    if (value === undefined) return 'undefined';
+    if (Array.isArray(value)) return `[${value.length}]`;
+    if (typeof value === 'object') return '{...}';
+    if (typeof value === 'string') {
+      return value.length > MAX_VALUE_LENGTH 
+        ? value.slice(0, MAX_VALUE_LENGTH) + '…' 
+        : value;
+    }
+    return String(value);
+  }
+
+  // Get example fields with values from element
   function getExampleFields(el: TimelineElement): string[] {
     const example = (el as any).example;
     if (!example || typeof example !== 'object') return [];
-    return Object.keys(example);
+    return Object.entries(example).map(([key, value]) => {
+      return `${key}: ${formatValue(value)}`;
+    });
+  }
+
+  // Get actor description
+  function getActorDescription(el: TimelineElement): string {
+    if (!isActor(el)) return '';
+    return `reads: ${el.readsView || '?'}\n→ ${el.sendsCommand || '?'}`;
   }
 
   // Calculate lane Y positions
@@ -263,7 +286,12 @@
                 <span class="ht-symbol">{symbols[el.type]}</span>
                 <span class="ht-name">{el.name}</span>
               </div>
-              {#if fields.length > 0}
+              {#if isActor(el)}
+                <div class="ht-actor-desc">
+                  <div class="ht-actor-reads">reads: {el.readsView || '?'}</div>
+                  <div class="ht-actor-triggers">→ {el.sendsCommand || '?'}</div>
+                </div>
+              {:else if fields.length > 0}
                 <ul class="ht-fields">
                   {#each fields.slice(0, MAX_FIELDS) as field}
                     <li>{field}</li>
@@ -655,6 +683,28 @@
 
   .ht-fields-more::before {
     content: "" !important;
+  }
+
+  .ht-actor-desc {
+    font-size: 0.65rem;
+    font-weight: 400;
+    opacity: 0.95;
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .ht-actor-reads,
+  .ht-actor-triggers {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .ht-actor-triggers {
+    opacity: 0.85;
   }
 
   .ht-element.selected {
