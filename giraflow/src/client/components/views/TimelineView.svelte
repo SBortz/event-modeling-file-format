@@ -390,6 +390,30 @@
   });
 </script>
 
+<!-- Floating Orientation Toggle -->
+<div class="orientation-toggle-floating">
+  <button 
+    class="orientation-btn-floating" 
+    class:active={orientation === 'vertical'}
+    onclick={() => orientation = 'vertical'}
+    title="Vertikal (Zeit ↓)"
+  >
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M12 4v16M8 16l4 4 4-4" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </button>
+  <button 
+    class="orientation-btn-floating" 
+    class:active={orientation === 'horizontal'}
+    onclick={() => orientation = 'horizontal'}
+    title="Horizontal (Zeit →)"
+  >
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M4 12h16M16 8l4 4-4 4" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </button>
+</div>
+
 {#if orientation === 'horizontal'}
   <TimelineHorizontalView bind:activeTick bind:orientation />
 {:else}
@@ -571,28 +595,6 @@
       <span class="tl-detail-count">
           {filteredCount}{filteredCount !== viewModel.count ? ` of ${viewModel.count}` : ''} items
         </span>
-      <div class="orientation-toggle-inline">
-        <button 
-          class="orientation-btn-inline" 
-          class:active={orientation === 'vertical'}
-          onclick={() => orientation = 'vertical'}
-          title="Vertikal (Zeit ↓)"
-        >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M12 4v16M8 16l4 4 4-4" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </button>
-        <button 
-          class="orientation-btn-inline" 
-          class:active={orientation === 'horizontal'}
-          onclick={() => orientation = 'horizontal'}
-          title="Horizontal (Zeit →)"
-        >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M4 12h16M16 8l4 4-4 4" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </button>
-      </div>
     </header>
     {#each filteredItems as { element: el, position }}
       <section
@@ -664,21 +666,25 @@
 {/if}
 
 <style>
-  .orientation-toggle-inline {
+  .orientation-toggle-floating {
+    position: fixed;
+    bottom: 1.5rem;
+    right: 1.5rem;
     display: flex;
-    margin-left: auto;
-    background: var(--bg-secondary);
+    background: var(--bg-card);
     border: 1px solid var(--border);
-    border-radius: 0.375rem;
+    border-radius: 0.5rem;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+    z-index: 100;
     overflow: hidden;
   }
 
-  .orientation-btn-inline {
+  .orientation-btn-floating {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 1.75rem;
-    height: 1.75rem;
+    width: 2.5rem;
+    height: 2.5rem;
     border: none;
     background: transparent;
     color: var(--text-secondary);
@@ -686,27 +692,33 @@
     transition: all 0.15s;
   }
 
-  .orientation-btn-inline svg {
-    width: 14px;
-    height: 14px;
+  .orientation-btn-floating svg {
+    width: 18px;
+    height: 18px;
   }
 
-  .orientation-btn-inline:hover {
-    background: var(--bg-card);
+  .orientation-btn-floating:hover {
+    background: var(--bg-secondary);
     color: var(--text-primary);
   }
 
-  .orientation-btn-inline.active {
+  .orientation-btn-floating.active {
     background: var(--color-command);
     color: white;
   }
 
-  .orientation-btn-inline:first-child {
+  .orientation-btn-floating:first-child {
     border-right: 1px solid var(--border);
   }
 
-  .orientation-btn-inline.active:first-child {
+  .orientation-btn-floating.active:first-child {
     border-right-color: var(--color-command);
+  }
+
+  @media (max-width: 900px) {
+    .orientation-toggle-floating {
+      bottom: 5rem;
+    }
   }
   .timeline-master-detail {
     display: flex;

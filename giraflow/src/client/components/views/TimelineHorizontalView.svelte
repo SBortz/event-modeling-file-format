@@ -109,28 +109,6 @@
   <header class="ht-header">
     <h2>Timeline</h2>
     <span class="ht-count">{timelineItems.length} items, {tickColumns().length} ticks</span>
-    <div class="ht-orientation-toggle">
-      <button 
-        class="ht-orientation-btn" 
-        class:active={orientation === 'vertical'}
-        onclick={() => orientation = 'vertical'}
-        title="Vertikal (Zeit ↓)"
-      >
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M12 4v16M8 16l4 4 4-4" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-      </button>
-      <button 
-        class="ht-orientation-btn" 
-        class:active={orientation === 'horizontal'}
-        onclick={() => orientation = 'horizontal'}
-        title="Horizontal (Zeit →)"
-      >
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M4 12h16M16 8l4 4-4 4" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-      </button>
-    </div>
   </header>
 
   <div class="ht-container">
