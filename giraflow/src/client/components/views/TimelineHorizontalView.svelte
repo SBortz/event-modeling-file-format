@@ -1,8 +1,9 @@
 <script lang="ts">
   import { modelStore } from "../../stores/model.svelte";
   import { isEvent, isState, isCommand, isActor } from "../../lib/types";
-  import type { Event, Actor } from "../../lib/types";
+  import type { Event, Actor, Command, StateView, TimelineElement } from "../../lib/types";
   import { buildTimelineViewModel } from "../../lib/models";
+  import JsonDisplay from "../shared/JsonDisplay.svelte";
 
   const symbols: Record<string, string> = {
     event: "●",
@@ -15,6 +16,9 @@
   let viewModel = $derived(buildTimelineViewModel(modelStore.model));
   let timelineItems = $derived(viewModel.items);
   let laneConfig = $derived(viewModel.laneConfig);
+
+  // Selected element (not just tick)
+  let selectedElement = $state<TimelineElement | null>(null);
 
   // Group items by tick
   let tickColumns = $derived(() => {
@@ -57,8 +61,10 @@
     (laneConfig.actorRoles.length + 1 + laneConfig.eventSystems.length) * LANE_HEIGHT
   );
 
-  // Selected tick
-  let selectedTick = $state<number | null>(null);
+  // Close detail panel
+  function closeDetails() {
+    selectedElement = null;
+  }
 </script>
 
 <div class="horizontal-timeline">
@@ -101,19 +107,17 @@
         {#each tickColumns() as { tick, items }, tickIndex}
           <div 
             class="ht-tick-column" 
-            class:selected={selectedTick === tick}
+            class:selected={selectedElement?.tick === tick}
             style="left: {tickIndex * TICK_WIDTH}px; width: {TICK_WIDTH}px; height: {totalHeight}px;"
-            onclick={() => selectedTick = tick}
-            role="button"
-            tabindex="0"
           >
             <span class="ht-tick-label">@{tick}</span>
           </div>
 
           <!-- Elements in this tick -->
           {#each items as { element: el, position, laneIndex }}
-            <div
+            <button
               class="ht-element {el.type}"
+              class:selected={selectedElement?.tick === el.tick && selectedElement?.name === el.name}
               style="
                 left: {tickIndex * TICK_WIDTH + (TICK_WIDTH - BOX_WIDTH) / 2}px;
                 top: {getLaneY(position, laneIndex) - BOX_HEIGHT / 2}px;
@@ -121,39 +125,91 @@
                 height: {BOX_HEIGHT}px;
               "
               title="{el.name} @{el.tick}"
+              onclick={() => selectedElement = el}
             >
               <span class="ht-symbol">{symbols[el.type]}</span>
               <span class="ht-name">{el.name.length > 12 ? el.name.slice(0, 11) + '…' : el.name}</span>
-            </div>
+            </button>
           {/each}
         {/each}
       </div>
     </div>
   </div>
 
-  <!-- Selected tick details -->
-  {#if selectedTick !== null}
-    {@const selectedItems = tickColumns().find(c => c.tick === selectedTick)?.items || []}
-    <div class="ht-details">
-      <h3>@{selectedTick}</h3>
-      <ul>
-        {#each selectedItems as { element: el }}
-          <li class={el.type}>
-            <span class="symbol">{symbols[el.type]}</span>
-            {el.name}
-          </li>
-        {/each}
-      </ul>
-    </div>
-  {/if}
+  <!-- Detail Panel (slides up from bottom) -->
+  <div class="ht-detail-panel" class:open={selectedElement !== null}>
+    {#if selectedElement}
+      <div class="ht-detail-header">
+        <div class="ht-detail-title">
+          <span class="ht-detail-symbol {selectedElement.type}">{symbols[selectedElement.type]}</span>
+          <span class="ht-detail-name">{selectedElement.name}</span>
+          <span class="ht-detail-tick">@{selectedElement.tick}</span>
+        </div>
+        <button class="ht-detail-close" onclick={closeDetails} title="Schließen">✕</button>
+      </div>
+      <div class="ht-detail-content">
+        {#if isEvent(selectedElement)}
+          {#if selectedElement.producedBy}
+            <div class="ht-detail-row">
+              <span class="ht-detail-label">producedBy:</span>
+              <span class="command">{selectedElement.producedBy}</span>
+            </div>
+          {/if}
+          {#if selectedElement.example}
+            <div class="ht-detail-section">
+              <span class="ht-detail-label">Example:</span>
+              <JsonDisplay data={selectedElement.example} />
+            </div>
+          {/if}
+        {:else if isState(selectedElement)}
+          {#if selectedElement.sourcedFrom?.length > 0}
+            <div class="ht-detail-row">
+              <span class="ht-detail-label">sourcedFrom:</span>
+              {#each selectedElement.sourcedFrom as eventName, i}
+                <span class="event">{eventName}</span>{i < selectedElement.sourcedFrom.length - 1 ? ', ' : ''}
+              {/each}
+            </div>
+          {/if}
+          {#if selectedElement.example}
+            <div class="ht-detail-section">
+              <span class="ht-detail-label">Example:</span>
+              <JsonDisplay data={selectedElement.example} />
+            </div>
+          {/if}
+        {:else if isCommand(selectedElement)}
+          {#if selectedElement.example}
+            <div class="ht-detail-section">
+              <span class="ht-detail-label">Example:</span>
+              <JsonDisplay data={selectedElement.example} />
+            </div>
+          {/if}
+        {:else if isActor(selectedElement)}
+          <div class="ht-detail-row">
+            <span class="ht-detail-label">reads:</span>
+            <span class="state">{selectedElement.readsView}</span>
+            <span class="ht-detail-label">→ triggers:</span>
+            <span class="command">{selectedElement.sendsCommand}</span>
+          </div>
+          {#if selectedElement.role}
+            <div class="ht-detail-row">
+              <span class="ht-detail-label">Role:</span>
+              <span>{selectedElement.role}</span>
+            </div>
+          {/if}
+        {/if}
+      </div>
+    {/if}
+  </div>
 </div>
 
 <style>
   .horizontal-timeline {
     display: flex;
     flex-direction: column;
-    height: calc(100vh - 120px);
+    height: calc(100vh - 160px);
     font-family: var(--font-mono);
+    position: relative;
+    overflow: hidden;
   }
 
   .ht-header {
@@ -309,39 +365,116 @@
     text-overflow: ellipsis;
   }
 
-  .ht-details {
-    padding: 1rem 2rem;
-    border-top: 1px solid var(--border);
+  .ht-element.selected {
+    transform: scale(1.1);
+    box-shadow: 0 0 0 3px var(--color-command), 0 4px 12px rgba(0, 0, 0, 0.2);
+    z-index: 10;
+  }
+
+  /* Detail Panel */
+  .ht-detail-panel {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
     background: var(--bg-card);
-    max-height: 150px;
+    border-top: 1px solid var(--border);
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
+    transform: translateY(100%);
+    transition: transform 0.25s ease-out;
+    max-height: 40vh;
     overflow-y: auto;
+    z-index: 100;
   }
 
-  .ht-details h3 {
-    font-size: 0.9rem;
-    margin: 0 0 0.5rem 0;
+  .ht-detail-panel.open {
+    transform: translateY(0);
   }
 
-  .ht-details ul {
-    list-style: none;
-    padding: 0;
-    margin: 0;
+  .ht-detail-header {
     display: flex;
-    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-secondary);
+    position: sticky;
+    top: 0;
+  }
+
+  .ht-detail-title {
+    display: flex;
+    align-items: center;
     gap: 0.5rem;
   }
 
-  .ht-details li {
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
-    padding: 0.25rem 0.5rem;
-    border-radius: 4px;
-    font-size: 0.8rem;
+  .ht-detail-symbol {
+    font-size: 1.1rem;
   }
 
-  .ht-details li.event { background: rgba(249, 115, 22, 0.2); color: var(--color-event); }
-  .ht-details li.command { background: rgba(122, 162, 247, 0.2); color: var(--color-command); }
-  .ht-details li.state { background: rgba(158, 206, 106, 0.2); color: var(--color-state); }
-  .ht-details li.actor { background: rgba(107, 114, 128, 0.2); color: var(--color-actor); }
+  .ht-detail-symbol.event { color: var(--color-event); }
+  .ht-detail-symbol.state { color: var(--color-state); }
+  .ht-detail-symbol.command { color: var(--color-command); }
+  .ht-detail-symbol.actor { color: var(--color-actor); }
+
+  .ht-detail-name {
+    font-weight: 600;
+    font-size: 1rem;
+  }
+
+  .ht-detail-tick {
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+  }
+
+  .ht-detail-close {
+    width: 2rem;
+    height: 2rem;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 1.25rem;
+    cursor: pointer;
+    border-radius: 0.25rem;
+    transition: all 0.15s;
+  }
+
+  .ht-detail-close:hover {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+  }
+
+  .ht-detail-content {
+    padding: 1rem 1.5rem;
+  }
+
+  .ht-detail-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+    font-size: 0.85rem;
+  }
+
+  .ht-detail-label {
+    color: var(--text-secondary);
+  }
+
+  .ht-detail-section {
+    margin-bottom: 0.75rem;
+  }
+
+  .ht-detail-section .ht-detail-label {
+    display: block;
+    margin-bottom: 0.25rem;
+  }
+
+  .ht-detail-content .event { color: var(--color-event); }
+  .ht-detail-content .state { color: var(--color-state); }
+  .ht-detail-content .command { color: var(--color-command); }
+  .ht-detail-content .actor { color: var(--color-actor); }
+
+  .horizontal-timeline {
+    position: relative;
+  }
 </style>
