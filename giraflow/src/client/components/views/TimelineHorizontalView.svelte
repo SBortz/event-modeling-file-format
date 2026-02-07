@@ -84,11 +84,12 @@
       .map(([tick, items]) => ({ tick, items }));
   });
 
-  // Layout constants
+  // Layout constants - responsive
   const TICK_WIDTH = 200;
-  const LANE_HEIGHT = 200;
+  const isMobile = typeof window !== 'undefined' && window.innerWidth <= 900;
+  const LANE_HEIGHT = isMobile ? 140 : 200;
   const BOX_WIDTH = 180;
-  const BOX_HEIGHT = 180;
+  const BOX_HEIGHT = isMobile ? 120 : 180;
   const MAX_FIELDS = 4; // Max fields to show before truncating
 
   // Get example fields from element
@@ -417,6 +418,8 @@
     overflow: auto;
     -webkit-overflow-scrolling: touch;
     scroll-behavior: smooth;
+    touch-action: pan-x pan-y;
+    overscroll-behavior-x: contain;
   }
 
   .ht-canvas {
