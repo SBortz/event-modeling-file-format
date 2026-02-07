@@ -211,7 +211,16 @@
   function closeDetails() {
     selectedElement = null;
   }
+  
+  // Handle keyboard events
+  function handleKeydown(e: KeyboardEvent) {
+    if (e.key === 'Escape' && selectedElement !== null) {
+      closeDetails();
+    }
+  }
 </script>
+
+<svelte:window onkeydown={handleKeydown} />
 
 <div class="horizontal-timeline">
   <header class="ht-header">
