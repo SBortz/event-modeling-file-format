@@ -229,8 +229,8 @@
 
   // Get connection opacity based on highlight state
   function getConnectionOpacity(conn: TimelineConnection): number {
-    if (connectionHighlightTick === null) return 0.15; // Very faint when nothing highlighted
-    return isConnectionHighlighted(conn) ? 0.8 : 0.05; // Highlighted vs dimmed
+    if (connectionHighlightTick === null) return 0; // Hidden when nothing selected
+    return isConnectionHighlighted(conn) ? 0.85 : 0; // Show only highlighted, hide others
   }
 
   // Generate orthogonal path (right-angled) instead of bezier
