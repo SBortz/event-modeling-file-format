@@ -7,7 +7,13 @@
   import WireframeViewer from "../shared/WireframeViewer.svelte";
 
   // Props for syncing with vertical view
-  let { activeTick = $bindable<number | null>(null) }: { activeTick?: number | null } = $props();
+  let { 
+    activeTick = $bindable<number | null>(null),
+    orientation = $bindable<'vertical' | 'horizontal'>('horizontal')
+  }: { 
+    activeTick?: number | null,
+    orientation?: 'vertical' | 'horizontal'
+  } = $props();
 
   const symbols: Record<string, string> = {
     event: "●",
@@ -105,8 +111,30 @@
 
 <div class="horizontal-timeline">
   <header class="ht-header">
-    <h2>Timeline (Horizontal)</h2>
+    <h2>Timeline</h2>
     <span class="ht-count">{timelineItems.length} items, {tickColumns().length} ticks</span>
+    <div class="ht-orientation-toggle">
+      <button 
+        class="ht-orientation-btn" 
+        class:active={orientation === 'vertical'}
+        onclick={() => orientation = 'vertical'}
+        title="Vertikal (Zeit ↓)"
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 4v16M8 16l4 4 4-4" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+      <button 
+        class="ht-orientation-btn" 
+        class:active={orientation === 'horizontal'}
+        onclick={() => orientation = 'horizontal'}
+        title="Horizontal (Zeit →)"
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M4 12h16M16 8l4 4-4 4" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+    </div>
   </header>
 
   <div class="ht-container">
@@ -282,6 +310,51 @@
   .ht-count {
     font-size: 0.85rem;
     color: var(--text-secondary);
+  }
+
+  .ht-orientation-toggle {
+    display: flex;
+    margin-left: auto;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 0.375rem;
+    overflow: hidden;
+  }
+
+  .ht-orientation-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.75rem;
+    height: 1.75rem;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .ht-orientation-btn svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .ht-orientation-btn:hover {
+    background: var(--bg-card);
+    color: var(--text-primary);
+  }
+
+  .ht-orientation-btn.active {
+    background: var(--color-command);
+    color: white;
+  }
+
+  .ht-orientation-btn:first-child {
+    border-right: 1px solid var(--border);
+  }
+
+  .ht-orientation-btn.active:first-child {
+    border-right-color: var(--color-command);
   }
 
   .ht-container {

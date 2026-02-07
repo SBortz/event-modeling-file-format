@@ -390,32 +390,8 @@
   });
 </script>
 
-<!-- Compact Orientation Toggle (floating) -->
-<div class="orientation-toggle-compact">
-  <button 
-    class="orientation-btn-compact" 
-    class:active={orientation === 'vertical'}
-    onclick={() => orientation = 'vertical'}
-    title="Vertikal (Zeit ↓)"
-  >
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <path d="M12 4v16M8 16l4 4 4-4" stroke-linecap="round" stroke-linejoin="round"/>
-    </svg>
-  </button>
-  <button 
-    class="orientation-btn-compact" 
-    class:active={orientation === 'horizontal'}
-    onclick={() => orientation = 'horizontal'}
-    title="Horizontal (Zeit →)"
-  >
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <path d="M4 12h16M16 8l4 4-4 4" stroke-linecap="round" stroke-linejoin="round"/>
-    </svg>
-  </button>
-</div>
-
 {#if orientation === 'horizontal'}
-  <TimelineHorizontalView bind:activeTick />
+  <TimelineHorizontalView bind:activeTick bind:orientation />
 {:else}
 <!-- svelte-ignore a11y_click_events_have_key_events -->
 <div class="timeline-master-detail" role="presentation" onclick={handleClickOutside}>
@@ -595,6 +571,28 @@
       <span class="tl-detail-count">
           {filteredCount}{filteredCount !== viewModel.count ? ` of ${viewModel.count}` : ''} items
         </span>
+      <div class="orientation-toggle-inline">
+        <button 
+          class="orientation-btn-inline" 
+          class:active={orientation === 'vertical'}
+          onclick={() => orientation = 'vertical'}
+          title="Vertikal (Zeit ↓)"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 4v16M8 16l4 4 4-4" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+        <button 
+          class="orientation-btn-inline" 
+          class:active={orientation === 'horizontal'}
+          onclick={() => orientation = 'horizontal'}
+          title="Horizontal (Zeit →)"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M4 12h16M16 8l4 4-4 4" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      </div>
     </header>
     {#each filteredItems as { element: el, position }}
       <section
@@ -666,25 +664,21 @@
 {/if}
 
 <style>
-  .orientation-toggle-compact {
-    position: fixed;
-    top: 105px;
-    right: 1rem;
+  .orientation-toggle-inline {
     display: flex;
-    background: var(--bg-card);
+    margin-left: auto;
+    background: var(--bg-secondary);
     border: 1px solid var(--border);
     border-radius: 0.375rem;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    z-index: 50;
     overflow: hidden;
   }
 
-  .orientation-btn-compact {
+  .orientation-btn-inline {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 2rem;
-    height: 2rem;
+    width: 1.75rem;
+    height: 1.75rem;
     border: none;
     background: transparent;
     color: var(--text-secondary);
@@ -692,26 +686,26 @@
     transition: all 0.15s;
   }
 
-  .orientation-btn-compact svg {
-    width: 16px;
-    height: 16px;
+  .orientation-btn-inline svg {
+    width: 14px;
+    height: 14px;
   }
 
-  .orientation-btn-compact:hover {
-    background: var(--bg-secondary);
+  .orientation-btn-inline:hover {
+    background: var(--bg-card);
     color: var(--text-primary);
   }
 
-  .orientation-btn-compact.active {
+  .orientation-btn-inline.active {
     background: var(--color-command);
     color: white;
   }
 
-  .orientation-btn-compact:first-child {
+  .orientation-btn-inline:first-child {
     border-right: 1px solid var(--border);
   }
 
-  .orientation-btn-compact.active:first-child {
+  .orientation-btn-inline.active:first-child {
     border-right-color: var(--color-command);
   }
   .timeline-master-detail {
