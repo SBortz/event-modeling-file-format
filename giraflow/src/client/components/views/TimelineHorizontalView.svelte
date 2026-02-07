@@ -568,6 +568,12 @@
     z-index: 100;
   }
 
+  @media (max-width: 900px) {
+    .ht-detail-panel {
+      max-height: 70vh;
+    }
+  }
+
   .ht-detail-panel.open {
     transform: translateY(0);
   }
