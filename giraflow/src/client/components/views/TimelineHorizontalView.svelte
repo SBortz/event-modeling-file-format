@@ -7,10 +7,10 @@
   import WireframeViewer from "../shared/WireframeViewer.svelte";
 
   // Props for syncing with vertical view
-  let { 
+  let {
     activeTick = $bindable<number | null>(null),
     orientation = $bindable<'vertical' | 'horizontal'>('horizontal')
-  }: { 
+  }: {
     activeTick?: number | null,
     orientation?: 'vertical' | 'horizontal'
   } = $props();
@@ -29,24 +29,32 @@
 
   // Selected element for detail panel (separate from scroll sync)
   let selectedElement = $state<TimelineElement | null>(null);
-  let initialScrollDone = false;
+  let lastScrolledTick: number | null = null;
+  let isInternalChange = false;
   
-  // Scroll to activeTick only on initial mount
+  // Scroll to activeTick on mount and when switching views (external change)
   $effect(() => {
-    if (!initialScrollDone && activeTick !== null && timelineItems.length > 0) {
-      initialScrollDone = true;
+    const tick = activeTick;
+    const hasItems = timelineItems.length > 0;
+    
+    // Only scroll if tick changed externally (not from user click)
+    if (tick !== null && hasItems && tick !== lastScrolledTick && !isInternalChange) {
+      lastScrolledTick = tick;
       requestAnimationFrame(() => {
-        scrollToTick(activeTick!);
+        scrollToTick(tick);
       });
     }
+    isInternalChange = false;
   });
-  
+
   // When selectedElement changes by user interaction, update activeTick
   function selectElement(el: TimelineElement) {
     selectedElement = el;
+    isInternalChange = true;
+    lastScrolledTick = el.tick;
     activeTick = el.tick;
   }
-  
+
   function scrollToTick(tick: number) {
     const tickIndex = tickColumns().findIndex(col => col.tick === tick);
     if (tickIndex >= 0) {
@@ -79,7 +87,7 @@
   const BOX_WIDTH = 180;
   const BOX_HEIGHT = 180;
   const MAX_FIELDS = 4; // Max fields to show before truncating
-  
+
   // Get example fields from element
   function getExampleFields(el: TimelineElement): string[] {
     const example = (el as any).example;
@@ -92,7 +100,7 @@
   function getLaneY(position: string, laneIndex: number): number {
     const actorLaneCount = laneConfig.actorRoles.length;
     const eventLaneCount = laneConfig.eventSystems.length;
-    
+
     if (position === 'right') { // Actors at top
       return laneIndex * LANE_HEIGHT + LANE_HEIGHT / 2;
     } else if (position === 'center') { // Commands/States in middle
@@ -151,8 +159,8 @@
 
         <!-- Tick columns -->
         {#each tickColumns() as { tick, items }, tickIndex}
-          <div 
-            class="ht-tick-column" 
+          <div
+            class="ht-tick-column"
             class:selected={selectedElement?.tick === tick}
             style="left: {tickIndex * TICK_WIDTH}px; width: {TICK_WIDTH}px; height: {totalHeight}px;"
           >
