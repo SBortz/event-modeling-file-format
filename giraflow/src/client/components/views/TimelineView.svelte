@@ -5,6 +5,7 @@
   import { buildTimelineViewModel } from "../../lib/models";
   import JsonDisplay from "../shared/JsonDisplay.svelte";
   import WireframeViewer from "../shared/WireframeViewer.svelte";
+  import TimelineHorizontalView from "./TimelineHorizontalView.svelte";
 
   const symbols: Record<string, string> = {
     event: "●",
@@ -12,6 +13,21 @@
     command: "▶",
     actor: "○",
   };
+
+  // Orientation toggle: vertical (default) or horizontal
+  // Restore from localStorage if available
+  const savedOrientation = typeof localStorage !== 'undefined' 
+    ? localStorage.getItem('giraflow-timeline-orientation') as 'vertical' | 'horizontal' | null
+    : null;
+  let orientation = $state<'vertical' | 'horizontal'>(savedOrientation || 'vertical');
+  let prevOrientation = $state<'vertical' | 'horizontal'>(savedOrientation || 'vertical');
+  
+  // Save orientation to localStorage when it changes
+  $effect(() => {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('giraflow-timeline-orientation', orientation);
+    }
+  });
 
   let activeTick = $state<number | null>(null);
   let detailContainer: HTMLElement | null = $state(null);
@@ -272,6 +288,24 @@
     }
   }
 
+  // Scroll to activeTick when switching from horizontal to vertical
+  $effect(() => {
+    if (prevOrientation === 'horizontal' && orientation === 'vertical' && activeTick !== null) {
+      // Wait for DOM to render vertical view
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          const element = document.getElementById(`tick-${activeTick}`);
+          if (element) {
+            isProgrammaticScroll = true;
+            element.scrollIntoView({ behavior: "smooth", block: "start" });
+            setTimeout(() => (isProgrammaticScroll = false), 1000);
+          }
+        });
+      });
+    }
+    prevOrientation = orientation;
+  });
+
   // Register detail elements for intersection observer
   function registerDetailElement(el: HTMLElement, tick: number) {
     detailElements.set(tick, el);
@@ -343,30 +377,80 @@
     return () => window.removeEventListener("scroll", updateActiveFromScroll);
   });
 
-  // Handle initial hash on mount
+  // Handle initial hash on mount - parse tick from URL (runs once when data loads)
+  let hasInitializedFromHash = false;
   $effect(() => {
+    if (hasInitializedFromHash) return;
+    
     const hash = window.location.hash.slice(1);
-    if (hash.startsWith("timeline/tick-")) {
+    if (hash.startsWith("timeline/tick-") && timelineItems.length > 0) {
       const tick = parseInt(hash.replace("timeline/tick-", ""), 10);
-      if (!isNaN(tick) && timelineItems.length > 0) {
+      if (!isNaN(tick)) {
+        hasInitializedFromHash = true;
         activeTick = tick;
-        isProgrammaticScroll = true;
-        requestAnimationFrame(() => {
-          const el = document.getElementById(`tick-${tick}`);
-          if (el) {
-            el.scrollIntoView({ behavior: "smooth", block: "start" });
-          }
-          // Re-enable scroll handler after animation completes
-          setTimeout(() => (isProgrammaticScroll = false), 1000);
-        });
+        // Scroll to this tick in vertical view
+        if (orientation === 'vertical') {
+          requestAnimationFrame(() => {
+            const el = document.getElementById(`tick-${tick}`);
+            if (el) {
+              isProgrammaticScroll = true;
+              el.scrollIntoView({ behavior: "smooth", block: "start" });
+              setTimeout(() => (isProgrammaticScroll = false), 1000);
+            }
+          });
+        }
       }
     } else if (timelineItems.length > 0 && activeTick === null) {
-      // Set first tick as active by default
+      hasInitializedFromHash = true;
       activeTick = timelineItems[0].element.tick;
     }
   });
+  
+  // Scroll to activeTick only when switching from horizontal to vertical
+  $effect(() => {
+    if (prevOrientation === 'horizontal' && orientation === 'vertical' && activeTick !== null) {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          const el = document.getElementById(`tick-${activeTick}`);
+          if (el) {
+            isProgrammaticScroll = true;
+            el.scrollIntoView({ behavior: "smooth", block: "start" });
+            setTimeout(() => (isProgrammaticScroll = false), 1000);
+          }
+        });
+      });
+    }
+    prevOrientation = orientation;
+  });
 </script>
 
+<!-- Floating Orientation Toggle -->
+<div class="orientation-toggle-floating">
+  <button 
+    class="orientation-btn-floating" 
+    class:active={orientation === 'vertical'}
+    onclick={() => orientation = 'vertical'}
+    title="Vertikal (Zeit ↓)"
+  >
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M12 4v16M8 16l4 4 4-4" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </button>
+  <button 
+    class="orientation-btn-floating" 
+    class:active={orientation === 'horizontal'}
+    onclick={() => orientation = 'horizontal'}
+    title="Horizontal (Zeit →)"
+  >
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M4 12h16M16 8l4 4-4 4" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </button>
+</div>
+
+{#if orientation === 'horizontal'}
+  <TimelineHorizontalView bind:activeTick bind:orientation />
+{:else}
 <!-- svelte-ignore a11y_click_events_have_key_events -->
 <div class="timeline-master-detail" role="presentation" onclick={handleClickOutside}>
   <!-- Mobile toggle button -->
@@ -613,8 +697,57 @@
     {/each}
   </main>
 </div>
+{/if}
 
 <style>
+  .orientation-toggle-floating {
+    position: fixed;
+    top: 105px;
+    right: 1rem;
+    display: flex;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 0.375rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    z-index: 50;
+    overflow: hidden;
+  }
+
+  .orientation-btn-floating {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .orientation-btn-floating svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .orientation-btn-floating:hover {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+  }
+
+  .orientation-btn-floating.active {
+    background: var(--color-command);
+    color: white;
+  }
+
+  .orientation-btn-floating:first-child {
+    border-right: 1px solid var(--border);
+  }
+
+  .orientation-btn-floating.active:first-child {
+    border-right-color: var(--color-command);
+  }
   .timeline-master-detail {
     display: flex;
     font-family: var(--font-mono);
@@ -1113,14 +1246,13 @@
     cursor: pointer;
     transition: all 0.15s;
     color: var(--text-secondary);
-    box-shadow: var(--shadow-card);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    box-sizing: content-box;
   }
 
   .tl-filter-trigger:hover {
-    border-color: var(--text-secondary);
     background: var(--bg-secondary);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(122, 162, 247, 0.25);
+    color: var(--text-primary);
   }
 
   .tl-filter-icon {
