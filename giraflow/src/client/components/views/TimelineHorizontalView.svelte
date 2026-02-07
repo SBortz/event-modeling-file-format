@@ -23,6 +23,23 @@
     actor: "○",
   };
 
+  // Wheel scroll mode: 'vertical' (default) or 'horizontal'
+  const savedWheelMode = typeof localStorage !== 'undefined' 
+    ? localStorage.getItem('giraflow-wheel-mode') as 'vertical' | 'horizontal' | null
+    : null;
+  let wheelMode = $state<'vertical' | 'horizontal'>(savedWheelMode || 'vertical');
+  
+  // Save wheel mode to localStorage
+  $effect(() => {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('giraflow-wheel-mode', wheelMode);
+    }
+  });
+  
+  function toggleWheelMode() {
+    wheelMode = wheelMode === 'vertical' ? 'horizontal' : 'vertical';
+  }
+
   // Build view model
   let viewModel = $derived(buildTimelineViewModel(modelStore.model));
   let timelineItems = $derived(viewModel.items);
@@ -186,25 +203,27 @@
     }
   }
 
-  // Handle wheel for horizontal scroll (shift+wheel or when at vertical bounds)
+  // Handle wheel scroll based on wheelMode setting
   function handleWheel(e: WheelEvent) {
     const scrollArea = e.currentTarget as HTMLElement;
     
-    // Shift+wheel always scrolls horizontally
+    // Shift+wheel always toggles the opposite direction
     if (e.shiftKey) {
       e.preventDefault();
-      scrollArea.scrollLeft += e.deltaY;
+      if (wheelMode === 'horizontal') {
+        scrollArea.scrollTop += e.deltaY;
+      } else {
+        scrollArea.scrollLeft += e.deltaY;
+      }
       return;
     }
     
-    // Regular wheel: convert to horizontal if at vertical bounds
-    const atTop = scrollArea.scrollTop === 0;
-    const atBottom = scrollArea.scrollTop >= scrollArea.scrollHeight - scrollArea.clientHeight - 1;
-    
-    if ((e.deltaY < 0 && atTop) || (e.deltaY > 0 && atBottom)) {
+    // Use wheelMode setting
+    if (wheelMode === 'horizontal') {
       e.preventDefault();
       scrollArea.scrollLeft += e.deltaY;
     }
+    // vertical mode: default browser behavior (no preventDefault)
   }
 
   // Close detail panel
@@ -226,6 +245,22 @@
   <header class="ht-header">
     <h2>Timeline</h2>
     <span class="ht-count">{tickColumns().length} ticks</span>
+    <!-- Wheel mode toggle -->
+    <button 
+      class="ht-wheel-toggle"
+      onclick={toggleWheelMode}
+      title={wheelMode === 'vertical' ? 'Mausrad: Vertikal scrollen (klicken für Horizontal)' : 'Mausrad: Horizontal scrollen (klicken für Vertikal)'}
+    >
+      {#if wheelMode === 'vertical'}
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 4v16M8 8l4-4 4 4M8 16l4 4 4-4" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      {:else}
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M4 12h16M8 8l-4 4 4 4M16 8l4 4-4 4" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      {/if}
+    </button>
   </header>
 
   <div class="ht-container">
@@ -441,6 +476,32 @@
   .ht-count {
     font-size: 0.85rem;
     color: var(--text-secondary);
+  }
+
+  .ht-wheel-toggle {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border: 1px solid var(--border);
+    border-radius: 0.375rem;
+    background: var(--bg-card);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .ht-wheel-toggle:hover {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border-color: var(--text-secondary);
+  }
+
+  .ht-wheel-toggle svg {
+    width: 16px;
+    height: 16px;
   }
 
   .ht-orientation-toggle {
