@@ -515,11 +515,11 @@
           title={showConnections ? 'Verbindungen ausblenden' : 'Verbindungen einblenden'}
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M6 6l12 12M6 18L18 6" stroke-linecap="round" stroke-opacity={showConnections ? 0 : 0.5}/>
-            <path d="M4 8c4-4 12 4 16 0" stroke-linecap="round"/>
-            <circle cx="4" cy="8" r="2.5" fill="currentColor"/>
-            <circle cx="20" cy="8" r="2.5" fill="currentColor"/>
+            <path d="M4 12c4-6 12 6 16 0" stroke-linecap="round"/>
+            <circle cx="4" cy="12" r="3" fill="currentColor"/>
+            <circle cx="20" cy="12" r="3" fill="currentColor"/>
           </svg>
+          <span class="tl-toggle-label">{showConnections ? 'Verbindungen' : 'Verbindungen aus'}</span>
         </button>
       </div>
       {#if shouldShowLaneHeader()}
@@ -1002,32 +1002,52 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 1.75rem;
+    gap: 0.375rem;
     height: 1.75rem;
-    padding: 0;
+    padding: 0 0.5rem;
     border: 1px solid var(--border);
     background: var(--bg-card);
     border-radius: 0.375rem;
     cursor: pointer;
     transition: all 0.15s;
     color: var(--text-secondary);
+    font-size: 0.7rem;
+    font-family: inherit;
   }
 
   .tl-connections-toggle svg {
-    width: 14px;
-    height: 14px;
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+  }
+
+  .tl-toggle-label {
+    white-space: nowrap;
   }
 
   .tl-connections-toggle:hover {
     border-color: var(--color-command);
     color: var(--color-command);
-    transform: translateY(-1px);
   }
 
   .tl-connections-toggle.active {
     border-color: var(--color-command);
     color: var(--color-command);
-    background: rgba(122, 162, 247, 0.1);
+    background: rgba(122, 162, 247, 0.15);
+  }
+
+  .tl-connections-toggle:not(.active) {
+    opacity: 0.6;
+  }
+
+  @media (max-width: 600px) {
+    .tl-toggle-label {
+      display: none;
+    }
+    .tl-connections-toggle {
+      width: 1.75rem;
+      padding: 0;
+    }
   }
 
   .tl-lane-highlight {
