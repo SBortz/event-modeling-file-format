@@ -7,6 +7,7 @@
   import TableView from "./components/views/TableView.svelte";
   import EditorView from "./components/views/EditorView.svelte";
   import HowtoView from "./components/views/HowtoView.svelte";
+  import TimelineHorizontalView from "./components/views/TimelineHorizontalView.svelte";
 
   // Handle browser back/forward navigation and hash changes
   $effect(() => {
@@ -49,6 +50,8 @@
   {:else if modelStore.model}
     {#if modelStore.view === "timeline"}
       <TimelineView />
+    {:else if modelStore.view === "timeline-horizontal"}
+      <TimelineHorizontalView />
     {:else if modelStore.view === "slice"}
       <SliceView />
     {:else if modelStore.view === "table"}

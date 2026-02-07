@@ -1,0 +1,347 @@
+<script lang="ts">
+  import { modelStore } from "../../stores/model.svelte";
+  import { isEvent, isState, isCommand, isActor } from "../../lib/types";
+  import type { Event, Actor } from "../../lib/types";
+  import { buildTimelineViewModel } from "../../lib/models";
+
+  const symbols: Record<string, string> = {
+    event: "●",
+    state: "◆",
+    command: "▶",
+    actor: "○",
+  };
+
+  // Build view model
+  let viewModel = $derived(buildTimelineViewModel(modelStore.model));
+  let timelineItems = $derived(viewModel.items);
+  let laneConfig = $derived(viewModel.laneConfig);
+
+  // Group items by tick
+  let tickColumns = $derived(() => {
+    const tickMap = new Map<number, typeof timelineItems>();
+    for (const item of timelineItems) {
+      const tick = item.element.tick;
+      if (!tickMap.has(tick)) {
+        tickMap.set(tick, []);
+      }
+      tickMap.get(tick)!.push(item);
+    }
+    return Array.from(tickMap.entries())
+      .sort(([a], [b]) => a - b)
+      .map(([tick, items]) => ({ tick, items }));
+  });
+
+  // Layout constants
+  const TICK_WIDTH = 120;
+  const LANE_HEIGHT = 60;
+  const BOX_WIDTH = 100;
+  const BOX_HEIGHT = 32;
+
+  // Calculate lane Y positions
+  // Order: Actors (top) → Commands/States (middle) → Events (bottom)
+  function getLaneY(position: string, laneIndex: number): number {
+    const actorLaneCount = laneConfig.actorRoles.length;
+    const eventLaneCount = laneConfig.eventSystems.length;
+    
+    if (position === 'right') { // Actors at top
+      return laneIndex * LANE_HEIGHT + LANE_HEIGHT / 2;
+    } else if (position === 'center') { // Commands/States in middle
+      return actorLaneCount * LANE_HEIGHT + LANE_HEIGHT / 2;
+    } else { // Events at bottom
+      return (actorLaneCount + 1 + laneIndex) * LANE_HEIGHT + LANE_HEIGHT / 2;
+    }
+  }
+
+  // Total height
+  let totalHeight = $derived(
+    (laneConfig.actorRoles.length + 1 + laneConfig.eventSystems.length) * LANE_HEIGHT
+  );
+
+  // Selected tick
+  let selectedTick = $state<number | null>(null);
+</script>
+
+<div class="horizontal-timeline">
+  <header class="ht-header">
+    <h2>Timeline (Horizontal)</h2>
+    <span class="ht-count">{timelineItems.length} items, {tickColumns().length} ticks</span>
+  </header>
+
+  <div class="ht-container">
+    <!-- Lane labels (fixed left) -->
+    <div class="ht-lane-labels" style="height: {totalHeight}px;">
+      {#each laneConfig.actorRoles as role, i}
+        <div class="ht-lane-label actor" style="top: {i * LANE_HEIGHT}px; height: {LANE_HEIGHT}px;">
+          {role || 'Actors'}
+        </div>
+      {/each}
+      <div class="ht-lane-label center" style="top: {laneConfig.actorRoles.length * LANE_HEIGHT}px; height: {LANE_HEIGHT}px;">
+        Cmd / State
+      </div>
+      {#each laneConfig.eventSystems as system, i}
+        <div class="ht-lane-label event" style="top: {(laneConfig.actorRoles.length + 1 + i) * LANE_HEIGHT}px; height: {LANE_HEIGHT}px;">
+          {system || 'Events'}
+        </div>
+      {/each}
+    </div>
+
+    <!-- Scrollable timeline area -->
+    <div class="ht-scroll-area">
+      <div class="ht-canvas" style="width: {tickColumns().length * TICK_WIDTH + 50}px; height: {totalHeight}px;">
+        <!-- Lane backgrounds -->
+        {#each laneConfig.actorRoles as _, i}
+          <div class="ht-lane-bg actor" style="top: {i * LANE_HEIGHT}px; height: {LANE_HEIGHT}px;"></div>
+        {/each}
+        <div class="ht-lane-bg center" style="top: {laneConfig.actorRoles.length * LANE_HEIGHT}px; height: {LANE_HEIGHT}px;"></div>
+        {#each laneConfig.eventSystems as _, i}
+          <div class="ht-lane-bg event" style="top: {(laneConfig.actorRoles.length + 1 + i) * LANE_HEIGHT}px; height: {LANE_HEIGHT}px;"></div>
+        {/each}
+
+        <!-- Tick columns -->
+        {#each tickColumns() as { tick, items }, tickIndex}
+          <div 
+            class="ht-tick-column" 
+            class:selected={selectedTick === tick}
+            style="left: {tickIndex * TICK_WIDTH}px; width: {TICK_WIDTH}px; height: {totalHeight}px;"
+            onclick={() => selectedTick = tick}
+            role="button"
+            tabindex="0"
+          >
+            <span class="ht-tick-label">@{tick}</span>
+          </div>
+
+          <!-- Elements in this tick -->
+          {#each items as { element: el, position, laneIndex }}
+            <div
+              class="ht-element {el.type}"
+              style="
+                left: {tickIndex * TICK_WIDTH + (TICK_WIDTH - BOX_WIDTH) / 2}px;
+                top: {getLaneY(position, laneIndex) - BOX_HEIGHT / 2}px;
+                width: {BOX_WIDTH}px;
+                height: {BOX_HEIGHT}px;
+              "
+              title="{el.name} @{el.tick}"
+            >
+              <span class="ht-symbol">{symbols[el.type]}</span>
+              <span class="ht-name">{el.name.length > 12 ? el.name.slice(0, 11) + '…' : el.name}</span>
+            </div>
+          {/each}
+        {/each}
+      </div>
+    </div>
+  </div>
+
+  <!-- Selected tick details -->
+  {#if selectedTick !== null}
+    {@const selectedItems = tickColumns().find(c => c.tick === selectedTick)?.items || []}
+    <div class="ht-details">
+      <h3>@{selectedTick}</h3>
+      <ul>
+        {#each selectedItems as { element: el }}
+          <li class={el.type}>
+            <span class="symbol">{symbols[el.type]}</span>
+            {el.name}
+          </li>
+        {/each}
+      </ul>
+    </div>
+  {/if}
+</div>
+
+<style>
+  .horizontal-timeline {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 120px);
+    font-family: var(--font-mono);
+  }
+
+  .ht-header {
+    display: flex;
+    align-items: baseline;
+    gap: 1rem;
+    padding: 1rem 2rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .ht-header h2 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 0;
+  }
+
+  .ht-count {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+  }
+
+  .ht-container {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  .ht-lane-labels {
+    flex-shrink: 0;
+    width: 100px;
+    position: relative;
+    background: var(--bg-secondary);
+    border-right: 1px solid var(--border);
+  }
+
+  .ht-lane-label {
+    position: absolute;
+    left: 0;
+    right: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .ht-lane-label.actor { color: var(--color-actor); }
+  .ht-lane-label.center { color: var(--text-secondary); }
+  .ht-lane-label.event { color: var(--color-event); }
+
+  .ht-scroll-area {
+    flex: 1;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+
+  .ht-canvas {
+    position: relative;
+    min-height: 100%;
+  }
+
+  .ht-lane-bg {
+    position: absolute;
+    left: 0;
+    right: 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .ht-lane-bg.actor { background: rgba(107, 114, 128, 0.05); }
+  .ht-lane-bg.center { background: rgba(107, 114, 128, 0.1); }
+  .ht-lane-bg.event { background: rgba(249, 115, 22, 0.05); }
+
+  .ht-tick-column {
+    position: absolute;
+    top: 0;
+    border-right: 1px dashed var(--border);
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .ht-tick-column:hover {
+    background: rgba(122, 162, 247, 0.1);
+  }
+
+  .ht-tick-column.selected {
+    background: rgba(122, 162, 247, 0.15);
+  }
+
+  .ht-tick-label {
+    position: absolute;
+    top: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.65rem;
+    color: var(--text-secondary);
+  }
+
+  .ht-element {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: transform 0.1s, box-shadow 0.1s;
+    z-index: 1;
+  }
+
+  .ht-element:hover {
+    transform: scale(1.05);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    z-index: 2;
+  }
+
+  .ht-element.event {
+    background: var(--color-event);
+    border: 1px solid #df7e44;
+    color: var(--text-primary);
+  }
+
+  .ht-element.command {
+    background: var(--color-command);
+    border: 1px solid #5a82d7;
+    color: var(--text-primary);
+  }
+
+  .ht-element.state {
+    background: var(--color-state);
+    border: 1px solid #7eb356;
+    color: var(--text-primary);
+  }
+
+  .ht-element.actor {
+    background: var(--color-actor);
+    border: 1px solid #4b5563;
+    color: white;
+    border-radius: 16px;
+  }
+
+  .ht-symbol {
+    font-size: 0.8rem;
+  }
+
+  .ht-name {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .ht-details {
+    padding: 1rem 2rem;
+    border-top: 1px solid var(--border);
+    background: var(--bg-card);
+    max-height: 150px;
+    overflow-y: auto;
+  }
+
+  .ht-details h3 {
+    font-size: 0.9rem;
+    margin: 0 0 0.5rem 0;
+  }
+
+  .ht-details ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .ht-details li {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+  }
+
+  .ht-details li.event { background: rgba(249, 115, 22, 0.2); color: var(--color-event); }
+  .ht-details li.command { background: rgba(122, 162, 247, 0.2); color: var(--color-command); }
+  .ht-details li.state { background: rgba(158, 206, 106, 0.2); color: var(--color-state); }
+  .ht-details li.actor { background: rgba(107, 114, 128, 0.2); color: var(--color-actor); }
+</style>
