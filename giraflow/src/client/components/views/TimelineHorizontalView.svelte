@@ -241,26 +241,27 @@
 
 <svelte:window onkeydown={handleKeydown} />
 
+<!-- Floating wheel mode toggle (left of orientation toggle) -->
+<button 
+  class="ht-wheel-toggle-floating"
+  onclick={toggleWheelMode}
+  title={wheelMode === 'vertical' ? 'Mausrad: Vertikal scrollen (klicken für Horizontal)' : 'Mausrad: Horizontal scrollen (klicken für Vertikal)'}
+>
+  {#if wheelMode === 'vertical'}
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M12 4v16M8 8l4-4 4 4M8 16l4 4 4-4" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  {:else}
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M4 12h16M8 8l-4 4 4 4M16 8l4 4-4 4" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  {/if}
+</button>
+
 <div class="horizontal-timeline">
   <header class="ht-header">
     <h2>Timeline</h2>
     <span class="ht-count">{tickColumns().length} ticks</span>
-    <!-- Wheel mode toggle -->
-    <button 
-      class="ht-wheel-toggle"
-      onclick={toggleWheelMode}
-      title={wheelMode === 'vertical' ? 'Mausrad: Vertikal scrollen (klicken für Horizontal)' : 'Mausrad: Horizontal scrollen (klicken für Vertikal)'}
-    >
-      {#if wheelMode === 'vertical'}
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M12 4v16M8 8l4-4 4 4M8 16l4 4 4-4" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-      {:else}
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M4 12h16M8 8l-4 4 4 4M16 8l4 4-4 4" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-      {/if}
-    </button>
   </header>
 
   <div class="ht-container">
@@ -478,8 +479,10 @@
     color: var(--text-secondary);
   }
 
-  .ht-wheel-toggle {
-    margin-left: auto;
+  .ht-wheel-toggle-floating {
+    position: fixed;
+    top: 105px;
+    right: calc(1rem + 4.5rem);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -491,15 +494,17 @@
     color: var(--text-secondary);
     cursor: pointer;
     transition: all 0.15s;
+    z-index: 50;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   }
 
-  .ht-wheel-toggle:hover {
+  .ht-wheel-toggle-floating:hover {
     background: var(--bg-secondary);
     color: var(--text-primary);
     border-color: var(--text-secondary);
   }
 
-  .ht-wheel-toggle svg {
+  .ht-wheel-toggle-floating svg {
     width: 16px;
     height: 16px;
   }
