@@ -273,6 +273,10 @@
     text-transform: uppercase;
     letter-spacing: 0.02em;
     border-bottom: 1px solid var(--border);
+    text-align: center;
+    word-break: break-word;
+    padding: 0.5rem;
+    line-height: 1.3;
   }
 
   .ht-lane-label.actor { color: var(--color-actor); }
