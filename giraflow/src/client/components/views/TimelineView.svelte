@@ -220,10 +220,11 @@
     return type === 'reads';
   }
 
-  // Check if connection is related to highlighted tick
+  // Check if connection points TO the highlighted tick (incoming dependencies only)
   function isConnectionHighlighted(conn: TimelineConnection): boolean {
     if (connectionHighlightTick === null) return false;
-    return conn.fromTick === connectionHighlightTick || conn.toTick === connectionHighlightTick;
+    // Only show connections where the selected element is the TARGET (dependencies from the past)
+    return conn.toTick === connectionHighlightTick;
   }
 
   // Get connection opacity based on highlight state
