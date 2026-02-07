@@ -498,6 +498,12 @@
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   }
 
+  @media (max-width: 900px) {
+    .ht-wheel-toggle-floating {
+      display: none;
+    }
+  }
+
   .ht-wheel-toggle-floating:hover {
     background: var(--bg-secondary);
     color: var(--text-primary);
