@@ -23,25 +23,27 @@
 
   // Selected element (not just tick) - sync with activeTick
   let selectedElement = $state<TimelineElement | null>(null);
+  let lastSyncedTick = $state<number | null>(null);
   
-  // When activeTick changes from parent, find and select the element
+  // When activeTick changes from parent (e.g. switching views), sync once
   $effect(() => {
-    if (activeTick !== null && (!selectedElement || selectedElement.tick !== activeTick)) {
+    if (activeTick !== null && activeTick !== lastSyncedTick) {
       const item = timelineItems.find(i => i.element.tick === activeTick);
       if (item) {
         selectedElement = item.element;
+        lastSyncedTick = activeTick;
         // Scroll to the tick column
         scrollToTick(activeTick);
       }
     }
   });
   
-  // When selectedElement changes, update activeTick
-  $effect(() => {
-    if (selectedElement && selectedElement.tick !== activeTick) {
-      activeTick = selectedElement.tick;
-    }
-  });
+  // When selectedElement changes by user interaction, update activeTick
+  function selectElement(el: TimelineElement) {
+    selectedElement = el;
+    activeTick = el.tick;
+    lastSyncedTick = el.tick;
+  }
   
   function scrollToTick(tick: number) {
     const tickIndex = tickColumns().findIndex(col => col.tick === tick);
@@ -159,7 +161,7 @@
                 height: {BOX_HEIGHT}px;
               "
               title="{el.name} @{el.tick}"
-              onclick={() => selectedElement = el}
+              onclick={() => selectElement(el)}
             >
               <span class="ht-symbol">{symbols[el.type]}</span>
               <span class="ht-name">{el.name}</span>
