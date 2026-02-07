@@ -27,20 +27,16 @@
   let timelineItems = $derived(viewModel.items);
   let laneConfig = $derived(viewModel.laneConfig);
 
-  // Selected element (not just tick) - sync with activeTick
+  // Selected element for detail panel (separate from scroll sync)
   let selectedElement = $state<TimelineElement | null>(null);
   let lastSyncedTick = $state<number | null>(null);
   
-  // When activeTick changes from parent (e.g. switching views), sync once
+  // When activeTick changes from parent (e.g. switching views), only scroll - don't open panel
   $effect(() => {
     if (activeTick !== null && activeTick !== lastSyncedTick) {
-      const item = timelineItems.find(i => i.element.tick === activeTick);
-      if (item) {
-        selectedElement = item.element;
-        lastSyncedTick = activeTick;
-        // Scroll to the tick column
-        scrollToTick(activeTick);
-      }
+      lastSyncedTick = activeTick;
+      // Only scroll to the tick column, don't select/open panel
+      scrollToTick(activeTick);
     }
   });
   
