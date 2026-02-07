@@ -668,14 +668,14 @@
 <style>
   .orientation-toggle-floating {
     position: fixed;
-    bottom: 1.5rem;
-    right: 1.5rem;
+    top: 105px;
+    right: 1rem;
     display: flex;
     background: var(--bg-card);
     border: 1px solid var(--border);
-    border-radius: 0.5rem;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
-    z-index: 100;
+    border-radius: 0.375rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    z-index: 50;
     overflow: hidden;
   }
 
@@ -683,8 +683,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 2.5rem;
-    height: 2.5rem;
+    width: 2rem;
+    height: 2rem;
     border: none;
     background: transparent;
     color: var(--text-secondary);
@@ -693,8 +693,8 @@
   }
 
   .orientation-btn-floating svg {
-    width: 18px;
-    height: 18px;
+    width: 16px;
+    height: 16px;
   }
 
   .orientation-btn-floating:hover {
@@ -713,12 +713,6 @@
 
   .orientation-btn-floating.active:first-child {
     border-right-color: var(--color-command);
-  }
-
-  @media (max-width: 900px) {
-    .orientation-toggle-floating {
-      bottom: 5rem;
-    }
   }
   .timeline-master-detail {
     display: flex;
