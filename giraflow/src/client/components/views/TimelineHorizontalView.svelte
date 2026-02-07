@@ -4,6 +4,7 @@
   import type { Event, Actor, Command, StateView, TimelineElement } from "../../lib/types";
   import { buildTimelineViewModel } from "../../lib/models";
   import JsonDisplay from "../shared/JsonDisplay.svelte";
+  import WireframeViewer from "../shared/WireframeViewer.svelte";
 
   const symbols: Record<string, string> = {
     event: "●",
@@ -194,6 +195,16 @@
             <div class="ht-detail-row">
               <span class="ht-detail-label">Role:</span>
               <span>{selectedElement.role}</span>
+            </div>
+          {/if}
+          {#if selectedElement.wireframes && selectedElement.wireframes.length > 0}
+            <div class="ht-wireframes">
+              {#each selectedElement.wireframes as wireframe}
+                <WireframeViewer
+                  src={modelStore.getWireframePath(wireframe)}
+                  title="{selectedElement.name} - {wireframe}"
+                />
+              {/each}
             </div>
           {/if}
         {/if}
@@ -480,6 +491,13 @@
   .ht-detail-content .state { color: var(--color-state); }
   .ht-detail-content .command { color: var(--color-command); }
   .ht-detail-content .actor { color: var(--color-actor); }
+
+  .ht-wireframes {
+    margin-top: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
 
   .horizontal-timeline {
     position: relative;
