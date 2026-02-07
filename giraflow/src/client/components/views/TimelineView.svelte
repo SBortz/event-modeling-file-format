@@ -83,22 +83,11 @@
   // Toggle for showing connections
   let showConnections = $state(true);
 
-  // Hovered/selected tick for connection highlighting
-  // On desktop: set by hover, on mobile: set by tap
+  // Hovered tick for connection highlighting (desktop hover)
   let hoveredTick = $state<number | null>(null);
-  let selectedConnectionTick = $state<number | null>(null);
   
-  // Combined: use selected if set, otherwise hovered
-  let connectionHighlightTick = $derived(selectedConnectionTick ?? hoveredTick);
-
-  // Toggle connection highlight on click (for mobile)
-  function toggleConnectionHighlight(tick: number) {
-    if (selectedConnectionTick === tick) {
-      selectedConnectionTick = null; // Deselect on second tap
-    } else {
-      selectedConnectionTick = tick;
-    }
-  }
+  // Use activeTick (selected) or hoveredTick for highlighting
+  let connectionHighlightTick = $derived(hoveredTick ?? activeTick);
 
   // Filtered lane config - excludes hidden systems/roles
   let filteredLaneConfig = $derived(() => {
@@ -695,10 +684,7 @@
           class:active={activeTick === el.tick}
           class:hovered={connectionHighlightTick === el.tick}
           data-tick={el.tick}
-          onclick={() => {
-            selectedConnectionTick = el.tick; // Show connections on tap
-            scrollToDetail(el.tick);
-          }}
+          onclick={() => scrollToDetail(el.tick)}
           onmouseenter={() => hoveredTick = el.tick}
           onmouseleave={() => hoveredTick = null}
         >
